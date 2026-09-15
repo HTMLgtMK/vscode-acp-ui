@@ -83,6 +83,10 @@
                             "authMethodId": {
                                 "type": "string",
                                 "description": "ACP authenticate methodId to use when the agent advertises multiple auth methods."
+                            },
+                            "socketPath": {
+                                "type": "string",
+                                "description": "Connect to an already-running ACP daemon on this unix socket (standard ACP NDJSON JSON-RPC) instead of spawning `command`."
                             }
                         }
                     },

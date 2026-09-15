@@ -1,5 +1,5 @@
 /**
- * Optional sink for raw NDJSON-RPC lines (stdio transport), used for debugging and support.
+ * Optional sink for raw NDJSON-RPC lines (agent transport wire traffic), used for debugging and support.
  * When {@link isLoggingEnabled} is false, transports should not insert extra stream taps.
  */
 export type AcpRpcNdjsonDirection = "toAgent" | "fromAgent";

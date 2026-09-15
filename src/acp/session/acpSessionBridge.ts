@@ -12,6 +12,7 @@ import {
     extensionMessagesForPermissionRequest,
     sessionUpdateToWebviewMessages,
 } from "../mapping/sessionUpdateMapping";
+import type { AcpAgentTransport } from "../ports/agentTransport";
 import type { AcpHostFilesystem } from "../ports/hostFilesystem";
 import type { AcpRpcNdjsonSink } from "../ports/rpcNdjsonSink";
 import { buildModelId, parseModelIdBracketParams } from "./modelVariantPicker";
@@ -44,6 +45,12 @@ export type AcpSessionHostRuntime = {
     hostFilesystem: AcpHostFilesystem;
     rpcNdjsonSink: AcpRpcNdjsonSink;
     getWorkspaceRoot: () => string | undefined;
+    /**
+     * Creates the transport used to reach the agent for a config. Omit to use the
+     * default resolution (unix-socket daemon when `socketPath` is configured,
+     * spawn a subprocess otherwise).
+     */
+    createAgentTransport?: (config: AcpAgentSpawnConfig) => AcpAgentTransport;
 };
 
 export type AcpSessionBridgeHooks = {
@@ -106,6 +113,9 @@ export class AcpSessionBridge {
     ) {
         this.agentProcess = new AcpAgentProcess({
             config,
+            ...(host.createAgentTransport !== undefined
+                ? { transport: host.createAgentTransport(config) }
+                : {}),
             requestPermission: (params) => this.queuePermissionRequest(params),
             extMethod: (method, params) =>
                 this.handleExtensionMethod(method, params),
