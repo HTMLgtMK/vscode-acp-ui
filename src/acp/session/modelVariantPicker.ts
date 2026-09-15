@@ -4,12 +4,12 @@ export type ParsedModelId = {
     params: Record<string, string>;
 };
 
-export type ModelPickerVariant = {
+type ModelPickerVariant = {
     modelId: string;
     label: string;
 };
 
-export type ModelPickerGroup = {
+type ModelPickerGroup = {
     /** Stable grouping key (parsed model id base slug). */
     name: string;
     /** Human-readable label for the model family. */

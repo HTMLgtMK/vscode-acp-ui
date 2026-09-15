@@ -64,7 +64,7 @@ export function setAcpUiCustomEditorRefreshHandler(
 /**
  * Custom editor for `.acp` session files: hosts the ACP UI webview and persists events.
  */
-export class AcpUiCustomEditorProvider implements CustomTextEditorProvider {
+class AcpUiCustomEditorProvider implements CustomTextEditorProvider {
     constructor(private readonly context: ExtensionContext) {}
 
     async resolveCustomTextEditor(

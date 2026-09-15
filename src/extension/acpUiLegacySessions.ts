@@ -1,4 +1,4 @@
-export type StoredChatItem = {
+type StoredChatItem = {
     id: string;
     title: string;
     agentName: string;

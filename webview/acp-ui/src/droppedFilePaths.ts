@@ -169,7 +169,7 @@ export function pathForPrompt(
 }
 
 /** Formats one path as an @-mention, quoting when needed. */
-export function formatFileMention(pathForPrompt: string): string {
+function formatFileMention(pathForPrompt: string): string {
   if (/[\s\n"]/.test(pathForPrompt)) {
     return `@"${pathForPrompt.replace(/"/g, '\\"')}"`;
   }

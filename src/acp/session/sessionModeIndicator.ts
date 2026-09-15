@@ -1,6 +1,6 @@
 import type { AcpUiSessionConfigOption } from "./sessionConfigOptions";
 
-export type SessionModeIndicatorTone = "ask" | "plan";
+type SessionModeIndicatorTone = "ask" | "plan";
 
 export type SessionModeIndicatorSpec =
     | {

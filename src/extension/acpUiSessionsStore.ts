@@ -24,9 +24,6 @@ export type AcpUiSessionRecord = {
     uri: Uri;
 };
 
-export type { StoredChatItem } from "./acpUiLegacySessions";
-export { parseStoredChatItems } from "./acpUiLegacySessions";
-
 const chatsStorageKey = "acpUi.chats.v2";
 const legacyGlobalChatsStorageKey = "acpUi.chats.v1";
 const migrationDoneKey = "acpUi.chats.jsonlMigration.v1";

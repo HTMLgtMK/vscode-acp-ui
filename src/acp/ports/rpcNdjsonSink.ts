@@ -45,20 +45,3 @@ export class NullAcpRpcNdjsonSink implements AcpRpcNdjsonSink {
         _context?: AcpRpcNdjsonLineContext,
     ): void {}
 }
-
-/** Forwards each NDJSON line to every configured sink. */
-export class CompositeAcpRpcNdjsonSink implements AcpRpcNdjsonSink {
-    constructor(private readonly sinks: AcpRpcNdjsonSink[]) {}
-
-    get isLoggingEnabled(): boolean {
-        return this.sinks.some((sink) => sink.isLoggingEnabled);
-    }
-
-    appendRawNdjsonLine(line: string, context?: AcpRpcNdjsonLineContext): void {
-        for (const sink of this.sinks) {
-            if (sink.isLoggingEnabled) {
-                sink.appendRawNdjsonLine(line, context);
-            }
-        }
-    }
-}

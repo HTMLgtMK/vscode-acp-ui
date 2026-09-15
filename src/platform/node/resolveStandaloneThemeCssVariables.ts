@@ -33,7 +33,7 @@ export type StandaloneThemeResolution = {
 const MARKDOWN_INLINE_EDITOR_PREFIX = "markdownInlineEditor.colors.";
 
 /** Default VS Code user settings path on Linux (override with `ACP_UI_VSCODE_SETTINGS`). */
-export function defaultVscodeUserSettingsPath(): string {
+function defaultVscodeUserSettingsPath(): string {
     const fromEnv = process.env.ACP_UI_VSCODE_SETTINGS?.trim();
     if (fromEnv !== undefined && fromEnv.length > 0) {
         return fromEnv;
@@ -111,7 +111,7 @@ function readTokenColorCustomizations(
     return value as TokenColorCustomizations;
 }
 
-export function vscodeExtensionSearchRoots(): string[] {
+function vscodeExtensionSearchRoots(): string[] {
     const roots = [
         join(homedir(), ".vscode", "extensions"),
         "/usr/share/code/resources/app/extensions",
@@ -124,7 +124,7 @@ export function vscodeExtensionSearchRoots(): string[] {
     return roots.filter((root) => existsSync(root));
 }
 
-export function findContributedThemePath(
+function findContributedThemePath(
     themeLabel: string,
     extensionRoots: readonly string[] = vscodeExtensionSearchRoots(),
 ): string | undefined {
@@ -165,7 +165,7 @@ export function findContributedThemePath(
     return undefined;
 }
 
-export function readColorThemeJsonSync(
+function readColorThemeJsonSync(
     themePath: string,
     visited: Set<string> = new Set(),
 ): ColorThemeJson {

@@ -51,7 +51,7 @@ export function languageFromClassName(className: string | undefined): string | u
     return match?.[1]?.toLowerCase();
 }
 
-export function highlightCodeToNodes(
+function highlightCodeToNodes(
     language: string | undefined,
     code: string,
 ): ReactNode[] {

@@ -10,12 +10,6 @@ import { createDefaultAcpSessionHostRuntime } from "../platform/vscode/defaultHo
 import { sortSessionInfos } from "./acpAgentSessionListFormat";
 import { getAcpUiExtensionActivation } from "./extensionServices";
 
-export {
-    sessionInfoLabel,
-    sessionInfoSortKey,
-    sortSessionInfos,
-} from "./acpAgentSessionListFormat";
-
 const cancelledPermission: RequestPermissionHandler = async () => ({
     outcome: { outcome: "cancelled" },
 });

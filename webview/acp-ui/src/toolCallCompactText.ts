@@ -51,7 +51,7 @@ function pathSegmentFromRaw(
     };
 }
 
-export type ToolKindCounts = {
+type ToolKindCounts = {
     read: number;
     search: number;
     glob: number;
@@ -81,7 +81,7 @@ export type CompactGroupSummaryParts = {
     counts: string;
 };
 
-export function basenameFromPath(pathText: string): string {
+function basenameFromPath(pathText: string): string {
     const trimmed = pathText.trim();
     const normalized = trimmed.replace(/\\/g, "/");
     const slash = normalized.lastIndexOf("/");
@@ -259,7 +259,7 @@ function globScopeFromItem(item: TraceToolItem): string {
     return ".";
 }
 
-export function countToolKinds(items: TraceToolItem[]): ToolKindCounts {
+function countToolKinds(items: TraceToolItem[]): ToolKindCounts {
     const counts: ToolKindCounts = {
         read: 0,
         search: 0,
@@ -487,7 +487,7 @@ export function compactToolShowsDiffStats(item: TraceToolItem): boolean {
     return normalizedKind(item) === "edit";
 }
 
-export const compactExecutePreviewLineCount = 3;
+const compactExecutePreviewLineCount = 3;
 
 /** Grouped minimal mode shows only the last N per-tool detail lines. */
 export const compactGroupMaxVisibleDetails = 3;
@@ -503,7 +503,7 @@ export function compactGroupHiddenDetailCount(
     return itemCount - maxVisible;
 }
 
-export function isExecuteTool(item: TraceToolItem): boolean {
+function isExecuteTool(item: TraceToolItem): boolean {
     const kind = normalizedKind(item);
     return kind === "execute" || kind === "terminal";
 }
@@ -519,7 +519,7 @@ export function executeCommandText(item: TraceToolItem): string {
 }
 
 /** Terminal output lines with a leading echoed command line stripped when present. */
-export function executeOutputContentLines(item: TraceToolItem): string[] {
+function executeOutputContentLines(item: TraceToolItem): string[] {
     const content = item.content?.trim();
     if (content === undefined || content.length === 0) {
         return [];

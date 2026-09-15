@@ -40,14 +40,14 @@ function fallbackThemeVariables(): Record<string, string> {
     };
 }
 
-export function applyCssVariables(variables: Record<string, string>): void {
+function applyCssVariables(variables: Record<string, string>): void {
     const root = document.documentElement;
     for (const [name, value] of Object.entries(variables)) {
         root.style.setProperty(name, value);
     }
 }
 
-export async function fetchStandaloneThemeVariables(): Promise<
+async function fetchStandaloneThemeVariables(): Promise<
     Record<string, string>
 > {
     try {

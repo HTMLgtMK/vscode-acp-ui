@@ -47,12 +47,12 @@ export type TraceItem =
     | TraceToolItem
     | { type: "plan"; entries: PlanEntry[] };
 
-export type AcpAgentSelectionState = {
+type AcpAgentSelectionState = {
     currentName: string;
     availableNames: string[];
 };
 
-export type PermissionPromptState = {
+type PermissionPromptState = {
     requestId: string;
     toolTitle: string;
     options: { optionId: string; name: string }[];

@@ -6,7 +6,7 @@ const minPercent = 10;
 const maxPercent = 100;
 
 /** Clamps a content width percentage to the supported range. */
-export function clampContentWidthPercent(value: number): number {
+function clampContentWidthPercent(value: number): number {
     if (!Number.isFinite(value)) {
         return defaultPercent;
     }

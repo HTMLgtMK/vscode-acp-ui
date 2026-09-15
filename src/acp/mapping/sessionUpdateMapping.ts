@@ -88,7 +88,7 @@ function commandSubtitleFromBacktickTitle(title: string): string | undefined {
 /**
  * Resolves a one-line shell command for execute/terminal tools from structured input, output, or Cursor-style backtick titles.
  */
-export function toolCallExecuteCommandSubtitle(call: {
+function toolCallExecuteCommandSubtitle(call: {
     title?: string | null;
     kind?: string | null;
     rawInput?: unknown;
@@ -723,9 +723,7 @@ function fileNameFromPath(pathText: string): string {
 /**
  * Builds the dim subtitle line for a tool call (paths, arguments, or inline text from the agent).
  */
-export function toolCallSubtitleFromToolCall(
-    call: acp.ToolCall,
-): string | undefined {
+function toolCallSubtitleFromToolCall(call: acp.ToolCall): string | undefined {
     const execLine = toolCallExecuteCommandSubtitle(call);
     if (execLine !== undefined) {
         return execLine;

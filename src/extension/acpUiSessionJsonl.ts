@@ -10,27 +10,13 @@ import {
     normalizeUserMessageHistory,
     parseSessionDocument,
     serializeSessionDocument,
-    sessionFileBaseNameFromTitle,
     uniqueSessionFileBaseNameFromTitle,
 } from "./acpUiSessionJsonlFormat";
 
 export {
-    ACP_UI_SESSION_FILE_SUFFIX,
-    ACP_UI_SESSION_SCHEMA,
     type AcpUiSessionDocument,
-    type AcpUiSessionHeader,
-    type AcpUiSessionMetadata,
-    enqueueSessionFileWrite,
-    isFlatSessionFilePath,
-    normalizeUserMessageHistory,
-    parseSessionDocument,
     parseSessionFile,
-    parseSessionHeaderBlock,
-    parseSessionHeaderLine,
-    serializeSessionDocument,
-    sessionFileBaseNameFromTitle,
     shouldDeferJsonlHistoryReplay,
-    uniqueSessionFileBaseNameFromTitle,
 } from "./acpUiSessionJsonlFormat";
 
 /**
@@ -76,29 +62,15 @@ export function resolveSessionsDirectoryUri(context: ExtensionContext): Uri {
 /**
  * Per-session directory under the chats root (`chats/<sessionId>/`).
  */
-export function sessionDirectoryUriForId(
+function sessionDirectoryUriForId(
     context: ExtensionContext,
     sessionId: string,
 ): Uri {
     return Uri.joinPath(resolveSessionsDirectoryUri(context), sessionId);
 }
 
-/**
- * Resolves the `.acp` file path for a session id and title.
- */
-export function sessionFileUriForId(
-    context: ExtensionContext,
-    sessionId: string,
-    title = "Chat",
-): Uri {
-    return Uri.joinPath(
-        sessionDirectoryUriForId(context, sessionId),
-        sessionFileBaseNameFromTitle(title),
-    );
-}
-
 /** True when the session file sits directly under the chats root (legacy layout). */
-export function isFlatSessionFileUri(uri: Uri, sessionsDir: Uri): boolean {
+function isFlatSessionFileUri(uri: Uri, sessionsDir: Uri): boolean {
     return isFlatSessionFilePath(uri.fsPath, sessionsDir.fsPath);
 }
 

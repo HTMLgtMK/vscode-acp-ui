@@ -7,7 +7,7 @@ import {
 import { isSessionModeConfigOption } from "./sessionModeIndicator";
 import type { AcpUiSessionModelSelection } from "./sessionModels";
 
-export type AcpUiConfigSelectChoice = {
+type AcpUiConfigSelectChoice = {
     value: string;
     name: string;
     description?: string;
@@ -153,7 +153,7 @@ function currentFamilyName(
 /**
  * Groups model bases by vendor line (e.g. claude-opus-4-8 -> claude-opus).
  */
-export function modelLinePrefix(base: string): string {
+function modelLinePrefix(base: string): string {
     const parts = base.split("-");
     if (parts[0] === "claude" && parts.length >= 2) {
         return `${parts[0]}-${parts[1]}`;
@@ -434,13 +434,6 @@ export function sessionConfigOptionsFromAgent(
     return options.length > 0 ? { options } : null;
 }
 
-export function findSessionConfigOption(
-    state: AcpUiSessionConfigState | null,
-    configId: string,
-): AcpUiSessionConfigOption | undefined {
-    return state?.options.find((option) => option.configId === configId);
-}
-
 export function modelConfigOption(
     state: AcpUiSessionConfigState | null,
 ): Extract<AcpUiSessionConfigOption, { type: "select" }> | undefined {
@@ -466,9 +459,7 @@ export function modeConfigOption(
 }
 
 /** Param controls (context, effort, fast, ...) excluding model and mode. */
-export function isModelParamConfigOption(
-    option: AcpUiSessionConfigOption,
-): boolean {
+function isModelParamConfigOption(option: AcpUiSessionConfigOption): boolean {
     if (option.type === "select" && option.category === "model") {
         return false;
     }
@@ -495,7 +486,7 @@ export function modelParamCacheKey(
     return modelLinePrefix(parseModelIdBracketParams(modelValue).base);
 }
 
-export function replaceModelParamConfigOptions(
+function replaceModelParamConfigOptions(
     options: ReadonlyArray<AcpUiSessionConfigOption>,
     modelConfigId: string,
     newModelValue: string,
@@ -741,7 +732,7 @@ export function modelParameterOptions(
 /**
  * Stable display order for derived model-parameter controls.
  */
-export function sortModelParameterOptions(
+function sortModelParameterOptions(
     options: AcpUiSessionConfigOption[],
 ): AcpUiSessionConfigOption[] {
     return [...options].sort((a, b) => {
@@ -1044,7 +1035,7 @@ export function isDerivedConfigId(configId: string): boolean {
     return configId.startsWith(DERIVED_CONFIG_PREFIX);
 }
 
-export function derivedParamKeyFromConfigId(configId: string): string {
+function derivedParamKeyFromConfigId(configId: string): string {
     return configId.slice(DERIVED_CONFIG_PREFIX.length);
 }
 
@@ -1124,7 +1115,7 @@ export function resolveDerivedModelParamPick(
     return composeModelIdAfterDerivedChange(modelOption, configId, value);
 }
 
-export function modelChoiceLabel(choice: AcpUiConfigSelectChoice): string {
+function modelChoiceLabel(choice: AcpUiConfigSelectChoice): string {
     return formatModelDisplayName(choice.name, choice.value);
 }
 

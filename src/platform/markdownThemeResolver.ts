@@ -255,16 +255,6 @@ export function buildSyntaxHighlightCssVariables(
     };
 }
 
-/** VS Code markdown preview typography scale (see markdown.css in markdown-language-features). */
-export const MARKDOWN_HEADING_FONT_SIZE_EM = {
-    h1: 2,
-    h2: 1.5,
-    h3: 1.25,
-    h4: 1,
-    h5: 0.875,
-    h6: 0.85,
-} as const;
-
 export function buildMarkdownTypographyCssVariables(options: {
     fontSizePx: number;
     lineHeight: number;

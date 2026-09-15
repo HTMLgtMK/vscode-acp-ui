@@ -1,11 +1,10 @@
 import {
     compareSlashCommandGroups,
     normalizeSlashCommand,
-    parseTrailingParenLabels,
     slashCommandGroupLabel,
 } from "../../../../src/acp/slashCommandMetadata";
 
-export type ComposerSuggestionItem = {
+type ComposerSuggestionItem = {
     key: string;
     primary: string;
     secondary?: string;
@@ -13,7 +12,7 @@ export type ComposerSuggestionItem = {
     insertText: string;
 };
 
-export type ComposerSuggestionGroup = {
+type ComposerSuggestionGroup = {
     label?: string;
     items: ComposerSuggestionItem[];
 };
@@ -130,9 +129,3 @@ export function wrapIndex(index: number, size: number): number {
     const mod = index % size;
     return mod < 0 ? mod + size : mod;
 }
-
-export {
-    normalizeSlashCommand,
-    parseTrailingParenLabels,
-    slashCommandGroupLabel,
-};

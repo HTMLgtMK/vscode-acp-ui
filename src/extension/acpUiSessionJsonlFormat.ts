@@ -97,7 +97,7 @@ export function enqueueSessionFileWrite<T>(
 /**
  * Session metadata stored in every `.acp` file.
  */
-export type AcpUiSessionMetadata = {
+type AcpUiSessionMetadata = {
     schema: typeof ACP_UI_SESSION_SCHEMA;
     id: string;
     title: string;
@@ -113,9 +113,6 @@ export type AcpUiSessionMetadata = {
 export type AcpUiSessionDocument = AcpUiSessionMetadata & {
     history: string[];
 };
-
-/** @deprecated Use {@link AcpUiSessionDocument}. */
-export type AcpUiSessionHeader = AcpUiSessionDocument;
 
 function metadataFromParsedValue(value: unknown): AcpUiSessionMetadata | null {
     if (value === null || typeof value !== "object") {

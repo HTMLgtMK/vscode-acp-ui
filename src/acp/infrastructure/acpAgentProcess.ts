@@ -147,7 +147,7 @@ export function buildAcpClientInfoFromPackage(pkg: {
 }
 
 /** `clientInfo` for the `initialize` request (configured at activation or a safe fallback). */
-export function buildAcpClientInfo(): acp.Implementation {
+function buildAcpClientInfo(): acp.Implementation {
     return (
         configuredClientInfo ??
         buildAcpClientInfoFromPackage({

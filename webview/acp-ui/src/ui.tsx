@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import type { ChatState, ExtensionMessageAfterInit, InitPayload } from "./chatReducer";
 import { AcpUiApp } from "./AcpUiApp";
 
-export type { ExtensionMessageAfterInit, InitPayload } from "./chatReducer";
+export type { InitPayload } from "./chatReducer";
 
 export type ChatView = {
     handleMessage(message: ExtensionMessageAfterInit): void;
