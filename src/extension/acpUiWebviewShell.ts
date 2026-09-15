@@ -1,5 +1,7 @@
 import { Uri, type Webview } from "vscode";
 
+import { buildAcpUiWebviewHtml } from "../sdk/acpUiWebviewHtml";
+
 const webviewMediaSegment = "media";
 const webviewBundleDir = "acp-ui";
 const webviewScriptName = "main.js";
@@ -7,45 +9,35 @@ const webviewStyleName = "main.css";
 
 /**
  * HTML shell for the ACP UI webview: CSP, asset URIs, and root mount node.
+ * Delegates markup to the SDK template so both hosts share a single source.
  */
 export function getAcpUiWebviewHtml(
     extensionRoot: Uri,
     webview: Webview,
 ): string {
-    const scriptUri = webview.asWebviewUri(
-        Uri.joinPath(
-            extensionRoot,
-            webviewMediaSegment,
-            webviewBundleDir,
-            webviewScriptName,
-        ),
-    );
-    const styleUri = webview.asWebviewUri(
-        Uri.joinPath(
-            extensionRoot,
-            webviewMediaSegment,
-            webviewBundleDir,
-            webviewStyleName,
-        ),
-    );
-    const cspSource = webview.cspSource;
-    const contentSecurityPolicy = [
-        `default-src 'none'`,
-        `style-src ${cspSource}`,
-        `font-src ${cspSource}`,
-        `script-src ${cspSource}`,
-    ].join("; ");
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="${contentSecurityPolicy}" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="${styleUri}" />
-</head>
-<body>
-  <div id="root"></div>
-  <script src="${scriptUri}"></script>
-</body>
-</html>`;
+    const scriptUri = webview
+        .asWebviewUri(
+            Uri.joinPath(
+                extensionRoot,
+                webviewMediaSegment,
+                webviewBundleDir,
+                webviewScriptName,
+            ),
+        )
+        .toString();
+    const styleUri = webview
+        .asWebviewUri(
+            Uri.joinPath(
+                extensionRoot,
+                webviewMediaSegment,
+                webviewBundleDir,
+                webviewStyleName,
+            ),
+        )
+        .toString();
+    return buildAcpUiWebviewHtml({
+        scriptUri,
+        styleUri,
+        cspSource: webview.cspSource,
+    });
 }
