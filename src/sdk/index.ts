@@ -4,7 +4,8 @@
  * Curated, `vscode`-free surface for embedding the ACP chat panel into another
  * extension host (Node process): the hexagonal session core (`AcpSessionBridge` +
  * `AcpSessionHostRuntime` with the `createAgentTransport` injection point), default
- * agent transports (subprocess spawn / unix-socket daemon), host ports, the
+ * agent transports (subprocess spawn / unix-socket daemon), an in-process mock daemon
+ * for host development/regression, host ports, the
  * host↔webview message contract, pure ACP→webview mapping helpers, and the webview
  * HTML/asset helpers. VS Code–specific glue stays in the extension shell and is
  * intentionally not exported.
@@ -91,6 +92,16 @@ export type {
     AcpUiSessionConfigState,
 } from "../acp/session/sessionConfigOptions";
 export type { AcpUiSessionModelSelection } from "../acp/session/sessionModels";
+
+// --- Dev support: in-process mock daemon (host development/regression) ----------
+// Real unix-socket mock of the minimal ACP daemon surface so external hosts can
+// develop and regression-test the chat panel before a real daemon is ready.
+// Development/testing aid only — keep it out of production dependencies.
+export type {
+    MockAcpNdjsonDaemonOptions,
+    RecordedAcpDaemonMessage,
+} from "../acp/testing/mockAcpNdjsonDaemon";
+export { MockAcpNdjsonDaemon } from "../acp/testing/mockAcpNdjsonDaemon";
 
 // --- Host ↔ webview message contract --------------------------------------------
 export type {
