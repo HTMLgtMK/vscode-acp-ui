@@ -10,3 +10,4 @@ standalone/mock/
 docs/acp/
 docs/cursor-extensions/
 tmp/
+dist-sdk/

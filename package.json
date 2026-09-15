@@ -8,6 +8,7 @@
         "sync:standalone-theme": "tsx scripts/sync-standalone-theme.ts",
         "screenshots": "npm run build:fixtures && tsx scripts/capture-readme-screenshots.ts",
         "build": "npm run build:webview && node esbuild.mjs",
+        "build:sdk": "npm run build:webview && node esbuild.sdk.mjs && tsc -p tsconfig.sdk.json && node scripts/emit-sdk-package.mjs",
         "watch": "node esbuild.mjs --watch",
         "package": "npm run build:webview && node esbuild.mjs --production",
         "check": "tsc --noEmit && tsc --noEmit -p webview/acp-ui/tsconfig.json && tsc --noEmit -p standalone/tsconfig.json",
