@@ -42,7 +42,13 @@ export type TraceToolItem = {
 
 export type TraceItem =
     | { type: "user"; text: string }
-    | { type: "thought"; text: string; durationMs?: number }
+    | {
+          type: "thought";
+          text: string;
+          durationMs?: number;
+          /** True while this thought is the open streaming segment. */
+          streaming?: boolean;
+      }
     | { type: "agent"; text: string }
     | TraceToolItem
     | { type: "plan"; entries: PlanEntry[] };
@@ -265,7 +271,24 @@ function appendUserText(state: ChatState, text: string): ChatState {
     };
 }
 
+
+/** Clears the streaming flag on the currently open thought (when the stream moves on). */
+function closeOpenThought(state: ChatState): ChatState {
+    const open = state.openStreamIndex;
+    if (open === null) {
+        return state;
+    }
+    const existing = state.trace[open];
+    if (existing?.type !== "thought" || !existing.streaming) {
+        return state;
+    }
+    const trace = state.trace.slice();
+    trace[open] = { ...existing, streaming: false };
+    return { ...state, trace };
+}
+
 function appendAgentText(state: ChatState, text: string): ChatState {
+    state = closeOpenThought(state);
     const open = state.openStreamIndex;
     if (open !== null) {
         const existing = state.trace[open];
@@ -298,6 +321,7 @@ function appendAgentThought(
             trace[open] = {
                 type: "thought",
                 text: joinThoughtChunks(existing.text, text),
+                streaming: true,
                 ...(mergedDuration !== undefined
                     ? { durationMs: mergedDuration }
                     : {}),
@@ -310,6 +334,7 @@ function appendAgentThought(
         {
             type: "thought" as const,
             text,
+            streaming: true,
             ...(durationMs !== undefined ? { durationMs } : {}),
         },
     ];
@@ -320,7 +345,11 @@ function appendAgentThought(
     };
 }
 
+// CJK 汉字虽属 \p{L}，但中文断行/断词不插空格；若算作词字符会给中文流式 chunk 之间塞进英文式空格。
 function isWordChar(char: string): boolean {
+    if (/[\u3000-\u9fff\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]/u.test(char)) {
+        return false;
+    }
     return /[\p{L}\p{N}_]/u.test(char);
 }
 
@@ -540,6 +569,7 @@ function todoStatusEmoji(status: TodoEntry["status"]): string {
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     if (action.type === "submit") {
+        state = closeOpenThought(state);
         return {
             ...state,
             trace: [...state.trace, { type: "user", text: action.body }],
@@ -766,13 +796,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         }
         case "turnComplete":
             return {
-                ...state,
+                ...closeOpenThought(state),
                 openStreamIndex: null,
                 promptInFlight: false,
             };
         case "error":
             return {
-                ...state,
+                ...closeOpenThought(state),
                 openStreamIndex: null,
                 errorText: action.message,
                 promptInFlight: false,

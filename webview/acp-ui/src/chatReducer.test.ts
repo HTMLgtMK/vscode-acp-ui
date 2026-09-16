@@ -40,6 +40,14 @@ describe("chatReducer", () => {
         expect(joinThoughtChunks("hello", ", world")).toBe("hello, world");
     });
 
+    it("does not insert spaces between CJK thought chunks", () => {
+        expect(joinThoughtChunks("又被拒了", "一次")).toBe("又被拒了一次");
+        expect(joinThoughtChunks("用户可能不想", "让第二条命令跑")).toBe(
+            "用户可能不想让第二条命令跑",
+        );
+        expect(joinThoughtChunks("已经确认", "1.")).toBe("已经确认1.");
+    });
+
     it("does not alter spacing inside fenced code block streams", () => {
         expect(joinThoughtChunks("```ts\nconst x", "=1;\n```")).toBe(
             "```ts\nconst x=1;\n```",
