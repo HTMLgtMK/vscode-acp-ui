@@ -85,23 +85,73 @@ function CollapsibleHintRow({
     );
 }
 
+/** Normalized header presentation: one label + one optional payload region. */
+type ToolHeaderPresentation = {
+    /** Collapsed header label, e.g. "tool · curl" or a structured title like "Write File". */
+    label: string;
+    /** Always-visible sub-line (paths etc.); null hides it. */
+    subtitle: string | null;
+    /** Payload revealed by expanding the header (command line, args JSON); null = nothing extra. */
+    payload: { kind: "command" | "arguments"; text: string } | null;
+};
+
 /**
- * Resolves the shell command text for the execute tool header (subtitle from the bridge, else backtick-wrapped title).
+ * Normalizes any daemon tool-call shape into one header presentation.
+ * Precedence: execute command (subtitle / backtick title) > generic
+ * `name(args)` title > structured title as-is. All tools render through
+ * this single path so header markup stays identical across shapes.
  */
-function commandLineForExecuteTitle(item: TraceToolItem): string | null {
+function toolHeaderPresentation(item: TraceToolItem): ToolHeaderPresentation {
+    // execute: shell line from subtitle (with optional "$" prefix) or `backtick` title
+    if (item.kind === "execute") {
+        const sub = item.subtitle?.trim() ?? "";
+        const fromSubtitle =
+            sub.length > 0
+                ? sub.startsWith("$")
+                  ? sub.slice(1).trimStart()
+                  : sub
+                : "";
+        const tit = item.title.trim();
+        const fromBacktick =
+            tit.length >= 2 && tit.startsWith("`") && tit.endsWith("`")
+                ? tit.slice(1, -1).trim()
+                : "";
+        const command = fromSubtitle.length > 0 ? fromSubtitle : fromBacktick;
+        if (command.length > 0) {
+            const firstWord = command.split(/\s+/)[0] ?? "";
+            return {
+                label:
+                    firstWord.length > 0 ? `tool · ${firstWord}` : "tool",
+                subtitle: null,
+                payload: { kind: "command", text: command },
+            };
+        }
+        return { label: "tool", subtitle: null, payload: null };
+    }
+
+    // generic daemon shape: `name(argsJson)` — name becomes the label, args the payload
+    const match = /^([A-Za-z_][A-Za-z0-9_.:-]*)\(([\s\S]*)\)\s*$/.exec(
+        item.title.trim(),
+    );
+    if (match !== null) {
+        const args = match[2]!.trim();
+        return {
+            label: `tool · ${match[1]!}`,
+            subtitle: null,
+            payload:
+                args.length > 0
+                    ? { kind: "arguments", text: args }
+                    : null,
+        };
+    }
+
+    // structured title (e.g. "Write File"): keep as-is with any sub-line
     const sub = item.subtitle?.trim() ?? "";
-    if (sub.length > 0) {
-        const withoutPrompt = sub.startsWith("$")
-            ? sub.slice(1).trimStart()
-            : sub;
-        return withoutPrompt.length > 0 ? withoutPrompt : null;
-    }
-    const tit = item.title.trim();
-    if (tit.length >= 2 && tit.startsWith("`") && tit.endsWith("`")) {
-        const inner = tit.slice(1, -1).trim();
-        return inner.length > 0 ? inner : null;
-    }
-    return null;
+    return {
+        label: item.title,
+        subtitle: sub.length > 0 ? sub : null,
+        payload: null,
+    };
 }
 
 function ToolCallStatusGlyph({
@@ -165,14 +215,7 @@ export function ToolCallBlock({
         item.detailVisible &&
         (hasDiff ||
             (item.content !== undefined && item.content.trim().length > 0));
-    const subtitle =
-        item.kind !== "execute" &&
-        item.subtitle !== undefined &&
-        item.subtitle.trim().length > 0
-            ? item.subtitle.trim()
-            : null;
-    const executeCommandLine =
-        item.kind === "execute" ? commandLineForExecuteTitle(item) : null;
+    const header = toolHeaderPresentation(item);
     const contentText = item.content ?? "";
     const contentLines = contentText.split(/\r?\n/);
     const outputCollapsible =
@@ -195,7 +238,8 @@ export function ToolCallBlock({
             : (diffRows ?? []);
 
     const headerCollapsible =
-        showOutput && (diffCollapsible || outputCollapsible);
+        header.payload !== null ||
+        (showOutput && (diffCollapsible || outputCollapsible));
 
     const collapseThisOutput = (): void => {
         setLocalExpanded(false);
@@ -231,6 +275,9 @@ export function ToolCallBlock({
             }
             data-tool-id={item.toolCallId}
             data-status={item.status}
+            data-collapsed={
+                headerCollapsible ? String(!expandedThis) : "false"
+            }
             role="status"
             aria-label="Tool use"
         >
@@ -262,50 +309,50 @@ export function ToolCallBlock({
                         : undefined
                 }
             >
-                {item.kind === "execute" ? (
-                    <>
-                        <div className="tool-call-terminal-line-main">
-                            <ToolCallStatusGlyph status={item.status} />
-                            <span className="tool-call-terminal-title tool-call-terminal-title--execute">
-                                {executeCommandLine === null ? (
-                                    "Terminal"
-                                ) : (
-                                    <>
-                                        <span
-                                            className="tool-call-terminal-prompt tool-call-terminal-prompt--inline"
-                                            aria-hidden="true"
-                                        >
-                                            $
-                                        </span>
-                                        <span className="tool-call-terminal-command-text">
-                                            {executeCommandLine}
-                                        </span>
-                                    </>
-                                )}
-                            </span>
-                        </div>
-                        {kindHidden ? null : (
-                            <span className="tool-call-terminal-kind">
-                                [{item.kind}]
-                            </span>
-                        )}
-                    </>
-                ) : (
-                    <>
-                        <ToolCallStatusGlyph status={item.status} />
-                        <span className="tool-call-terminal-title">
-                            {item.title}
+                <div className="tool-call-terminal-line-main">
+                    <span
+                        className="tool-call-terminal-caret"
+                        aria-hidden="true"
+                    >
+                        ▸
+                    </span>
+                    <span className="tool-call-terminal-title">
+                        {header.label}
+                    </span>
+                    {kindHidden ? null : (
+                        <span className="tool-call-terminal-kind">
+                            [{item.kind}]
                         </span>
-                        {kindHidden ? null : (
-                            <span className="tool-call-terminal-kind">
-                                [{item.kind}]
-                            </span>
-                        )}
-                    </>
-                )}
+                    )}
+                </div>
             </div>
-            {subtitle !== null ? (
-                <div className="tool-call-terminal-subtitle">{subtitle}</div>
+            {header.subtitle !== null ? (
+                <div className="tool-call-terminal-subtitle">
+                    {header.subtitle}
+                </div>
+            ) : null}
+            {header.payload !== null &&
+            !(headerCollapsible && !expandedThis) ? (
+                <div
+                    className="tool-call-terminal-commandline"
+                    aria-label={
+                        header.payload.kind === "command"
+                            ? "Command"
+                            : "Tool arguments"
+                    }
+                >
+                    {header.payload.kind === "command" ? (
+                        <span
+                            className="tool-call-terminal-prompt tool-call-terminal-prompt--inline"
+                            aria-hidden="true"
+                        >
+                            $
+                        </span>
+                    ) : null}
+                    <span className="tool-call-terminal-command-text">
+                        {header.payload.text}
+                    </span>
+                </div>
             ) : null}
             {showOutput && hasDiff ? (
                 diffCollapsible && !expandedThis ? (

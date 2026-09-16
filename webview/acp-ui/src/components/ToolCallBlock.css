@@ -299,3 +299,38 @@
         var(--vscode-descriptionForeground)
     );
 }
+
+/** 前导折叠符号：可展开时转向下方。 */
+.tool-call-terminal-caret {
+    flex-shrink: 0;
+    user-select: none;
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    transform-origin: 50% 55%;
+    color: var(
+        --vscode-descriptionForeground,
+        var(--vscode-list-deemphasizedForeground)
+    );
+    transition: transform 0.12s ease;
+}
+
+.tool-call-terminal[data-collapsed="false"] .tool-call-terminal-caret {
+    transform: rotate(90deg);
+}
+
+/** 展开后的命令行（execute）：与输出一致的缩进。 */
+.tool-call-terminal-commandline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 4px;
+    min-width: 0;
+    margin: 2px 0 0;
+    padding-left: 1.05rem;
+}
+
+.tool-call-terminal-commandline .tool-call-terminal-command-text {
+    word-break: break-word;
+    color: var(--vscode-terminal-foreground, var(--vscode-editor-foreground, var(--vscode-foreground)));
+}

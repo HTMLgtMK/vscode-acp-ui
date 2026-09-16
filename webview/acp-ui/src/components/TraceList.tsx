@@ -269,6 +269,7 @@ export function TraceList({
                             className={gapClass.trim()}
                             text={item.text}
                             durationMs={item.durationMs}
+                            streaming={item.streaming === true}
                         />
                     );
                 }

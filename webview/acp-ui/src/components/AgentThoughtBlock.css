@@ -1,34 +1,64 @@
+/* 终端风 Thought：默认收起的 <details>，▸ 前导符号，正文悬挂缩进对齐。 */
+
 .agent-thought-chunk {
-    margin: 0 0 10px;
-    padding: 8px 10px;
-    border: 1px solid
-        color-mix(in srgb, var(--vscode-widget-border) 78%, transparent);
-    border-radius: 2px;
-    background: color-mix(
-        in srgb,
-        var(--vscode-editor-background) 90%,
-        var(--vscode-sideBar-background) 10%
-    );
+    margin: 0 0 8px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
     font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
 }
 
-.agent-thought-chunk-title {
-    margin: 0 0 6px;
-    font-size: 11px;
-    line-height: 1.25;
+.agent-thought-chunk-summary {
+    list-style: none;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    min-width: 0;
     color: var(--vscode-descriptionForeground);
-    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.4;
 }
 
+.agent-thought-chunk-summary::-webkit-details-marker {
+    display: none;
+}
+
+.agent-thought-chunk-caret {
+    flex-shrink: 0;
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    transform-origin: 50% 55%;
+    color: var(--vscode-descriptionForeground);
+    transition: transform 0.12s ease;
+}
+
+/* 展开时箭头转向下方（终端折叠惯例） */
+.agent-thought-chunk[open] > .agent-thought-chunk-summary .agent-thought-chunk-caret {
+    transform: rotate(90deg);
+}
+
+.agent-thought-chunk-label {
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+}
+
+.agent-thought-chunk-duration {
+    opacity: 0.75;
+    font-size: 10px;
+}
+
+/* 正文悬挂缩进：与 summary 的 caret+gap 对齐（1em + 6px），换行后保持缩进。 */
 .agent-thought-chunk-body {
-    margin: 0;
+    margin: 2px 0 0;
+    padding: 0 0 0 calc(1em + 6px);
     white-space: pre-wrap;
     word-break: break-word;
+    font-style: italic;
     font-size: 11px;
-    line-height: 1.35;
-    color: color-mix(
-        in srgb,
-        var(--vscode-editor-foreground, var(--vscode-foreground)) 86%,
-        var(--vscode-descriptionForeground)
-    );
+    line-height: 1.45;
+    color: var(--vscode-descriptionForeground);
 }
