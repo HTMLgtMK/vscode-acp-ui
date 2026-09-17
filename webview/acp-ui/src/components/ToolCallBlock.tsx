@@ -9,14 +9,6 @@ import "./ToolCallBlock.css";
 import type { ToolCallStatus } from "../../../../src/protocol/extensionHostMessages";
 import type { TraceToolItem } from "../chatReducer";
 
-const collapsiblePreviewLineCount = 3;
-
-const collapsibleDiffPreviewRowCount = 6;
-
-function toolKindUsesCollapsiblePreview(kind: string | undefined): boolean {
-    return kind === "read" || kind === "execute";
-}
-
 function collapsibleRegionAriaLabel(
     kind: string | undefined,
     expanded: boolean,
@@ -48,36 +40,12 @@ function collapsibleHintText(expandAllGlobal: boolean): string {
 
 function CollapsibleHintRow({
     expandAllGlobal,
-    expanded,
-    onExpandThis,
-    onCollapseThis,
 }: {
     expandAllGlobal: boolean;
-    expanded: boolean;
-    onExpandThis: () => void;
-    onCollapseThis: () => void;
 }): ReactElement {
+    // 只展示快捷键说明：展开/收起点击入口是 header 本身，按钮是冗余噪音。
     return (
         <p className="tool-call-collapsible-hint">
-            <button
-                type="button"
-                className="tool-call-collapsible-expand"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (expanded) {
-                        onCollapseThis();
-                    } else {
-                        onExpandThis();
-                    }
-                }}
-                aria-label={
-                    expanded
-                        ? "Collapse this tool output"
-                        : "Expand this tool output"
-                }
-            >
-                {expanded ? "Collapse" : "Expand"}
-            </button>
             <span className="tool-call-collapsible-hint-text">
                 {collapsibleHintText(expandAllGlobal)}
             </span>
@@ -87,7 +55,7 @@ function CollapsibleHintRow({
 
 /** Normalized header presentation: one label + one optional payload region. */
 type ToolHeaderPresentation = {
-    /** Collapsed header label, e.g. "tool · curl" or a structured title like "Write File". */
+    /** Collapsed header label: the tool name (e.g. "curl", "memory_search") or a structured title like "Write File". */
     label: string;
     /** Always-visible sub-line (paths etc.); null hides it. */
     subtitle: string | null;
@@ -120,8 +88,7 @@ function toolHeaderPresentation(item: TraceToolItem): ToolHeaderPresentation {
         if (command.length > 0) {
             const firstWord = command.split(/\s+/)[0] ?? "";
             return {
-                label:
-                    firstWord.length > 0 ? `tool · ${firstWord}` : "tool",
+                label: firstWord.length > 0 ? firstWord : "tool",
                 subtitle: null,
                 payload: { kind: "command", text: command },
             };
@@ -136,7 +103,7 @@ function toolHeaderPresentation(item: TraceToolItem): ToolHeaderPresentation {
     if (match !== null) {
         const args = match[2]!.trim();
         return {
-            label: `tool · ${match[1]!}`,
+            label: match[1]!,
             subtitle: null,
             payload:
                 args.length > 0
@@ -217,25 +184,12 @@ export function ToolCallBlock({
             (item.content !== undefined && item.content.trim().length > 0));
     const header = toolHeaderPresentation(item);
     const contentText = item.content ?? "";
-    const contentLines = contentText.split(/\r?\n/);
-    const outputCollapsible =
-        !hasDiff &&
-        showOutput &&
-        toolKindUsesCollapsiblePreview(item.kind) &&
-        contentLines.length > collapsiblePreviewLineCount;
-    const displayedOutput =
-        outputCollapsible && !expandedThis
-            ? contentLines.slice(0, collapsiblePreviewLineCount).join("\n")
-            : contentText;
+    // 全折叠模式（与 thought 的 <details> 行为一致）：收起时不渲染输出，
+    // 展开显示全文。
+    const outputCollapsible = !hasDiff && showOutput;
     const diffRows = item.diffRows;
-    const diffCollapsible =
-        hasDiff &&
-        diffRows !== undefined &&
-        diffRows.length > collapsibleDiffPreviewRowCount;
-    const displayedDiffRows =
-        diffCollapsible && !expandedThis
-            ? diffRows.slice(0, collapsibleDiffPreviewRowCount)
-            : (diffRows ?? []);
+    const diffCollapsible = hasDiff;
+    const displayedDiffRows = diffRows ?? [];
 
     const headerCollapsible =
         header.payload !== null ||
@@ -359,46 +313,11 @@ export function ToolCallBlock({
                     <div
                         className="tool-call-collapsible-output"
                         role="group"
-                        aria-expanded={expandedThis}
-                        aria-label={collapsibleDiffAriaLabel(expandedThis)}
+                        aria-expanded={false}
+                        aria-label={collapsibleDiffAriaLabel(false)}
                     >
-                        <div
-                            className="tool-call-diff"
-                            role="group"
-                            aria-label="File diff preview"
-                        >
-                            {displayedDiffRows.map((row, rowIndex) => (
-                                <div
-                                    key={rowIndex}
-                                    className={
-                                        row.kind === "removed"
-                                            ? "tool-call-diff-line tool-call-diff-line--removed"
-                                            : row.kind === "added"
-                                              ? "tool-call-diff-line tool-call-diff-line--added"
-                                              : "tool-call-diff-line tool-call-diff-line--context"
-                                    }
-                                >
-                                    <span
-                                        className="tool-call-diff-prefix"
-                                        aria-hidden="true"
-                                    >
-                                        {row.kind === "removed"
-                                            ? "-"
-                                            : row.kind === "added"
-                                              ? "+"
-                                              : " "}
-                                    </span>
-                                    <span className="tool-call-diff-text">
-                                        {row.text}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
                         <CollapsibleHintRow
                             expandAllGlobal={expandAllToolOutputs}
-                            expanded={false}
-                            onExpandThis={expandThisOutput}
-                            onCollapseThis={collapseThisOutput}
                         />
                     </div>
                 ) : (
@@ -408,15 +327,15 @@ export function ToolCallBlock({
                             role="group"
                             aria-label="File diff"
                         >
-                            {(diffRows ?? []).map((row, rowIndex) => (
+                            {displayedDiffRows.map((row, rowIndex) => (
                                 <div
                                     key={rowIndex}
                                     className={
                                         row.kind === "removed"
-                                            ? "tool-call-diff-line tool-call-diff-line--removed"
+                                            ? "tool-c…line tool-c…line--removed"
                                             : row.kind === "added"
-                                              ? "tool-call-diff-line tool-call-diff-line--added"
-                                              : "tool-call-diff-line tool-call-diff-line--context"
+                                              ? "tool-c…line tool-c…line--added"
+                                              : "tool-c…line tool-c…line--context"
                                     }
                                 >
                                     <span
@@ -429,41 +348,31 @@ export function ToolCallBlock({
                                               ? "+"
                                               : " "}
                                     </span>
-                                    <span className="tool-call-diff-text">
+                                    <span className="tool-c…text">
                                         {row.text}
                                     </span>
                                 </div>
                             ))}
                         </div>
-                        {diffCollapsible && expandedThis ? (
-                            <CollapsibleHintRow
-                                expandAllGlobal={expandAllToolOutputs}
-                                expanded={true}
-                                onExpandThis={expandThisOutput}
-                                onCollapseThis={collapseThisOutput}
-                            />
-                        ) : null}
+                        <CollapsibleHintRow
+                            expandAllGlobal={expandAllToolOutputs}
+                        />
                     </>
                 )
+
             ) : showOutput ? (
                 outputCollapsible && !expandedThis ? (
                     <div
                         className="tool-call-collapsible-output"
                         role="group"
-                        aria-expanded={expandedThis}
+                        aria-expanded={false}
                         aria-label={collapsibleRegionAriaLabel(
                             item.kind,
-                            expandedThis,
+                            false,
                         )}
                     >
-                        <pre className="tool-call-terminal-pre tool-call-terminal-pre--collapsible">
-                            {displayedOutput}
-                        </pre>
                         <CollapsibleHintRow
                             expandAllGlobal={expandAllToolOutputs}
-                            expanded={false}
-                            onExpandThis={expandThisOutput}
-                            onCollapseThis={collapseThisOutput}
                         />
                     </div>
                 ) : outputCollapsible && expandedThis ? (
@@ -478,9 +387,6 @@ export function ToolCallBlock({
                         </pre>
                         <CollapsibleHintRow
                             expandAllGlobal={expandAllToolOutputs}
-                            expanded={true}
-                            onExpandThis={expandThisOutput}
-                            onCollapseThis={collapseThisOutput}
                         />
                     </div>
                 ) : (

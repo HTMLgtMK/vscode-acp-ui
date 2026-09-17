@@ -175,7 +175,8 @@
     flex-wrap: wrap;
     gap: 6px 8px;
     margin: 0;
-    padding: 0 0 1px 0;
+    /* 与 header 的 caret（1em）+ gap（6px）对齐：正文/hint 都悬挂缩进同一格 */
+    padding: 0 0 1px calc(1em + 6px);
     font-family: inherit;
     font-size: 10px;
     font-style: italic;
