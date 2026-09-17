@@ -41,6 +41,7 @@ import {
 } from "./components/composerAutocomplete";
 import {
   shouldCancelRunOnCtrlC,
+  shouldConfirmOnEnter,
   shouldCycleSessionModeOnShiftTab,
   shouldOpenNewChatOnCtrlT,
 } from "./components/composerKeybindings";
@@ -459,8 +460,14 @@ export function AcpUiApp({
       return;
     }
 
-    if (autocompleteActive && event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
+    if (
+      autocompleteActive &&
+      shouldConfirmOnEnter({
+        key: event.key,
+        shiftKey: event.shiftKey,
+        isComposing: event.nativeEvent.isComposing,
+      })
+    ) {
       const nextIndex = wrapIndex(
         composerSuggestionIndex,
         autocomplete.items.length,
@@ -472,6 +479,7 @@ export function AcpUiApp({
         const prefixToken = autocomplete.mode === "slash" ? "/" : "@";
         const tokenStart = left.lastIndexOf(prefixToken);
         if (tokenStart >= lineStart) {
+          event.preventDefault();
           const right = draft.slice(start);
           const consumed = right.match(/^[^\s]*/)?.[0] ?? "";
           const nextDraft =
@@ -482,6 +490,8 @@ export function AcpUiApp({
           return;
         }
       }
+      // 没接受候选（token 位置对不上）就落到下面的提交分支：这里不能
+      // preventDefault，否则 Enter 被吞掉、既没补全也没发送。
     }
 
     if (event.key === "ArrowUp" && !mod) {
@@ -525,7 +535,13 @@ export function AcpUiApp({
       return;
     }
 
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (
+      shouldConfirmOnEnter({
+        key: event.key,
+        shiftKey: event.shiftKey,
+        isComposing: event.nativeEvent.isComposing,
+      })
+    ) {
       event.preventDefault();
       if (state.promptInFlight) {
         postCancel();
