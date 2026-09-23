@@ -4,6 +4,7 @@ import type {
 } from "../../../src/protocol/extensionHostMessages";
 import "./global.css";
 import "./boot.css";
+import "./tokens.css";
 import { replayChatState, createChatStateFromInit, type ChatState } from "./chatReducer";
 import { createVsCodeAcpUiHost } from "./host";
 import { setCompactToolPathHome } from "./toolCallCompactText";

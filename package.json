@@ -1,7 +1,7 @@
 {
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "build:webview": "vite build --config webview/acp-ui/vite.config.ts",
+        "build:webview": "vite build --config webview/acp-ui/vite.config.ts && vite build --config webview/control-panel/vite.config.ts",
         "dev:standalone": "concurrently --names FE,BE --prefix-colors cyan,yellow 'vite --config standalone/vite.config.ts' 'tsx --watch standalone/server.ts'",
         "dev:standalone:demo": "ACP_UI_DEMO=1 concurrently --names FE,BE --prefix-colors cyan,yellow 'vite --config standalone/vite.config.ts' 'tsx --watch standalone/server.ts'",
         "build:fixtures": "tsx scripts/build-showcase-fixtures.ts",
@@ -11,7 +11,7 @@
         "build:sdk": "npm run build:webview && node esbuild.sdk.mjs && tsc -p tsconfig.sdk.json && node scripts/emit-sdk-package.mjs",
         "watch": "node esbuild.mjs --watch",
         "package": "npm run build:webview && node esbuild.mjs --production",
-        "check": "tsc --noEmit && tsc --noEmit -p webview/acp-ui/tsconfig.json && tsc --noEmit -p standalone/tsconfig.json",
+        "check": "tsc --noEmit && tsc --noEmit -p webview/acp-ui/tsconfig.json && tsc --noEmit -p webview/control-panel/tsconfig.json && tsc --noEmit -p standalone/tsconfig.json",
         "test": "vitest run",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",

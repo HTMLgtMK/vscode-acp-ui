@@ -102,7 +102,28 @@ export type {
     RecordedAcpDaemonMessage,
 } from "../acp/testing/mockAcpNdjsonDaemon";
 export { MockAcpNdjsonDaemon } from "../acp/testing/mockAcpNdjsonDaemon";
-
+// --- Control panel contract: snapshot downlink + action uplink -------------------
+// The self-drawn sidebar panel. Types live in the protocol layer so the host and the
+// panel bundle share one definition; the uplink parser is the untrusted-input gate.
+export type {
+    ControlPanelDownMessage,
+    ControlPanelHint,
+    ControlPanelLinkState,
+    ControlPanelNodeAction,
+    ControlPanelNodeState,
+    ControlPanelSkin,
+    ControlPanelSnapshot,
+    ControlPanelTreeKind,
+    ControlPanelTreeNode,
+    ControlPanelUpMessage,
+} from "../protocol/controlPanelMessages";
+export {
+    CONTROL_PANEL_FONT_SIZE,
+    CONTROL_PANEL_SKINS,
+    isControlPanelSkin,
+    isControlPanelTreeKind,
+    tryParseControlPanelUpMessage,
+} from "../protocol/controlPanelMessages";
 // --- Host ↔ webview message contract --------------------------------------------
 export type {
     AcpUiHistoryReplayEvent,

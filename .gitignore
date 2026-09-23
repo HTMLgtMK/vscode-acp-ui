@@ -1,6 +1,7 @@
 node_modules/
 dist/
 media/acp-ui/
+media/control-panel/
 *.vsix
 .DS_Store
 standalone/acp-rpc.ndjson

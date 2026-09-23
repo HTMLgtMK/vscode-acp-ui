@@ -12,7 +12,24 @@
         height: 100%;
       }
 
+      /* body 是 flex 列：顶部开发条占一行，下面左侧 480px 是控制面板
+         的设计宽度，右侧留给 trace / 聊天面板。 */
+      #gw-workbench {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        align-items: stretch;
+      }
+
+      #gw-side-panel {
+        width: 480px;
+        flex: none;
+        min-height: 0;
+      }
+
       #root {
+        flex: 1;
+        min-width: 0;
         height: 100%;
         display: flex;
         flex-direction: column;
@@ -21,7 +38,10 @@
     <!-- Workbench + markdown colors: standalone/src/standaloneTheme.ts (Dark Modern) -->
   </head>
   <body>
-    <div id="root"></div>
+    <div id="gw-workbench">
+      <div id="gw-side-panel"></div>
+      <div id="root"></div>
+    </div>
     <script type="module" src="./src/main.ts"></script>
   </body>
 </html>

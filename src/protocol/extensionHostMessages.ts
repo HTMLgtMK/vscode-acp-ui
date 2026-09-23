@@ -1,12 +1,23 @@
 import type { AcpUiSessionConfigOption } from "../acp/session/sessionConfigOptions";
 import type { AcpUiSessionModelSelection } from "../acp/session/sessionModels";
+import type {
+    ControlPanelDownMessage,
+    ControlPanelUpMessage,
+} from "./controlPanelMessages";
+import {
+    isControlPanelUpMessageType,
+    tryParseControlPanelUpMessage,
+} from "./controlPanelMessages";
 
 /** Replayable session log events (user submit + post-init extension messages). */
 export type AcpUiHistoryReplayEvent =
     | { type: "submit"; body: string }
     | Exclude<
           ExtensionToWebviewMessage,
-          { type: "init" } | { type: "historyReplay" }
+          | { type: "init" }
+          | { type: "historyReplay" }
+          // 控制面板快照是"当前状态"不是"发生过什么"，不进聊天回放流。
+          | { type: "controlPanel" }
       >;
 
 /** Plan entry forwarded from an ACP agent plan update. */
@@ -108,7 +119,9 @@ export type WebviewToExtensionMessage =
           type: "openWorkspacePath";
           path: string;
           target?: WorkspacePathOpenTarget;
-      };
+      }
+    /** 自绘控制面板的回传动作，见 `controlPanelMessages.ts`。 */
+    | ControlPanelUpMessage;
 
 /**
  * Messages sent from the extension host to a webview (or other UI host).
@@ -262,7 +275,9 @@ export type ExtensionToWebviewMessage =
     /** Clears the transcript and tool state; sent before the host reconnects the agent session. */
     | { type: "sessionReset" }
     /** Replays persisted session log lines after `init` (custom editor restore). */
-    | { type: "historyReplay"; events: AcpUiHistoryReplayEvent[] };
+    | { type: "historyReplay"; events: AcpUiHistoryReplayEvent[] }
+    /** 控制面板的完整快照（幂等全量推送），见 `controlPanelMessages.ts`。 */
+    | ControlPanelDownMessage;
 
 /**
  * True when `raw` is a non-null object (`typeof null === "object"` is excluded).
@@ -427,6 +442,9 @@ export function tryParseWebviewMessage(
             path: record.path.trim(),
             ...(target !== undefined && target !== "file" ? { target } : {}),
         };
+    }
+    if (isControlPanelUpMessageType(messageType)) {
+        return tryParseControlPanelUpMessage(record);
     }
     return null;
 }

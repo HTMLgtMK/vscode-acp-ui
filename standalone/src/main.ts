@@ -6,6 +6,7 @@ import "../../webview/acp-ui/src/global.css";
 import type { InitPayload } from "../../webview/acp-ui/src/chatReducer";
 import { setCompactToolPathHome } from "../../webview/acp-ui/src/toolCallCompactText";
 import { type ChatView, mountChatView } from "../../webview/acp-ui/src/ui";
+import { mountStandaloneControlPanel } from "./control-panel";
 import { applyStandaloneVsCodeTheme } from "./standaloneTheme";
 
 const WS_URL = `ws://${location.host}/__acp_ui_ws`;
@@ -163,6 +164,7 @@ const mountRoot = requireMountRoot();
 
 async function bootstrap(): Promise<void> {
     await applyStandaloneVsCodeTheme();
+    mountStandaloneControlPanel();
     const root = mountRoot;
 
     const host = createWebSocketHost();

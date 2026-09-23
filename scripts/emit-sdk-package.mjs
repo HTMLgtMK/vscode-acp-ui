@@ -24,6 +24,18 @@ if (!existsSync(join(webviewDistDir, "main.js"))) {
 }
 cpSync(webviewDistDir, join("dist-sdk", "webview"), { recursive: true });
 
+/** 控制面板是第二份 iife 产物，目录独立（两份构建各自 emptyOutDir）。 */
+const controlPanelDistDir = join("media", "control-panel");
+if (!existsSync(join(controlPanelDistDir, "main.js"))) {
+    console.error(
+        `emit-sdk-package: control panel bundle missing at ${controlPanelDistDir}. Run "npm run build:webview" first.`,
+    );
+    process.exit(1);
+}
+cpSync(controlPanelDistDir, join("dist-sdk", "webview-control-panel"), {
+    recursive: true,
+});
+
 /** Standalone package manifest; version/dependency stay in sync with the extension. */
 const sdkPackage = {
     name: "@htmlgtmk/acp-ui",
@@ -44,5 +56,5 @@ writeFileSync(
     `${JSON.stringify(sdkPackage, null, 4)}\n`,
 );
 console.log(
-    "emit-sdk-package: wrote dist-sdk/package.json and copied webview assets to dist-sdk/webview/",
+    "emit-sdk-package: wrote dist-sdk/package.json and copied webview assets to dist-sdk/webview/ and dist-sdk/webview-control-panel/",
 );

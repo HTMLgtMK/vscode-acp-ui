@@ -1,0 +1,217 @@
+/* ============================================================
+ * GOWORKER 皮肤契约 —— 语义 token 层（**运行时唯一源**）
+ *
+ * 本文件是全部界面（控制面板 + trace + 聊天）共用的 token 定义。
+ * goworker-vscode-extension 仓的 design/tokens.css 已退为设计基线，
+ * 内容 @import 指向这里；两边冲突以本文件为准。
+ *
+ * 三层变量模型：
+ *   1. --vscode-*   宿主注入。VSCode webview 自动有；浏览器里由
+ *                   standalone 的 /api/standalone-theme 补齐（见 standalone/src/standaloneTheme.ts）。
+ *   2. --gw-*       本文件。组件唯一允许读取的层。皮肤包只重写这一层。
+ *   3. 组件规则     只写 --gw-*，不出现 --vscode-*、不出现字面量颜色。
+ *
+ * 为什么中间要有第 2 层：没有它，皮肤只能去覆写组件选择器 —— 每加一套皮肤
+ * 就重画一遍全部组件，且覆写顺序依赖加载次序。有了 token 层，
+ * 一套皮肤 = 一份只含 :root 赋值的 CSS。
+ *
+ * 第三方皮肤的投递形式受 webview CSP 约束（style-src 只放行 cspSource，
+ * 禁 inline style 与外链），因此必须是本地 .css 文件、经扩展注册进
+ * localResourceRoots 后以 <link href="{webviewUri}"> 注入。
+ * ============================================================ */
+
+:root {
+    /* —— 字体 —— */
+    --gw-font-ui: var(--vscode-font-family, -apple-system, "SF Pro Text", sans-serif);
+    --gw-font-mono: var(--vscode-editor-font-family, ui-monospace, "SF Mono", Menlo, monospace);
+    /* 字号阶梯由一个基准派生：基准 12px 时与阶梯写死的年代逐像素相同，
+       要整体放大只改 --gw-text-base（控制面板把它接到宿主设置项上）。 */
+    --gw-text-base: 12px;
+    --gw-text-2xs: calc(var(--gw-text-base) - 2px);
+    --gw-text-xs: calc(var(--gw-text-base) - 1px);
+    --gw-text-sm: var(--gw-text-base);
+    --gw-text-md: calc(var(--gw-text-base) + 1px);
+    --gw-text-lg: calc(var(--gw-text-base) + 3px);
+    --gw-text-xl: calc(var(--gw-text-base) + 7px);
+    --gw-leading: 1.55;
+    --gw-tracking-meta: 0.04em;
+    /* 内容条目主字体：中文标题在等宽下回退系统字体会撑出丑间距，
+       等宽只留给元信息、路径与代码。 */
+    --gw-font-item: var(--gw-font-ui);
+
+    /* —— 形状与密度 —— */
+    --gw-radius: 4px;
+    --gw-radius-lg: 8px;
+    /* 主操作按钮单独一档：基调是方角时它也要跳出来，不能跟着归零 */
+    --gw-radius-cta: 6px;
+    --gw-space-1: 3px;
+    --gw-space-2: 6px;
+    --gw-space-3: 10px;
+    --gw-space-4: 14px;
+    --gw-space-5: 20px;
+    --gw-space-6: 28px;
+    --gw-row-pad-y: 5px;
+    --gw-row-pad-x: 8px;
+    --gw-border-w: 1px;
+    --gw-accent-bar: 2px;
+    --gw-content-max: 78ch;
+    /* 树行缩进的单位宽度，由 --gw-indent 按层数乘上去 */
+    --gw-indent-step: 14px;
+
+    /* —— 表面 —— */
+    --gw-surface-base: var(--vscode-editor-background, #1f1f1f);
+    --gw-surface-raised: var(--vscode-sideBar-background, #252526);
+    --gw-surface-sunken: var(--vscode-editor-inactiveSelectionBackground, #2a2d2e);
+    --gw-surface-overlay: var(--vscode-editorWidget-background, #252526);
+    --gw-surface-hover: var(--vscode-list-hoverBackground, #2a2d2e);
+
+    /* —— 描边 —— */
+    --gw-border: var(--vscode-panel-border, #3c3c3c);
+    --gw-border-strong: var(--vscode-widget-border, #4a4a4a);
+    --gw-divider: var(--vscode-descriptionForeground, #6f6f6f);
+
+    /* —— 文本 —— */
+    --gw-text: var(--vscode-foreground, #cccccc);
+    /* 二级：前景向背景混 12%。明暗两套主题都还在 8:1 以上，且不依赖具体主题。 */
+    --gw-text-dim: color-mix(
+        in srgb,
+        var(--vscode-foreground, #cccccc) 88%,
+        var(--vscode-editor-background, #1e1e1e)
+    );
+    /* 三级承载的是要读的信息（行尾 meta、socket 路径、组名、空态文案），
+       所以不能用 --vscode-disabledForeground —— 那是半透明的，Dark+ 落在 #1e1e1e 上
+       只有 2.5:1，肉眼就是"黑底上完全看不清"。descriptionForeground 明暗两套都 ≥4.9:1。 */
+    --gw-text-faint: var(--vscode-descriptionForeground, #9d9d9d);
+    --gw-text-invert: var(--vscode-button-foreground, #ffffff);
+    --gw-text-link: var(--vscode-textLink-foreground, #4daafc);
+
+    /* —— 强调色 —— */
+    --gw-accent: var(--vscode-button-background, #0e639c);
+    --gw-accent-hover: var(--vscode-button-hoverBackground, #1177bb);
+    --gw-on-accent: var(--vscode-button-foreground, #ffffff);
+    --gw-selected: var(--vscode-list-activeSelectionBackground, #094771);
+    --gw-on-selected: var(--vscode-list-activeSelectionForeground, #ffffff);
+    --gw-focus: var(--vscode-focusBorder, #0e639c);
+
+    /* —— 任务生命周期状态：侧栏 badge / 详情 header 共用 —— */
+    --gw-state-running: var(--vscode-charts-blue, #4daafc);
+    --gw-state-queued: var(--vscode-descriptionForeground, #9d9d9d);
+    --gw-state-review: var(--vscode-editorWarning-foreground, #d8a657);
+    --gw-state-done: var(--vscode-charts-green, #3fb950);
+    --gw-state-failed: var(--vscode-errorForeground, #f48771);
+
+    /* —— trace 角色：消息 / 思考 / 工具 / 计划 / 报错 —— */
+    --gw-role-user-fg: var(--gw-text);
+    --gw-role-user-bg: var(--vscode-input-background, #313131);
+    --gw-role-agent-fg: var(--gw-text);
+    --gw-role-agent-bg: transparent;
+    --gw-role-thought-fg: var(--gw-text-dim);
+    --gw-role-thought-bg: var(--vscode-textBlockQuote-background, transparent);
+    --gw-role-tool-fg: var(--gw-text);
+    --gw-role-tool-bg: var(--gw-surface-sunken);
+    --gw-role-plan-fg: var(--gw-text);
+    --gw-role-plan-bg: var(--gw-surface-sunken);
+    --gw-role-error-fg: var(--gw-state-failed);
+    --gw-role-error-bg: transparent;
+    --gw-code-bg: var(--vscode-textCodeBlock-background, #1b1b1b);
+    /* 契约：改 --gw-code-bg 必须同时改 --gw-code-fg 与 --gw-syntax-*。
+       三者是成对的，只覆写 bg 会让代码块在对比度上塌掉（亮色皮肤实测踩过）。 */
+    --gw-code-fg: var(--vscode-editor-foreground, #d4d4d4);
+    --gw-syntax-key: var(--vscode-terminal-ansiMagenta, #c586c0);
+    --gw-syntax-str: var(--vscode-terminal-ansiGreen, #b5cea8);
+    --gw-syntax-num: var(--vscode-terminal-ansiRed, #ce9178);
+    --gw-syntax-com: var(--vscode-terminal-ansiGreen, #6a9955);
+
+    /* —— 其他 —— */
+    --gw-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --gw-scrollbar: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+    --gw-glyph-run: "●";
+    --gw-glyph-user: "❯";
+    --gw-glyph-enter: "⏎";
+}
+
+/* ------------------------------------------------------------
+ * 内置皮肤 1 / terminal —— 现产品基调：黑底、去圆角、等宽、ANSI 着色
+ * ------------------------------------------------------------ */
+[data-skin="terminal"] {
+    --gw-radius: 0px;
+    --gw-radius-lg: 0px;
+    --gw-radius-cta: 6px;
+    --gw-surface-base: #141414;
+    --gw-surface-raised: #1a1a1a;
+    --gw-surface-sunken: #1f1f1f;
+    --gw-surface-overlay: #1c1c1c;
+    --gw-surface-hover: #242424;
+    --gw-border: #2e2e2e;
+    --gw-border-strong: #3a3f4b;
+    --gw-text: #d6d6d6;
+    /* 三档灰都要过 4.5:1（对最亮的那层表面 #1f1f1f 算）：12.7 / 6.8 / 4.8。 */
+    --gw-text-dim: #a6a6a6;
+    --gw-text-faint: #8a8a8a;
+    --gw-accent: #35a854;
+    --gw-accent-hover: #43c165;
+    --gw-on-accent: #0c0c0c;
+    --gw-selected: #21301f;
+    --gw-on-selected: #d6d6d6;
+    --gw-focus: #35a854;
+    --gw-state-running: #4daafc;
+    --gw-state-review: #e5c07b;
+    --gw-state-done: #35a854;
+    --gw-state-failed: #e06c75;
+    --gw-role-user-bg: transparent;
+    --gw-role-tool-bg: #191919;
+    --gw-code-bg: #0f0f0f;
+    --gw-glyph-user: "❯";
+}
+
+/* ------------------------------------------------------------
+ * 内置皮肤 2 / vscode —— 不写死任何值，全量跟随宿主主题。
+ * 侧栏/面板在 VSCode 内的默认表现。
+ * ------------------------------------------------------------ */
+[data-skin="vscode"] {
+    /* 刻意留空：继承 :root 的 var(--vscode-*) 解析结果 */
+}
+
+/* ------------------------------------------------------------
+ * 内置皮肤 3 / light-paper —— 亮色，用来反证 token 层够不够抽象。
+ * 若这里出现任何需要覆写组件选择器才能成立的效果，说明 token 层有洞。
+ * ------------------------------------------------------------ */
+[data-skin="light-paper"] {
+    --gw-radius: 6px;
+    --gw-radius-lg: 10px;
+    --gw-radius-cta: 9px;
+    --gw-font-item: var(--gw-font-ui);
+    --gw-surface-base: #fbfaf7;
+    --gw-surface-raised: #ffffff;
+    --gw-surface-sunken: #f2efe9;
+    --gw-surface-overlay: #ffffff;
+    --gw-surface-hover: #efece5;
+    --gw-border: #e3ded3;
+    --gw-border-strong: #cec8ba;
+    --gw-text: #2b2925;
+    /* 与 terminal 同一档阶梯：13.9 / 6.8 / 4.7（对最暗的那层表面 #f2efe9 算）。 */
+    --gw-text-dim: #57524a;
+    --gw-text-faint: #6f6a60;
+    --gw-text-invert: #ffffff;
+    --gw-text-link: #8a5a1f;
+    --gw-accent: #b4652a;
+    --gw-accent-hover: #9c5522;
+    --gw-on-accent: #ffffff;
+    --gw-selected: #f0e3d2;
+    --gw-on-selected: #2b2925;
+    --gw-focus: #b4652a;
+    --gw-state-running: #2f6f9e;
+    --gw-state-review: #b07d18;
+    --gw-state-done: #3f7d43;
+    --gw-state-failed: #b03a30;
+    --gw-role-user-bg: #f5f0e6;
+    --gw-role-tool-bg: #f4f1ea;
+    --gw-role-thought-fg: #7d766a;
+    --gw-code-bg: #f0ede5;
+    --gw-code-fg: #3a352c;
+    --gw-syntax-key: #7b3f9d;
+    --gw-syntax-str: #2f6b3f;
+    --gw-syntax-num: #a34a22;
+    --gw-syntax-com: #8a8272;
+    --gw-shadow-overlay: 0 8px 24px rgba(90, 70, 40, 0.18);
+}
