@@ -11,6 +11,19 @@
                 "group": "watchers"
             },
             "runOptions": { "runOn": "folderOpen" }
+        },
+        {
+            "label": "Standalone UI",
+            "type": "npm",
+            "script": "dev:standalone",
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "watchers"
+            },
+            "runOptions": { "runOn": "folderOpen" }
         }
     ]
 }
