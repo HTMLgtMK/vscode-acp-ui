@@ -38,7 +38,7 @@ Tool **display** for terminal/execute kinds still works from `session/update` pa
 - [ ] Implement `createTerminal` (cwd, env, shell as per schema)
 - [ ] Wire terminal output streaming back to agent per v1 terminals spec
 - [ ] Implement kill / release lifecycle
-- [ ] Standalone server stub or documented limitation for dev host
+- [ ] Playground server stub or documented limitation for dev host
 - [ ] Tests where feasible (mock terminal API)
 - [ ] `npm run verify` passes
 

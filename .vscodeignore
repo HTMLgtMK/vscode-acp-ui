@@ -11,7 +11,7 @@ node_modules/**
 # Source and dev apps (runtime uses dist/ + media/)
 src/**
 webview/**
-standalone/**
+playground/**
 scripts/**
 docs/**
 

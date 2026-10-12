@@ -1,8 +1,8 @@
 /**
- * Flattens the VS Code Dark Modern color theme into standalone/themes/dark-modern.json.
+ * Flattens the VS Code Dark Modern color theme into playground/themes/dark-modern.json.
  * Requires a local VS Code install (used for dev sync only).
  *
- * Usage: npm run sync:standalone-theme
+ * Usage: npm run sync:playground-theme
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { mergeColorThemeJson } from "../src/platform/markdownThemeResolver";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const outPath = join(root, "standalone/themes/dark-modern.json");
+const outPath = join(root, "playground/themes/dark-modern.json");
 
 const vscodeThemeCandidates = [
     "/usr/share/code/resources/app/extensions/theme-defaults/themes/dark_modern.json",

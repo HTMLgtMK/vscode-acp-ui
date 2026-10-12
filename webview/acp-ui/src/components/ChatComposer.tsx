@@ -41,7 +41,7 @@ export type ChatComposerProps = {
   modelSelection: AcpUiSessionModelSelection | null;
   sessionConfigOptions: AcpUiSessionConfigOption[] | null;
   sessionConfigLoading: boolean;
-  /** When true, model is shown as a label (standalone: after the first message). */
+  /** When true, model is shown as a label (playground: after the first message). */
   modelPickerLocked: boolean;
   /** Hides model/config dropdowns in the composer footer. */
   hideComposerModelControls: boolean;

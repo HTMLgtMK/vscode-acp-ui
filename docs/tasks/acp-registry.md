@@ -57,7 +57,7 @@ Protocol docs in this repo:
 | Webview state | `webview/acp-ui/src/chatReducer.ts` | `acpAgentSelection` exists |
 | Webview UI | `webview/acp-ui/src/components/ChatComposer.tsx` | Model picker only, no agent picker wired |
 | Commands | `package.json` | No registry commands |
-| Standalone | `standalone/server.ts` | `standalone/acp-agent.json` only |
+| Playground | `playground/server.ts` | `playground/acp-agent.json` only |
 
 No registry code exists under `src/` or `webview/` yet.
 
@@ -93,7 +93,7 @@ Every place that reads or lists agents must go through a single merged source af
                              |
      +-----------+-----------+-----------+-----------+
      |           |           |           |           |
- acpUiAgent  acpUiSession  acpUiPanel  standalone  (future)
+ acpUiAgent  acpUiSession  acpUiPanel  playground  (future)
  Picker      Controller    empty-state server
 ```
 
@@ -110,7 +110,7 @@ Every place that reads or lists agents must go through a single merged source af
 | `src/acp/registry/fixtures/registry.sample.json` | CI fixture, no live CDN in tests |
 | `src/extension/acpUiInstalledAgents.ts` | Persist install map in global storage |
 | `src/extension/acpUiRegistry.ts` | Browse/install/uninstall/refresh commands |
-| `webview/acp-ui/src/components/AgentPicker.tsx` | Composer agent dropdown (standalone parity) |
+| `webview/acp-ui/src/components/AgentPicker.tsx` | Composer agent dropdown (playground parity) |
 
 ### Files to change
 
@@ -125,7 +125,7 @@ Every place that reads or lists agents must go through a single merged source af
 | `package.json` | Settings, commands, menus |
 | `README.md` | Registry install section |
 
-`standalone/server.ts` is optional for dev parity.
+`playground/server.ts` is optional for dev parity.
 Prefer it if the change is small (read install map or env override).
 
 ## Registry data
@@ -228,7 +228,7 @@ When no agents exist at all, `acpUiPanel.ts` should offer **Browse Agent Registr
 
 - `buildInitPayload`: `availableAcpAgents` from merged list.
 - `setSessionAgent`: resolve from merged list (already looks up by name).
-- Wire `AgentPicker` in `ChatComposer` when `acpAgentSelection` is set and `lockSessionAgent` is false (standalone pre-flight).
+- Wire `AgentPicker` in `ChatComposer` when `acpAgentSelection` is set and `lockSessionAgent` is false (playground pre-flight).
 - Post `setSessionAgent` from webview on change, same as model picker.
 
 ### Settings (`package.json`)
@@ -287,7 +287,7 @@ Onboarding mainly helps users who cleared defaults.
 ### Polish (nice to have)
 
 - [ ] Changelog entry.
-- [ ] Standalone server reads install map for dev parity.
+- [ ] Playground server reads install map for dev parity.
 - [ ] "Update available" hint when catalog version > installed version.
 
 ## Edge cases

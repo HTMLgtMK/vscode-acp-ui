@@ -13,9 +13,9 @@
             "runOptions": { "runOn": "folderOpen" }
         },
         {
-            "label": "Standalone UI",
+            "label": "Playground UI",
             "type": "npm",
-            "script": "dev:standalone",
+            "script": "dev:playground",
             "problemMatcher": [],
             "isBackground": true,
             "presentation": {

@@ -6,7 +6,7 @@ import type {
 import { formatAcpRpcNdjsonDebugLine } from "../../acp/ports/rpcNdjsonSink";
 
 /**
- * Append-only NDJSON file sink for standalone / non-VS Code hosts (mirrors
+ * Append-only NDJSON file sink for playground / non-VS Code hosts (mirrors
  * {@link VscodeAcpRpcNdjsonSink} file behavior without an output channel).
  */
 export class FileAcpRpcNdjsonSink implements AcpRpcNdjsonSink {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-    buildStandaloneThemeCssVariables,
+    buildPlaygroundThemeCssVariables,
     parseVscodeUserSettings,
-} from "./resolveStandaloneThemeCssVariables";
+} from "./resolvePlaygroundThemeCssVariables";
 
 describe("parseVscodeUserSettings", () => {
     it("reads color customizations, token rules, and markdown inline editor colors", () => {
@@ -41,7 +41,7 @@ describe("parseVscodeUserSettings", () => {
     });
 });
 
-describe("buildStandaloneThemeCssVariables", () => {
+describe("buildPlaygroundThemeCssVariables", () => {
     it("prefers markdownInlineEditor heading colors over token rules", () => {
         const settings = parseVscodeUserSettings(`{
             "workbench.colorCustomizations": {
@@ -63,7 +63,7 @@ describe("buildStandaloneThemeCssVariables", () => {
             "markdownInlineEditor.colors.inlineCode": "#C678DD"
         }`);
 
-        const vars = buildStandaloneThemeCssVariables(settings, []);
+        const vars = buildPlaygroundThemeCssVariables(settings, []);
         expect(vars["--acp-markdown-h1-foreground"]).toBe("#D19A66");
         expect(vars["--acp-markdown-h2-foreground"]).toBe("#E06C75");
         expect(vars["--acp-markdown-h3-foreground"]).toBe("#61AFEF");
@@ -88,7 +88,7 @@ describe("buildStandaloneThemeCssVariables", () => {
             "markdownInlineEditor.colors.inlineCode": "#C678DD"
         }`);
 
-        const vars = buildStandaloneThemeCssVariables(settings, []);
+        const vars = buildPlaygroundThemeCssVariables(settings, []);
         expect(vars["--acp-markdown-inline-code-foreground"]).toBe("#C678DD");
     });
 });

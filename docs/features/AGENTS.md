@@ -23,7 +23,7 @@ docs/features/
     cursor-extensions.md
   maintainer/               # protocol/SDK evolution and dev tools
     platform.md
-    standalone.md
+    playground.md
     rpc-logging.md
   <group>/<feature-slug>.md # one file per high-level feature (kebab-case filename)
 ```

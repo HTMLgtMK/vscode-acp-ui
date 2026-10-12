@@ -1,8 +1,8 @@
 /**
- * Standalone WebSocket bridge for the ACP UI (dev). Reuses {@link AcpSessionBridge} and the
+ * Playground WebSocket bridge for the ACP UI (dev). Reuses {@link AcpSessionBridge} and the
  * same protocol/mapping as the VS Code extension — unlike a duplicated inline ACP client.
  *
- * Usage: `npm run dev:standalone` (Vite + this server with `tsx --watch`).
+ * Usage: `npm run dev:playground` (Vite + this server with `tsx --watch`).
  */
 
 import { randomUUID } from "node:crypto";
@@ -34,7 +34,7 @@ import { readCachedComposerSeed } from "../src/acp/session/sessionConfigOptionsC
 import { pickWebviewMarkdownThemeVariables } from "../src/platform/markdownThemeResolver";
 import { FileAcpRpcNdjsonSink } from "../src/platform/node/fileRpcNdjsonSink";
 import { createNodeAcpSessionHostRuntime } from "../src/platform/node/nodeAcpSessionHostRuntime";
-import { resolveStandaloneThemeCssVariables } from "../src/platform/node/resolveStandaloneThemeCssVariables";
+import { resolvePlaygroundThemeCssVariables } from "../src/platform/node/resolvePlaygroundThemeCssVariables";
 import { formatPathWithTilde } from "../src/platform/pathDisplay";
 import { resolveUserHomeDir } from "../src/platform/resolveUserHomeDir";
 import {
@@ -43,8 +43,8 @@ import {
 } from "../src/protocol/extensionHostMessages";
 
 const PORT = Number(process.env.ACP_WS_PORT ?? 5174);
-const STANDALONE_DIR = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = join(STANDALONE_DIR, "..");
+const PLAYGROUND_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = join(PLAYGROUND_DIR, "..");
 
 configureAcpClientInfo(
     buildAcpClientInfoFromPackage(
@@ -174,7 +174,7 @@ function loadContentWidthPercent(): number {
 const contentWidthRatio = loadContentWidthPercent() / 100;
 
 const rpcLogEnv = process.env.ACP_RPC_LOG;
-const defaultRpcLogFile = join(STANDALONE_DIR, "acp-rpc.ndjson");
+const defaultRpcLogFile = join(PLAYGROUND_DIR, "acp-rpc.ndjson");
 const rpcLogPath: string | null = ((): string | null => {
     if (rpcLogEnv === "0" || rpcLogEnv === "false" || rpcLogEnv === "") {
         return null;
@@ -283,7 +283,7 @@ function resolveFixture(body: string): string | null {
         const stem = candidate.slice(fixturePrefix.length);
         if (/^[a-z0-9-]+$/.test(stem)) {
             const chatPath = join(
-                STANDALONE_DIR,
+                PLAYGROUND_DIR,
                 "fixtures",
                 "chats",
                 `${stem}.ndjson`,
@@ -300,13 +300,13 @@ function resolveFixture(body: string): string | null {
     ) {
         const stem = candidate.slice(mockPrefix.length);
         if (/^[a-z0-9-]+$/.test(stem)) {
-            const mockPath = join(STANDALONE_DIR, "mock", `${stem}.ndjson`);
+            const mockPath = join(PLAYGROUND_DIR, "mock", `${stem}.ndjson`);
             if (existsSync(mockPath)) {
                 return mockPath;
             }
         }
     }
-    const fixturePath = join(STANDALONE_DIR, `${candidate}.ndjson`);
+    const fixturePath = join(PLAYGROUND_DIR, `${candidate}.ndjson`);
     return existsSync(fixturePath) ? fixturePath : null;
 }
 
@@ -384,7 +384,7 @@ function loadAgentConfigs(): AcpAgentSpawnConfig[] {
             },
         ];
     }
-    const configPath = join(STANDALONE_DIR, "acp-agent.json");
+    const configPath = join(PLAYGROUND_DIR, "acp-agent.json");
     if (!existsSync(configPath)) {
         console.error(`ACP agent config not found: ${configPath}`);
         console.error(
@@ -417,7 +417,7 @@ if (firstAgentConfig === undefined) {
 }
 
 function loadNamedComposerSeed(name: string): ReadmeSessionSeed {
-    const fixturePath = join(STANDALONE_DIR, "fixtures", `${name}-seed.json`);
+    const fixturePath = join(PLAYGROUND_DIR, "fixtures", `${name}-seed.json`);
     if (!existsSync(fixturePath)) {
         return { configOptions: null, modelSelection: null };
     }
@@ -431,7 +431,7 @@ function loadNamedComposerSeed(name: string): ReadmeSessionSeed {
 }
 
 function loadReadmeSessionSeed(): ReadmeSessionSeed {
-    const fixturePath = join(STANDALONE_DIR, "fixtures", "readme-seed.json");
+    const fixturePath = join(PLAYGROUND_DIR, "fixtures", "readme-seed.json");
     if (existsSync(fixturePath)) {
         try {
             const seed = parseReadmeSessionSeedFromJson(
@@ -444,7 +444,7 @@ function loadReadmeSessionSeed(): ReadmeSessionSeed {
             /* fall through */
         }
     }
-    const mockPath = join(STANDALONE_DIR, "mock", "readme.ndjson");
+    const mockPath = join(PLAYGROUND_DIR, "mock", "readme.ndjson");
     if (!existsSync(mockPath)) {
         return { modelSelection: null, configOptions: null };
     }
@@ -459,15 +459,15 @@ function loadReadmeSessionSeed(): ReadmeSessionSeed {
 
 // ── Fixture catalog (HTTP + gallery page) ────────────────────────────────────
 
-type StandaloneFixtureEntry = {
+type PlaygroundFixtureEntry = {
     id: string;
     label: string;
     description: string;
 };
 
-type StandaloneFixtureCatalog = {
-    chats: StandaloneFixtureEntry[];
-    seeds: StandaloneFixtureEntry[];
+type PlaygroundFixtureCatalog = {
+    chats: PlaygroundFixtureEntry[];
+    seeds: PlaygroundFixtureEntry[];
 };
 
 const CHAT_FIXTURE_META: Record<
@@ -519,9 +519,9 @@ function humanizeFixtureId(id: string): string {
         .join(" ");
 }
 
-function listStandaloneFixtures(): StandaloneFixtureCatalog {
-    const chats: StandaloneFixtureEntry[] = [];
-    const chatsDir = join(STANDALONE_DIR, "fixtures", "chats");
+function listPlaygroundFixtures(): PlaygroundFixtureCatalog {
+    const chats: PlaygroundFixtureEntry[] = [];
+    const chatsDir = join(PLAYGROUND_DIR, "fixtures", "chats");
     if (existsSync(chatsDir)) {
         for (const name of readdirSync(chatsDir).sort()) {
             if (!name.endsWith(".ndjson")) {
@@ -534,13 +534,13 @@ function listStandaloneFixtures(): StandaloneFixtureCatalog {
                 label: meta?.label ?? humanizeFixtureId(id),
                 description:
                     meta?.description ??
-                    `Replay ${name} through the standalone bridge.`,
+                    `Replay ${name} through the playground bridge.`,
             });
         }
     }
 
-    const seeds: StandaloneFixtureEntry[] = [];
-    const fixturesDir = join(STANDALONE_DIR, "fixtures");
+    const seeds: PlaygroundFixtureEntry[] = [];
+    const fixturesDir = join(PLAYGROUND_DIR, "fixtures");
     if (existsSync(fixturesDir)) {
         for (const name of readdirSync(fixturesDir).sort()) {
             if (!name.endsWith("-seed.json")) {
@@ -564,7 +564,7 @@ function listStandaloneFixtures(): StandaloneFixtureCatalog {
 function vscodeThemeVariablesForInit(): Record<string, string> | undefined {
     try {
         const picked = pickWebviewMarkdownThemeVariables(
-            resolveStandaloneThemeCssVariables().variables,
+            resolvePlaygroundThemeCssVariables().variables,
         );
         return Object.keys(picked).length > 0 ? picked : undefined;
     } catch {
@@ -577,12 +577,12 @@ function vscodeThemeVariablesForInit(): Record<string, string> | undefined {
 const httpServer = createServer((req, res) => {
     if (req.url === "/api/fixtures" && req.method === "GET") {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(listStandaloneFixtures()));
+        res.end(JSON.stringify(listPlaygroundFixtures()));
         return;
     }
-    if (req.url === "/api/standalone-theme" && req.method === "GET") {
+    if (req.url === "/api/playground-theme" && req.method === "GET") {
         try {
-            const theme = resolveStandaloneThemeCssVariables();
+            const theme = resolvePlaygroundThemeCssVariables();
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(theme));
         } catch (err: unknown) {
@@ -625,7 +625,7 @@ wss.on("connection", (ws: WebSocket) => {
 
     function resolveDemoFixturePath(name: string): string | null {
         const chatFixture = join(
-            STANDALONE_DIR,
+            PLAYGROUND_DIR,
             "fixtures",
             "chats",
             `${name}.ndjson`,
@@ -634,7 +634,7 @@ wss.on("connection", (ws: WebSocket) => {
             return chatFixture;
         }
         const legacyReplay = join(
-            STANDALONE_DIR,
+            PLAYGROUND_DIR,
             "fixtures",
             `${name}-replay.ndjson`,
         );
@@ -778,7 +778,7 @@ wss.on("connection", (ws: WebSocket) => {
             send({
                 type: "init",
                 sessionId,
-                title: demoSession ? "ACP UI (demo)" : "ACP UI (standalone)",
+                title: demoSession ? "ACP UI (demo)" : "ACP UI (playground)",
                 workspaceLabel: formatPathWithTilde(
                     process.cwd(),
                     resolveUserHomeDir(),

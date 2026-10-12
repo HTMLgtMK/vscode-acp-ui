@@ -1,5 +1,5 @@
 /**
- * Capture README screenshots from the standalone demo (no VS Code required).
+ * Capture README screenshots from the playground demo (no VS Code required).
  *
  * Usage: npm run screenshots
  */
@@ -163,7 +163,7 @@ async function captureSpec(
         [
             "vite",
             "--config",
-            "standalone/vite.config.ts",
+            "playground/vite.config.ts",
             "--host",
             "127.0.0.1",
             "--port",
@@ -174,7 +174,7 @@ async function captureSpec(
     const server = startProcess(
         "server",
         "npx",
-        ["tsx", "standalone/server.ts"],
+        ["tsx", "playground/server.ts"],
         demoEnv,
     );
 
@@ -182,7 +182,7 @@ async function captureSpec(
         await waitForUrl(baseUrl);
         if (server.child.exitCode !== null) {
             throw new Error(
-                `Standalone demo server exited before capturing ${capture.filename}.`,
+                `Playground demo server exited before capturing ${capture.filename}.`,
             );
         }
         const page = await browser.newPage({

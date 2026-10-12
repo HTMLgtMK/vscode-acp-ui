@@ -24,7 +24,7 @@ export type VscodeSettingsSnapshot = {
     markdownPreviewLineHeight: number | undefined;
 };
 
-export type StandaloneThemeResolution = {
+export type PlaygroundThemeResolution = {
     variables: Record<string, string>;
     source: string;
     colorTheme: string | undefined;
@@ -267,7 +267,7 @@ function chartAliasesFromColors(
     return aliases;
 }
 
-export function buildStandaloneThemeCssVariables(
+export function buildPlaygroundThemeCssVariables(
     settings: VscodeSettingsSnapshot,
     extensionRoots: readonly string[] = vscodeExtensionSearchRoots(),
 ): Record<string, string> {
@@ -315,10 +315,10 @@ export function buildStandaloneThemeCssVariables(
     return variables;
 }
 
-export function resolveStandaloneThemeCssVariables(options?: {
+export function resolvePlaygroundThemeCssVariables(options?: {
     settingsPath?: string;
     extensionRoots?: string[];
-}): StandaloneThemeResolution {
+}): PlaygroundThemeResolution {
     const settingsPath =
         options?.settingsPath ?? defaultVscodeUserSettingsPath();
     if (!existsSync(settingsPath)) {
@@ -327,7 +327,7 @@ export function resolveStandaloneThemeCssVariables(options?: {
     const settings = parseVscodeUserSettings(
         readFileSync(settingsPath, "utf-8"),
     );
-    const variables = buildStandaloneThemeCssVariables(
+    const variables = buildPlaygroundThemeCssVariables(
         settings,
         options?.extensionRoots,
     );

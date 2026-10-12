@@ -10,8 +10,8 @@
         "includes": [
             "**",
             "!webview",
-            "!standalone/index.html",
-            "!standalone/mock",
+            "!playground/index.html",
+            "!playground/mock",
             "!media",
             "!dist",
             "!docs/acp",

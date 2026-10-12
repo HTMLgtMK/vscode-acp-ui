@@ -1,12 +1,12 @@
-type StandaloneFixtureEntry = {
+type PlaygroundFixtureEntry = {
     id: string;
     label: string;
     description: string;
 };
 
-type StandaloneFixtureCatalog = {
-    chats: StandaloneFixtureEntry[];
-    seeds: StandaloneFixtureEntry[];
+type PlaygroundFixtureCatalog = {
+    chats: PlaygroundFixtureEntry[];
+    seeds: PlaygroundFixtureEntry[];
 };
 
 function chatFixtureUrl(
@@ -32,8 +32,8 @@ function seedFixtureUrl(id: string): string {
 
 function renderSection(
     title: string,
-    entries: StandaloneFixtureEntry[],
-    hrefFor: (entry: StandaloneFixtureEntry) => string,
+    entries: PlaygroundFixtureEntry[],
+    hrefFor: (entry: PlaygroundFixtureEntry) => string,
 ): HTMLElement {
     const section = document.createElement("section");
     section.className = "fixtures-section";
@@ -78,18 +78,18 @@ async function main(): Promise<void> {
         return;
     }
 
-    let catalog: StandaloneFixtureCatalog;
+    let catalog: PlaygroundFixtureCatalog;
     try {
         const response = await fetch("/api/fixtures");
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
-        catalog = (await response.json()) as StandaloneFixtureCatalog;
+        catalog = (await response.json()) as PlaygroundFixtureCatalog;
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         status.textContent = "";
         status.className = "fixtures-error";
-        status.textContent = `Could not load fixtures (${message}). Is the standalone server running?`;
+        status.textContent = `Could not load fixtures (${message}). Is the playground server running?`;
         return;
     }
 
@@ -114,7 +114,7 @@ async function main(): Promise<void> {
 
     if (catalog.chats.length === 0 && catalog.seeds.length === 0) {
         status.hidden = false;
-        status.textContent = "No fixtures found under standalone/fixtures/.";
+        status.textContent = "No fixtures found under playground/fixtures/.";
     }
 }
 

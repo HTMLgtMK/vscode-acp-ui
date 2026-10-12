@@ -1,5 +1,5 @@
 /**
- * Writes committed NDJSON chat fixtures for standalone demo and README screenshots.
+ * Writes committed NDJSON chat fixtures for playground demo and README screenshots.
  *
  * Usage: npm run build:fixtures
  */
@@ -9,8 +9,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const chatsDir = join(root, "standalone/fixtures/chats");
-const fixturesDir = join(root, "standalone/fixtures");
+const chatsDir = join(root, "playground/fixtures/chats");
+const fixturesDir = join(root, "playground/fixtures");
 const sessionId = "acp-ui-showcase-session";
 
 type SessionUpdate = Record<string, unknown>;
@@ -176,7 +176,7 @@ writeFixture("plan", [
     userText("Plan a README refresh for the extension."),
     planEntries([
         {
-            content: "Capture new standalone screenshots",
+            content: "Capture new playground screenshots",
             status: "completed",
             priority: "high",
         },
@@ -231,7 +231,7 @@ writeFixture("showcase", [
             status: "in_progress",
         },
         {
-            content: "Verify standalone demo fixtures",
+            content: "Verify playground demo fixtures",
             status: "pending",
         },
     ]),

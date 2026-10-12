@@ -6,7 +6,7 @@ import {
 } from "../../src/platform/markdownThemeResolver";
 import darkModern from "../themes/dark-modern.json";
 
-type StandaloneThemeApiResponse = {
+type PlaygroundThemeApiResponse = {
     variables: Record<string, string>;
     source?: string;
     colorTheme?: string;
@@ -47,15 +47,15 @@ export function applyCssVariables(variables: Record<string, string>): void {
     }
 }
 
-export async function fetchStandaloneThemeVariables(): Promise<
+export async function fetchPlaygroundThemeVariables(): Promise<
     Record<string, string>
 > {
     try {
-        const response = await fetch("/api/standalone-theme");
+        const response = await fetch("/api/playground-theme");
         if (!response.ok) {
             return fallbackThemeVariables();
         }
-        const body = (await response.json()) as StandaloneThemeApiResponse;
+        const body = (await response.json()) as PlaygroundThemeApiResponse;
         if (
             body.variables === null ||
             typeof body.variables !== "object" ||
@@ -69,6 +69,6 @@ export async function fetchStandaloneThemeVariables(): Promise<
     }
 }
 
-export async function applyStandaloneVsCodeTheme(): Promise<void> {
-    applyCssVariables(await fetchStandaloneThemeVariables());
+export async function applyPlaygroundVsCodeTheme(): Promise<void> {
+    applyCssVariables(await fetchPlaygroundThemeVariables());
 }

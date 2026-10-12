@@ -6,7 +6,7 @@ import "../../webview/acp-ui/src/global.css";
 import type { InitPayload } from "../../webview/acp-ui/src/chatReducer";
 import { setCompactToolPathHome } from "../../webview/acp-ui/src/toolCallCompactText";
 import { type ChatView, mountChatView } from "../../webview/acp-ui/src/ui";
-import { applyStandaloneVsCodeTheme } from "./standaloneTheme";
+import { applyPlaygroundVsCodeTheme } from "./playgroundTheme";
 
 const WS_URL = `ws://${location.host}/__acp_ui_ws`;
 
@@ -34,7 +34,7 @@ function readDemoParamsFromUrl(): Pick<
     return out;
 }
 
-function mountStandaloneDevNav(): void {
+function mountPlaygroundDevNav(): void {
     if (!import.meta.env.DEV) {
         return;
     }
@@ -47,17 +47,17 @@ function mountStandaloneDevNav(): void {
     document.body.appendChild(link);
 }
 
-function standaloneHistoryStorageKey(
+function playgroundHistoryStorageKey(
     workspaceLabel: string | undefined,
 ): string {
     const base =
         workspaceLabel !== undefined && workspaceLabel.trim().length > 0
             ? workspaceLabel.trim()
             : "default";
-    return `ib-acp-ui.standalone.history:${base}`;
+    return `ib-acp-ui.playground.history:${base}`;
 }
 
-function loadStandaloneHistory(
+function loadPlaygroundHistory(
     workspaceLabel: string | undefined,
 ): string[] | undefined {
     try {
@@ -65,11 +65,11 @@ function loadStandaloneHistory(
         if (storage === undefined) {
             return undefined;
         }
-        const key = standaloneHistoryStorageKey(workspaceLabel);
+        const key = playgroundHistoryStorageKey(workspaceLabel);
         const raw =
             storage.getItem(key) ??
             storage.getItem(
-                `ib-acp-ui.standalone.promptHistory:${workspaceLabel !== undefined && workspaceLabel.trim().length > 0 ? workspaceLabel.trim() : "default"}`,
+                `ib-acp-ui.playground.promptHistory:${workspaceLabel !== undefined && workspaceLabel.trim().length > 0 ? workspaceLabel.trim() : "default"}`,
             );
         if (raw === null || raw.length === 0) {
             return undefined;
@@ -87,7 +87,7 @@ function loadStandaloneHistory(
     }
 }
 
-function saveStandaloneHistory(
+function savePlaygroundHistory(
     workspaceLabel: string | undefined,
     entries: string[],
 ): void {
@@ -97,7 +97,7 @@ function saveStandaloneHistory(
             return;
         }
         storage.setItem(
-            standaloneHistoryStorageKey(workspaceLabel),
+            playgroundHistoryStorageKey(workspaceLabel),
             JSON.stringify(entries),
         );
     } catch {
@@ -162,7 +162,7 @@ function requireMountRoot(): HTMLElement {
 const mountRoot = requireMountRoot();
 
 async function bootstrap(): Promise<void> {
-    await applyStandaloneVsCodeTheme();
+    await applyPlaygroundVsCodeTheme();
     const root = mountRoot;
 
     const host = createWebSocketHost();
@@ -174,7 +174,7 @@ async function bootstrap(): Promise<void> {
                 setCompactToolPathHome(message.homeDir);
             }
             const workspaceLabel = message.workspaceLabel;
-            const restored = loadStandaloneHistory(workspaceLabel);
+            const restored = loadPlaygroundHistory(workspaceLabel);
             const initPayload: InitPayload =
                 restored !== undefined && restored.length > 0
                     ? { ...message, history: restored }
@@ -205,7 +205,7 @@ async function bootstrap(): Promise<void> {
                     });
                 },
                 (entries) => {
-                    saveStandaloneHistory(workspaceLabel, entries);
+                    savePlaygroundHistory(workspaceLabel, entries);
                     host.post({ type: "saveHistory", entries });
                 },
                 (payload) => {
@@ -238,7 +238,7 @@ async function bootstrap(): Promise<void> {
     });
 
     host.post({ type: "ready", ...readDemoParamsFromUrl() });
-    mountStandaloneDevNav();
+    mountPlaygroundDevNav();
 }
 
 void bootstrap();

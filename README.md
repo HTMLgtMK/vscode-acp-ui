@@ -100,16 +100,16 @@ npm run verify     # build + check + test + lint
 npm run install:local  # package .vsix and install into local VS Code (`code`)
 ```
 
-For a browser-only UI loop without VS Code, use `npm run dev:standalone` (see `standalone/`).
+For a browser-only UI loop without VS Code, use `npm run dev:playground` (see `playground/`).
 Preview mock chats without a live agent:
 
 ```bash
-npm run dev:standalone:demo
+npm run dev:playground:demo
 ```
 
 Then open http://localhost:5173.
 Browse mock chats and model-picker seeds from http://localhost:5173/fixtures.
-The standalone shell loads workbench colors and markdown syntax from your VS Code user settings (`~/.config/Code/User/settings.json` by default).
+The playground shell loads workbench colors and markdown syntax from your VS Code user settings (`~/.config/Code/User/settings.json` by default).
 Override with `ACP_UI_VSCODE_SETTINGS=/path/to/settings.json` if needed.
 In demo mode, send `fixture-markdown`, `fixture-tools`, or `fixture-plan` in the composer to replay other samples.
 Set `ACP_UI_DEMO_SEED=opus-model` to preview the agent-ordered model toolbar.
@@ -137,12 +137,12 @@ Publishing is automated when `package.json` **version** changes on `main` (see `
 | [`src/acp/`](src/acp/) | ACP session bridge, agent config from VS Code settings, RPC helpers. |
 | [`src/protocol/`](src/protocol/) | Messages between extension host and webview. |
 | [`webview/acp-ui/`](webview/acp-ui/) | React + Vite webview UI (chat UI, markdown, state). |
-| [`standalone/`](standalone/) | Local dev server and mocks for the webview without the extension host. |
-| [`standalone/fixtures/chats/`](standalone/fixtures/chats/) | Committed mock chat replays for demo and screenshots. |
+| [`playground/`](playground/) | Local dev server and mocks for the webview without the extension host. |
+| [`playground/fixtures/chats/`](playground/fixtures/chats/) | Committed mock chat replays for demo and screenshots. |
 | [`specs/`](specs/) | Design notes for features and commands. |
 | [`media/`](media/) | Activity bar and view icons. |
 
-Mock chat fixtures are built by `scripts/build-showcase-fixtures.ts` and replayed through the standalone WebSocket bridge.
+Mock chat fixtures are built by `scripts/build-showcase-fixtures.ts` and replayed through the playground WebSocket bridge.
 
 ## License
 

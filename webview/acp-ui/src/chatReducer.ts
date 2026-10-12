@@ -90,7 +90,7 @@ export type ChatState = {
      */
     lockSessionAgent: boolean;
     /**
-     * After the first real user message, model + agent pickers are read-only (standalone pre-flight).
+     * After the first real user message, model + agent pickers are read-only (playground pre-flight).
      */
     composerPicksLocked: boolean;
     /** When true, hide model/config controls in the composer footer. */
@@ -204,7 +204,7 @@ export function createInitialChatState(): ChatState {
 }
 
 /**
- * Builds initial chat state from the host `init` payload (model list from ACP or standalone readme seed).
+ * Builds initial chat state from the host `init` payload (model list from ACP or playground readme seed).
  */
 export function createChatStateFromInit(payload: InitPayload): ChatState {
     const base: ChatState = {

@@ -52,11 +52,11 @@ export type WorkspacePathOpenTarget = "file" | "auto";
 export type WebviewToExtensionMessage =
     | {
           type: "ready";
-          /** Standalone dev: composer seed id (`cursor-model`, `opus-model`, ...). */
+          /** Playground dev: composer seed id (`cursor-model`, `opus-model`, ...). */
           demoSeed?: string;
-          /** Standalone dev: chat replay id (`markdown`, `tools`, ...). */
+          /** Playground dev: chat replay id (`markdown`, `tools`, ...). */
           demoFixture?: string;
-          /** Standalone dev: replay the fixture on load (default true when `demoFixture` is set). */
+          /** Playground dev: replay the fixture on load (default true when `demoFixture` is set). */
           demoReplay?: boolean;
       }
     | { type: "send"; body: string }
@@ -133,12 +133,12 @@ export type ExtensionToWebviewMessage =
           history?: string[];
           /**
            * When true, the agent picker is read-only (agent was chosen when the chat was created).
-           * The model picker may still change until the first user message in standalone mode.
+           * The model picker may still change until the first user message in playground mode.
            */
           lockSessionAgent?: boolean;
           /** Cached config options applied on mount before the agent connects. */
           sessionConfigOptionsSeed?: AcpUiSessionConfigOption[];
-          /** Hides composer model/config controls (standalone demo and screenshots). */
+          /** Hides composer model/config controls (playground demo and screenshots). */
           hideComposerModelControls?: boolean;
           /** True while ACP `session/load` replays conversation history. */
           sessionHistoryLoading?: boolean;

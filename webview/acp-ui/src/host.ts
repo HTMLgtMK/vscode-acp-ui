@@ -9,7 +9,7 @@ declare function acquireVsCodeApi(): {
 };
 
 /**
- * VS Code webview bridge. A standalone app can replace this with fetch, WebSocket, or another transport.
+ * VS Code webview bridge. A playground app can replace this with fetch, WebSocket, or another transport.
  */
 export function createVsCodeAcpUiHost(): {
     post(message: WebviewToExtensionMessage): void;

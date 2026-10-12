@@ -80,7 +80,7 @@ function modelSelectionFromRaw(
 
 /**
  * Extracts bootstrap `models` and `configOptions` from a captured ACP NDJSON log
- * (e.g. `standalone/mock/readme.ndjson`).
+ * (e.g. `playground/mock/readme.ndjson`).
  */
 export function parseReadmeSessionSeedFromNdjson(
     text: string,

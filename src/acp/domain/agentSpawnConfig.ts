@@ -1,6 +1,6 @@
 /**
  * Spawn configuration for an ACP agent subprocess. Shared by the extension
- * settings shape and standalone JSON config files.
+ * settings shape and playground JSON config files.
  */
 export type AcpAgentSpawnConfig = {
     name: string;

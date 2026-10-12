@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parseReadmeSessionSeedFromJson } from "./readmeSessionSeed";
 import { usesAgentOrderedConfigLayout } from "./sessionConfigOptions";
 
-const fixtureRoot = join(import.meta.dirname, "../../../standalone/fixtures");
+const fixtureRoot = join(import.meta.dirname, "../../../playground/fixtures");
 
 describe("parseReadmeSessionSeedFromJson", () => {
     it("loads the committed readme fixture seed for composer bootstrap", () => {

@@ -24,10 +24,10 @@ Complete NDJSON lines are forwarded to the sink without altering the wire protoc
 
 [formatAcpRpcNdjsonDebugLine](../../../src/acp/ports/rpcNdjsonSink.ts#L19-L38) formats each record.
 
-### Standalone file sink
+### Playground file sink
 
-In standalone mode, [FileAcpRpcNdjsonSink](../../../src/platform/node/fileRpcNdjsonSink.ts) writes to a file controlled by `ACP_RPC_LOG`.
-See [standalone](./standalone.md).
+In playground mode, [FileAcpRpcNdjsonSink](../../../src/platform/node/fileRpcNdjsonSink.ts) writes to a file controlled by `ACP_RPC_LOG`.
+See [playground](./playground.md).
 
 ### Composite and null sinks
 

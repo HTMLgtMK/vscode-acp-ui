@@ -5,7 +5,7 @@ import {
 } from "./sessionModels";
 
 /**
- * Extracts `result.modes` from a captured ACP NDJSON log (e.g. `standalone/mock/readme.ndjson`).
+ * Extracts `result.modes` from a captured ACP NDJSON log (e.g. `playground/mock/readme.ndjson`).
  */
 export function parseSessionModelsFromReadmeNdjson(
     text: string,

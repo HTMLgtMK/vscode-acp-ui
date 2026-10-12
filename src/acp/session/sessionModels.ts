@@ -1,7 +1,7 @@
 import type { SessionMode, SessionModeState } from "@agentclientprotocol/sdk";
 
 /**
- * Serializable model list for a chat UI. Matches `sessionModels` in standalone mocks.
+ * Serializable model list for a chat UI. Matches `sessionModels` in playground mocks.
  */
 export type AcpUiSessionModelSelection = {
     currentModelId: string;

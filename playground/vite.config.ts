@@ -11,7 +11,7 @@ export default defineConfig({
     plugins: [
         react(),
         {
-            name: "standalone-fixtures-route",
+            name: "playground-fixtures-route",
             configureServer(server) {
                 server.middlewares.use((req, _res, next) => {
                     if (req.url === "/fixtures" || req.url === "/fixtures/") {
