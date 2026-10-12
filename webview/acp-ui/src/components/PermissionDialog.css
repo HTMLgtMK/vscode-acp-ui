@@ -2,11 +2,11 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: calc(100% + 6px);
+    bottom: calc(100% + var(--acp-ui-space-6));
     z-index: 50;
     display: flex;
     justify-content: center;
-    padding: 0 10px;
+    padding: 0 var(--acp-ui-space-10);
     pointer-events: none;
 }
 
@@ -14,51 +14,45 @@
     pointer-events: auto;
     max-width: 520px;
     width: 100%;
-    padding: 10px 12px 12px;
-    border-radius: 6px;
-    border: 1px solid
-        var(
-            --vscode-widget-border,
-            color-mix(in srgb, var(--vscode-foreground) 18%, transparent)
-        );
-    background: var(
-        --vscode-editorWidget-background,
-        var(--vscode-sideBar-background)
-    );
-    color: var(--vscode-foreground);
-    box-shadow: 0 -4px 18px
-        color-mix(in srgb, var(--vscode-widget-shadow) 35%, transparent);
+    padding: var(--acp-ui-space-12) var(--acp-ui-space-16)
+        var(--acp-ui-space-16);
+    border-radius: var(--acp-ui-radius-lg);
+    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
+    background: var(--acp-ui-surface-panel);
+    color: var(--acp-ui-text-primary);
+    box-shadow: var(--acp-ui-shadow-lg);
 }
 
 .ib-permission-title {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--acp-ui-font-size-x-small);
+    font-weight: var(--acp-ui-font-weight-semibold);
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    color: var(--vscode-descriptionForeground);
-    margin-bottom: 4px;
+    color: var(--acp-ui-text-secondary);
+    margin-bottom: var(--acp-ui-space-4);
 }
 
 .ib-permission-tool {
-    font-size: 13px;
-    line-height: 1.35;
-    margin-bottom: 10px;
+    font-size: var(--acp-ui-font-size-body);
+    line-height: var(--acp-ui-line-height-heading);
+    margin-bottom: var(--acp-ui-space-12);
     word-break: break-word;
 }
 
 .ib-permission-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--acp-ui-space-8);
     justify-content: flex-end;
 }
 
 .ib-permission-button {
     font: inherit;
-    font-size: 12px;
-    padding: 5px 10px;
-    border-radius: 3px;
-    border: 1px solid var(--vscode-button-border, transparent);
+    font-size: var(--acp-ui-font-size-small);
+    padding: var(--acp-ui-space-6) var(--acp-ui-space-12);
+    border-radius: var(--acp-ui-radius-md);
+    border: var(--acp-ui-stroke-width) solid
+        var(--vscode-button-border, transparent);
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
     cursor: pointer;
@@ -70,10 +64,10 @@
 
 .ib-permission-button--secondary {
     background: transparent;
-    color: var(--vscode-foreground);
+    color: var(--acp-ui-text-primary);
     border-color: var(
         --vscode-button-secondaryHoverBackground,
-        var(--vscode-widget-border)
+        var(--acp-ui-border-chrome)
     );
 }
 

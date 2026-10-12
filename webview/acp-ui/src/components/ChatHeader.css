@@ -1,24 +1,24 @@
 .agent-header {
     flex-shrink: 0;
-    margin-bottom: 10px;
+    margin-bottom: var(--acp-ui-space-12);
 }
 
 .agent-title-line {
-    color: var(--vscode-foreground);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.01em;
+    color: var(--acp-ui-text-primary);
+    font-size: var(--acp-ui-font-size-body);
+    font-weight: var(--acp-ui-font-weight-semibold);
+    line-height: var(--acp-ui-line-height-heading);
 }
 
 .agent-version {
-    color: var(--vscode-descriptionForeground);
-    font-weight: 400;
+    color: var(--acp-ui-text-secondary);
+    font-weight: var(--acp-ui-font-weight-regular);
 }
 
 .agent-meta-line {
-    margin-top: 3px;
-    color: var(--vscode-descriptionForeground);
-    font-size: 11px;
+    margin-top: var(--acp-ui-space-4);
+    color: var(--acp-ui-text-secondary);
+    font-size: var(--acp-ui-font-size-x-small);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

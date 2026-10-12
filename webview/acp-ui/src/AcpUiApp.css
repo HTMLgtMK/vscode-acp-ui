@@ -12,26 +12,27 @@
 }
 
 .acp-ui-shell.acp-ui-shell--file-drag {
-    outline: 2px dashed var(--vscode-focusBorder, var(--vscode-textLink-foreground));
+    outline: 2px dashed
+        var(--acp-ui-focus-border, var(--vscode-textLink-foreground));
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: var(--acp-ui-radius-md);
 }
 
 .acp-ui-error {
     flex-shrink: 0;
-    margin-bottom: 8px;
-    padding: 8px 10px;
+    margin-bottom: var(--acp-ui-space-8);
+    padding: var(--acp-ui-space-8) var(--acp-ui-space-12);
     color: var(--vscode-errorForeground);
     background-color: color-mix(
         in srgb,
         var(--vscode-inputValidation-errorBackground) 90%,
         transparent
     );
-    border: 1px solid
+    border: var(--acp-ui-stroke-width) solid
         var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
-    border-radius: 3px;
-    font-size: 12px;
-    line-height: 1.4;
+    border-radius: var(--acp-ui-radius-sm);
+    font-size: var(--acp-ui-font-size-small);
+    line-height: var(--acp-ui-line-height-body);
 }
 
 .agent-trace {
@@ -39,7 +40,7 @@
     min-height: 0;
     overflow: auto;
     width: 100%;
-    color: var(--vscode-foreground);
+    color: var(--acp-ui-text-primary);
     scrollbar-gutter: stable;
 }
 

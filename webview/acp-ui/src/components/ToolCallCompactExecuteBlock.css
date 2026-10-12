@@ -1,7 +1,7 @@
 .tool-call-compact-execute {
-    margin: 0 0 8px;
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
-    font-size: 11px;
+    margin: 0 0 var(--acp-ui-space-8);
+    font-family: var(--acp-ui-font-mono);
+    font-size: var(--acp-ui-font-size-x-small);
     line-height: 1.4;
     min-width: 0;
 }

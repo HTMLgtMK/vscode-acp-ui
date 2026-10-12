@@ -1,12 +1,11 @@
 .agent-markdown {
-    font-family:
-        var(--vscode-editor-font-family), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--acp-ui-font-sans);
     font-size: var(
         --acp-markdown-font-size,
-        var(--vscode-editor-font-size, 12px)
+        var(--acp-ui-font-size-body)
     );
-    line-height: var(--acp-markdown-line-height, 1.5);
-    color: var(--vscode-foreground);
+    line-height: var(--acp-markdown-line-height, var(--acp-ui-line-height-body));
+    color: var(--acp-ui-text-primary);
 }
 
 .agent-markdown p {
@@ -83,11 +82,11 @@
 }
 
 .agent-markdown code {
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
+    font-family: var(--acp-ui-font-mono);
     font-size: 1em;
     line-height: 1.357em;
     padding: 0.1em 0.35em;
-    border-radius: 3px;
+    border-radius: var(--acp-ui-radius-sm);
     background-color: transparent;
     border: 1px solid
         var(
@@ -119,7 +118,7 @@
     margin: 0;
     padding: 8px 36px 10px 10px;
     overflow: auto;
-    border-radius: 4px;
+    border-radius: var(--acp-ui-radius-md);
     background-color: var(
         --vscode-textCodeBlock-background,
         var(--vscode-editor-background)
@@ -140,7 +139,7 @@
     height: 22px;
     padding: 0;
     border: none;
-    border-radius: 3px;
+    border-radius: var(--acp-ui-radius-sm);
     background: color-mix(
         in srgb,
         var(--vscode-editor-background) 55%,
@@ -227,8 +226,8 @@
     margin: 0.65em 0 0.85em;
     border-collapse: collapse;
     width: 100%;
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
-    font-size: var(--vscode-editor-font-size, 12px);
+    font-family: var(--acp-ui-font-mono);
+    font-size: var(--acp-ui-font-size-small);
     line-height: 1.45;
 }
 

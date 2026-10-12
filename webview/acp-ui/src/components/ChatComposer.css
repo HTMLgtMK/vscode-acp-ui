@@ -1,35 +1,31 @@
 .composer-frame {
     flex-shrink: 0;
     margin-top: auto;
-    border: 1px solid
-        var(--vscode-editorWidget-border, var(--vscode-widget-border));
-    border-radius: 4px;
-    background-color: var(
-        --vscode-editorWidget-background,
-        var(--vscode-sideBar-background)
-    );
+    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-panel);
+    border-radius: var(--acp-ui-radius-lg);
+    background-color: var(--acp-ui-surface-panel);
     overflow: visible;
 }
 
 .composer-frame:focus-within {
     outline: none;
     box-shadow: none;
-    border-color: var(--vscode-editorWidget-border, var(--vscode-widget-border));
+    border-color: var(--acp-ui-border-panel);
 }
 
 .composer-top-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 6px 10px 4px;
+    gap: var(--acp-ui-space-10);
+    padding: var(--acp-ui-space-8) var(--acp-ui-space-12) var(--acp-ui-space-4);
 }
 
 .composer-activity {
     flex: 1;
     min-width: 0;
-    font-size: 11px;
-    color: var(--vscode-descriptionForeground);
+    font-size: var(--acp-ui-font-size-x-small);
+    color: var(--acp-ui-text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -59,9 +55,9 @@
 
 .composer-top-bar-hint {
     flex-shrink: 0;
-    font-size: 10px;
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
-    color: var(--vscode-descriptionForeground);
+    font-size: var(--acp-ui-font-size-label);
+    font-family: var(--acp-ui-font-mono);
+    color: var(--acp-ui-text-secondary);
     opacity: 0.8;
     user-select: none;
 }
@@ -70,22 +66,22 @@
     display: flex;
     flex: 1;
     min-width: 0;
-    gap: 8px;
+    gap: var(--acp-ui-space-8);
 }
 
 .composer-inline-label {
     flex-shrink: 0;
-    font-size: 11px;
-    color: var(--vscode-descriptionForeground);
+    font-size: var(--acp-ui-font-size-x-small);
+    color: var(--acp-ui-text-secondary);
 }
 
 .composer-pick-value {
     flex: 0 1 auto;
     min-width: 0;
     max-width: 12rem;
-    padding: 3px 7px;
-    font-size: 11px;
-    color: var(--vscode-foreground);
+    padding: var(--acp-ui-space-4) var(--acp-ui-space-6);
+    font-size: var(--acp-ui-font-size-x-small);
+    color: var(--acp-ui-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -96,16 +92,17 @@
     width: auto;
     min-width: 0;
     max-width: 12rem;
-    padding: 3px 6px;
-    color: var(--vscode-foreground);
+    padding: var(--acp-ui-space-4) var(--acp-ui-space-8);
+    color: var(--acp-ui-text-primary);
     background-color: var(
         --vscode-dropdown-background,
         var(--vscode-editor-background)
     );
-    border: 1px solid var(--vscode-dropdown-border, var(--vscode-widget-border));
-    border-radius: 3px;
+    border: var(--acp-ui-stroke-width) solid
+        var(--vscode-dropdown-border, var(--acp-ui-border-chrome));
+    border-radius: var(--acp-ui-radius-md);
     font-family: inherit;
-    font-size: 11px;
+    font-size: var(--acp-ui-font-size-small);
 }
 
 .composer-model-variant-select {
@@ -120,9 +117,9 @@
 .composer-slash-menu {
     position: absolute;
     bottom: 100%;
-    left: 8px;
-    right: 8px;
-    margin-bottom: 4px;
+    left: var(--acp-ui-space-8);
+    right: var(--acp-ui-space-8);
+    margin-bottom: var(--acp-ui-space-4);
     max-height: min(320px, 42vh);
     overflow-y: auto;
     scrollbar-color: var(
@@ -134,19 +131,11 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding: 4px 0;
-    border: 1px solid
-        var(
-            --vscode-widget-border,
-            color-mix(in srgb, var(--vscode-foreground) 14%, transparent)
-        );
-    border-radius: 4px;
-    background: var(
-        --vscode-editorWidget-background,
-        var(--vscode-sideBar-background)
-    );
-    box-shadow: 0 -6px 16px
-        color-mix(in srgb, var(--vscode-widget-shadow) 45%, transparent);
+    padding: var(--acp-ui-space-4) 0;
+    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
+    border-radius: var(--acp-ui-radius-lg);
+    background: var(--acp-ui-surface-panel);
+    box-shadow: var(--acp-ui-shadow-lg);
 }
 
 .composer-slash-menu::-webkit-scrollbar {
@@ -158,7 +147,7 @@
         --vscode-editor-background,
         var(--vscode-sideBar-background)
     );
-    border-radius: 4px;
+    border-radius: var(--acp-ui-radius-sm);
 }
 
 .composer-slash-menu::-webkit-scrollbar-thumb {
@@ -166,20 +155,20 @@
         --vscode-scrollbarSlider-hoverBackground,
         var(--vscode-scrollbarSlider-background)
     );
-    border-radius: 5px;
+    border-radius: var(--acp-ui-radius-full);
     border: 2px solid transparent;
     background-clip: padding-box;
 }
 
 .composer-slash-group {
-    padding: 6px 10px 2px;
-    font-size: 9px;
-    font-weight: 600;
+    padding: var(--acp-ui-space-6) var(--acp-ui-space-12) var(--acp-ui-space-2);
+    font-size: var(--acp-ui-font-size-label);
+    font-weight: var(--acp-ui-font-weight-semibold);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(
         --vscode-list-deemphasizedForeground,
-        var(--vscode-descriptionForeground)
+        var(--acp-ui-text-secondary)
     );
 }
 
@@ -187,16 +176,16 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 8px;
+    gap: var(--acp-ui-space-8);
     width: 100%;
     min-width: 0;
     margin: 0;
-    padding: 5px 10px;
+    padding: var(--acp-ui-space-6) var(--acp-ui-space-12);
     border: none;
     background: transparent;
-    color: var(--vscode-foreground);
+    color: var(--acp-ui-text-primary);
     font: inherit;
-    font-size: 12px;
+    font-size: var(--acp-ui-font-size-small);
     text-align: left;
     cursor: pointer;
 }
@@ -209,22 +198,22 @@
 
 .composer-slash-item--active {
     background: var(--vscode-list-activeSelectionBackground);
-    color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground));
+    color: var(--vscode-list-activeSelectionForeground, var(--acp-ui-text-primary));
 }
 
 .composer-slash-name {
     flex-shrink: 0;
-    font-weight: 600;
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
-    font-size: 11px;
+    font-weight: var(--acp-ui-font-weight-semibold);
+    font-family: var(--acp-ui-font-mono);
+    font-size: var(--acp-ui-font-size-x-small);
 }
 
 .composer-slash-desc {
     flex: 1 1 auto;
     min-width: 0;
-    font-size: 11px;
-    color: var(--vscode-descriptionForeground);
-    line-height: 1.3;
+    font-size: var(--acp-ui-font-size-x-small);
+    color: var(--acp-ui-text-secondary);
+    line-height: var(--acp-ui-line-height-heading);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -234,14 +223,14 @@
     flex-shrink: 0;
     margin-left: auto;
     max-width: 6.5rem;
-    padding-left: 6px;
-    font-size: 9px;
-    line-height: 1.3;
+    padding-left: var(--acp-ui-space-6);
+    font-size: var(--acp-ui-font-size-label);
+    line-height: var(--acp-ui-line-height-heading);
     letter-spacing: 0.02em;
     text-transform: lowercase;
     color: var(
         --vscode-list-deemphasizedForeground,
-        var(--vscode-descriptionForeground)
+        var(--acp-ui-text-secondary)
     );
     white-space: nowrap;
     overflow: hidden;
@@ -251,23 +240,23 @@
 .composer-input {
     display: block;
     width: 100%;
-    min-height: 60px;
+    min-height: 64px;
     max-height: 200px;
     resize: none;
     margin: 0;
-    padding: 0 12px;
-    color: var(--vscode-foreground);
+    padding: var(--acp-ui-space-8) var(--acp-ui-space-12);
+    color: var(--acp-ui-text-primary);
     background: transparent;
     border: none;
     font-family: inherit;
-    font-size: 12px;
-    line-height: 1.45;
+    font-size: var(--acp-ui-font-size-body);
+    line-height: var(--acp-ui-line-height-body);
 }
 
 .composer-input::placeholder {
     color: var(
         --vscode-input-placeholderForeground,
-        var(--vscode-descriptionForeground)
+        var(--acp-ui-text-secondary)
     );
     opacity: 0.7;
 }
@@ -283,13 +272,14 @@
 .composer-config-select:focus,
 .composer-config-select:focus-visible {
     outline: none;
+    border-color: var(--acp-ui-focus-border);
 }
 
 .composer-footer {
     display: flex;
     align-items: flex-end;
-    gap: 10px;
-    padding: 4px 8px 6px;
+    gap: var(--acp-ui-space-10);
+    padding: var(--acp-ui-space-6) var(--acp-ui-space-8) var(--acp-ui-space-8);
     border-top: none;
 }
 
@@ -301,14 +291,14 @@
 
 .composer-send {
     flex-shrink: 0;
-    padding: 4px 14px;
+    padding: var(--acp-ui-space-6) var(--acp-ui-space-16);
     color: var(--vscode-button-foreground);
     background-color: var(--vscode-button-background);
     border: none;
-    border-radius: 3px;
+    border-radius: var(--acp-ui-radius-md);
     font-family: inherit;
-    font-size: 11px;
-    font-weight: 500;
+    font-size: var(--acp-ui-font-size-small);
+    font-weight: var(--acp-ui-font-weight-medium);
     cursor: default;
     transition: background-color 0.1s ease;
 }
@@ -323,16 +313,16 @@
 
 .composer-cancel {
     flex-shrink: 0;
-    padding: 4px 12px;
-    color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+    padding: var(--acp-ui-space-6) var(--acp-ui-space-12);
+    color: var(--vscode-button-secondaryForeground, var(--acp-ui-text-primary));
     background-color: var(
         --vscode-button-secondaryBackground,
         var(--vscode-button-background)
     );
-    border: 1px solid var(--vscode-widget-border);
-    border-radius: 3px;
+    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
+    border-radius: var(--acp-ui-radius-md);
     font-family: inherit;
-    font-size: 11px;
+    font-size: var(--acp-ui-font-size-small);
     cursor: default;
 }
 

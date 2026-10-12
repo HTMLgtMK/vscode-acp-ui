@@ -1,34 +1,36 @@
 .user-prompt-bar {
     flex-shrink: 0;
-    padding: 8px 10px;
-    margin-bottom: 12px;
-    color: var(--vscode-foreground);
-    background-color: color-mix(
-        in srgb,
-        var(--vscode-editor-inactiveSelectionBackground) 65%,
-        var(--vscode-editor-background)
+    padding: var(--acp-ui-space-8) var(--acp-ui-space-12);
+    margin-bottom: var(--acp-ui-space-16);
+    color: var(--acp-ui-text-primary);
+    background-color: var(
+        --vscode-chat-requestBubbleBackground,
+        color-mix(
+            in srgb,
+            var(--vscode-editor-inactiveSelectionBackground) 65%,
+            var(--vscode-editor-background)
+        )
     );
-    border: 1px solid var(--vscode-widget-border);
-    border-radius: 2px;
-    font-size: 12px;
-    line-height: 1.4;
+    border-radius: var(--acp-ui-radius-lg);
+    font-size: var(--acp-ui-font-size-body);
+    line-height: var(--acp-ui-line-height-body);
     white-space: pre-wrap;
     word-break: break-word;
 }
 
 .agent-response-stream {
-    margin: 0 0 6px;
+    margin: 0 0 var(--acp-ui-space-8);
     padding: 0;
     border: none;
     background: transparent;
 }
 
 .trace-segment-gap {
-    margin-top: 14px;
+    margin-top: var(--acp-ui-space-16);
 }
 
 .agent-response-stream.trace-segment-gap {
-    padding-top: 2px;
+    padding-top: var(--acp-ui-space-2);
 }
 
 .agent-response-markdown {

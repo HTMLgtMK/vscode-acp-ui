@@ -19,7 +19,7 @@
 .agent-trace::-webkit-scrollbar-thumb,
 .composer-input::-webkit-scrollbar-thumb {
     background-color: var(--vscode-scrollbarSlider-background, #4e566680);
-    border-radius: 5px;
+    border-radius: var(--acp-ui-radius-full);
     border: 2px solid var(--vscode-editor-background);
 }
 

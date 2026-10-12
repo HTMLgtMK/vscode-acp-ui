@@ -1,34 +1,33 @@
 .agent-thought-chunk {
-    margin: 0 0 10px;
-    padding: 8px 10px;
-    border: 1px solid
-        color-mix(in srgb, var(--vscode-widget-border) 78%, transparent);
-    border-radius: 2px;
+    margin: 0 0 var(--acp-ui-space-10);
+    padding: var(--acp-ui-space-8) var(--acp-ui-space-12);
+    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-subtle);
+    border-radius: var(--acp-ui-radius-md);
     background: color-mix(
         in srgb,
         var(--vscode-editor-background) 90%,
         var(--vscode-sideBar-background) 10%
     );
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
+    font-family: var(--acp-ui-font-mono);
 }
 
 .agent-thought-chunk-title {
-    margin: 0 0 6px;
-    font-size: 11px;
-    line-height: 1.25;
-    color: var(--vscode-descriptionForeground);
-    font-weight: 600;
+    margin: 0 0 var(--acp-ui-space-6);
+    font-size: var(--acp-ui-font-size-x-small);
+    line-height: var(--acp-ui-line-height-heading);
+    color: var(--acp-ui-text-secondary);
+    font-weight: var(--acp-ui-font-weight-semibold);
 }
 
 .agent-thought-chunk-body {
     margin: 0;
     white-space: pre-wrap;
     word-break: break-word;
-    font-size: 11px;
-    line-height: 1.35;
+    font-size: var(--acp-ui-font-size-x-small);
+    line-height: var(--acp-ui-line-height-heading);
     color: color-mix(
         in srgb,
         var(--vscode-editor-foreground, var(--vscode-foreground)) 86%,
-        var(--vscode-descriptionForeground)
+        var(--acp-ui-text-secondary)
     );
 }

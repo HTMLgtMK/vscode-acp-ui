@@ -1,0 +1,84 @@
+:root {
+    /* Typography */
+    --acp-ui-font-sans: var(
+        --vscode-font-family,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif
+    );
+    --acp-ui-font-mono: var(
+        --vscode-editor-font-family,
+        ui-monospace,
+        "SF Mono",
+        Menlo,
+        Consolas,
+        monospace
+    );
+    --acp-ui-font-size-body: var(--vscode-font-size, 13px);
+    --acp-ui-font-size-small: 12px;
+    --acp-ui-font-size-x-small: 11px;
+    --acp-ui-font-size-label: 10px;
+    --acp-ui-line-height-body: 1.5;
+    --acp-ui-line-height-heading: 1.25;
+    --acp-ui-font-weight-regular: 400;
+    --acp-ui-font-weight-medium: 500;
+    --acp-ui-font-weight-semibold: 600;
+
+    /* Corner radius (mirrors --vscode-cornerRadius-*) */
+    --acp-ui-radius-xs: var(--vscode-cornerRadius-xSmall, 2px);
+    --acp-ui-radius-sm: var(--vscode-cornerRadius-small, 4px);
+    --acp-ui-radius-md: var(--vscode-cornerRadius-medium, 6px);
+    --acp-ui-radius-lg: var(--vscode-cornerRadius-large, 8px);
+    --acp-ui-radius-xl: var(--vscode-cornerRadius-xLarge, 12px);
+    --acp-ui-radius-full: var(--vscode-cornerRadius-circle, 9999px);
+
+    /* Spacing (mirrors --vscode-spacing-size*) */
+    --acp-ui-space-2: var(--vscode-spacing-size20, 2px);
+    --acp-ui-space-4: var(--vscode-spacing-size40, 4px);
+    --acp-ui-space-6: var(--vscode-spacing-size60, 6px);
+    --acp-ui-space-8: var(--vscode-spacing-size80, 8px);
+    --acp-ui-space-10: var(--vscode-spacing-size100, 10px);
+    --acp-ui-space-12: var(--vscode-spacing-size120, 12px);
+    --acp-ui-space-16: var(--vscode-spacing-size160, 16px);
+    --acp-ui-space-20: var(--vscode-spacing-size200, 20px);
+    --acp-ui-space-24: var(--vscode-spacing-size240, 24px);
+
+    /* Borders */
+    --acp-ui-stroke-width: var(--vscode-strokeThickness, 1px);
+    --acp-ui-border-chrome: var(
+        --vscode-widget-border,
+        color-mix(in srgb, var(--vscode-foreground) 14%, transparent)
+    );
+    --acp-ui-border-panel: var(
+        --vscode-editorWidget-border,
+        var(--vscode-widget-border)
+    );
+    --acp-ui-border-subtle: color-mix(
+        in srgb,
+        var(--vscode-widget-border) 78%,
+        transparent
+    );
+
+    /* Surfaces */
+    --acp-ui-surface-panel: var(
+        --vscode-editorWidget-background,
+        var(--vscode-sideBar-background)
+    );
+
+    /* Elevation */
+    --acp-ui-shadow-lg: var(
+        --vscode-shadow-lg,
+        0 0 16px color-mix(in srgb, var(--vscode-widget-shadow) 45%, transparent)
+    );
+
+    /* Text */
+    --acp-ui-text-primary: var(--vscode-foreground);
+    --acp-ui-text-secondary: var(--vscode-descriptionForeground);
+    --acp-ui-text-tertiary: var(
+        --vscode-disabledForeground,
+        var(--vscode-descriptionForeground)
+    );
+    --acp-ui-focus-border: var(--vscode-focusBorder);
+}

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Restyled the chat UI to the current VS Code design language.
+  Added a design-token layer that mirrors the VS Code corner radius, spacing, and font size tokens.
+  Chrome and message text now use the UI sans-serif font; code, diffs, and tool output stay monospace.
+  Rounded corners, padding, and focus states now follow the VS Code scale.
+
 ## 0.5.0 - 2026-07-07
 
 - Added `minimal` tool call verbosity: groups tool calls with a summary line and shows only the last three detail lines (Cursor-style).

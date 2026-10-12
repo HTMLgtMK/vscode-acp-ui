@@ -1,7 +1,7 @@
 .composer-mode-indicator {
     flex-shrink: 0;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--acp-ui-font-size-small);
+    font-weight: var(--acp-ui-font-weight-semibold);
     letter-spacing: 0.02em;
     user-select: none;
 }
