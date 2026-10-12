@@ -68,6 +68,111 @@ const DEMO_REPLAY = !(
     process.env.ACP_UI_DEMO_REPLAY === "false"
 );
 
+const contentWidthPercentSettingKey = "ib-acp-ui.contentWidthPercent";
+
+function clampContentWidthPercent(value: number): number {
+    if (!Number.isFinite(value)) {
+        return 100;
+    }
+    return Math.min(100, Math.max(10, value));
+}
+
+function vscodeUserSettingsPath(): string {
+    const home = resolveUserHomeDir();
+    if (process.platform === "darwin") {
+        return join(
+            home,
+            "Library",
+            "Application Support",
+            "Code",
+            "User",
+            "settings.json",
+        );
+    }
+    return join(home, ".config", "Code", "User", "settings.json");
+}
+
+function stripJsoncComments(input: string): string {
+    let out = "";
+    let inString = false;
+    let escaped = false;
+    let i = 0;
+    while (i < input.length) {
+        const ch = input[i];
+        if (inString) {
+            out += ch;
+            if (escaped) {
+                escaped = false;
+            } else if (ch === "\\") {
+                escaped = true;
+            } else if (ch === '"') {
+                inString = false;
+            }
+            i++;
+            continue;
+        }
+        if (ch === '"') {
+            inString = true;
+            out += ch;
+            i++;
+            continue;
+        }
+        if (ch === "/" && input[i + 1] === "/") {
+            while (i < input.length && input[i] !== "\n") {
+                i++;
+            }
+            continue;
+        }
+        if (ch === "/" && input[i + 1] === "*") {
+            i += 2;
+            while (
+                i < input.length &&
+                !(input[i] === "*" && input[i + 1] === "/")
+            ) {
+                i++;
+            }
+            i += 2;
+            continue;
+        }
+        out += ch;
+        i++;
+    }
+    return out;
+}
+
+function parseSettingsJson(text: string): unknown {
+    const json = stripJsoncComments(text).replace(/,\s*([}\]])/g, "$1");
+    return JSON.parse(json) as unknown;
+}
+
+function loadContentWidthPercent(): number {
+    const fromEnv = Number(process.env.ACP_UI_CONTENT_WIDTH_PERCENT);
+    if (Number.isFinite(fromEnv) && fromEnv > 0) {
+        return clampContentWidthPercent(fromEnv);
+    }
+    try {
+        const settingsPath = vscodeUserSettingsPath();
+        if (!existsSync(settingsPath)) {
+            return 100;
+        }
+        const parsed = parseSettingsJson(readFileSync(settingsPath, "utf8"));
+        if (typeof parsed !== "object" || parsed === null) {
+            return 100;
+        }
+        const value = (parsed as Record<string, unknown>)[
+            contentWidthPercentSettingKey
+        ];
+        if (typeof value !== "number") {
+            return 100;
+        }
+        return clampContentWidthPercent(value);
+    } catch {
+        return 100;
+    }
+}
+
+const contentWidthRatio = loadContentWidthPercent() / 100;
+
 const rpcLogEnv = process.env.ACP_RPC_LOG;
 const defaultRpcLogFile = join(STANDALONE_DIR, "acp-rpc.ndjson");
 const rpcLogPath: string | null = ((): string | null => {
@@ -692,6 +797,7 @@ wss.on("connection", (ws: WebSocket) => {
                 ...(vscodeThemeVariables !== undefined
                     ? { vscodeThemeVariables }
                     : {}),
+                contentWidthRatio,
                 lockSessionAgent: false,
             });
             if (DEMO_MODE || sessionDemoFixture !== undefined) {

@@ -6,6 +6,9 @@
   Added a design-token layer that mirrors the VS Code corner radius, spacing, and font size tokens.
   Chrome and message text now use the UI sans-serif font; code, diffs, and tool output stay monospace.
   Rounded corners, padding, and focus states now follow the VS Code scale.
+- The standalone playground now honors the `ib-acp-ui.contentWidthPercent` setting
+  (from VS Code settings or the `ACP_UI_CONTENT_WIDTH_PERCENT` env var), so the content
+  column lines up with the real extension instead of defaulting to full width.
 
 ## 0.5.0 - 2026-07-07
 
