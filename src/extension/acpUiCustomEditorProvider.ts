@@ -85,6 +85,9 @@ export class AcpUiCustomEditorProvider implements CustomTextEditorProvider {
             parsed.header.title,
             parsed.header.id,
         );
+        if (sessionUri.toString() !== document.uri.toString()) {
+            moveAcpUiCustomEditorUri(document.uri, sessionUri);
+        }
         updateAcpUiSessionFileUri(parsed.header.id, sessionUri);
         const sessionDocument =
             sessionUri.toString() === document.uri.toString()
@@ -95,6 +98,16 @@ export class AcpUiCustomEditorProvider implements CustomTextEditorProvider {
             enableScripts: true,
             localResourceRoots: [this.context.extensionUri],
         };
+        for (const [key, panel] of panelsByDocumentUri.entries()) {
+            if (panel === webviewPanel) {
+                const existing = controllersByDocumentUri.get(key);
+                existing?.dispose();
+                controllersByDocumentUri.delete(key);
+                panelsByDocumentUri.delete(key);
+                break;
+            }
+        }
+
         webviewPanel.webview.html = getAcpUiWebviewHtml(
             this.context.extensionUri,
             webviewPanel.webview,
@@ -102,13 +115,20 @@ export class AcpUiCustomEditorProvider implements CustomTextEditorProvider {
         webviewPanel.title = parsed.header.title;
         webviewPanel.iconPath = acpUiPanelTabIcon;
 
+        const uriKey = sessionDocument.uri.toString();
+        const boundController = controllersByDocumentUri.get(uriKey);
+        if (boundController !== undefined) {
+            boundController.dispose();
+            controllersByDocumentUri.delete(uriKey);
+            panelsByDocumentUri.delete(uriKey);
+        }
+
         const controller = new AcpUiSessionController({
             context: this.context,
             document: sessionDocument,
             webview: webviewPanel.webview,
             refreshChatsList: refreshChatsListHandler,
         });
-        const uriKey = sessionDocument.uri.toString();
         controllersByDocumentUri.set(uriKey, controller);
         panelsByDocumentUri.set(uriKey, webviewPanel);
         controller.activate();

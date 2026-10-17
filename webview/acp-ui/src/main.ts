@@ -4,7 +4,12 @@ import type {
 } from "../../../src/protocol/extensionHostMessages";
 import "./global.css";
 import "./boot.css";
-import { replayChatState, createChatStateFromInit, type ChatState } from "./chatReducer";
+import {
+    replayChatState,
+    createChatStateFromInit,
+    type ChatState,
+    type ExtensionMessageAfterInit,
+} from "./chatReducer";
 import { createVsCodeAcpUiHost } from "./host";
 import { setCompactToolPathHome } from "./toolCallCompactText";
 import { type ChatView, type InitPayload, mountChatView } from "./ui";
@@ -38,6 +43,17 @@ let initReceived = false;
 let pendingInit: InitPayload | null = null;
 let pendingHistory: AcpUiHistoryReplayEvent[] | undefined;
 let pendingSessionHistoryLoading = false;
+const pendingExtensionMessages: ExtensionMessageAfterInit[] = [];
+
+function flushPendingExtensionMessages(): void {
+    if (view === null) {
+        return;
+    }
+    for (const message of pendingExtensionMessages) {
+        view.handleMessage(message);
+    }
+    pendingExtensionMessages.length = 0;
+}
 
 function applyPendingSessionHistoryLoading(state: ChatState): ChatState {
     if (!pendingSessionHistoryLoading) {
@@ -108,6 +124,7 @@ function tryMountView(): void {
             });
         },
     );
+    flushPendingExtensionMessages();
 }
 
 host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
@@ -138,7 +155,11 @@ host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
         tryMountView();
         return;
     }
-    view?.handleMessage(message);
+    if (view !== null) {
+        view.handleMessage(message);
+        return;
+    }
+    pendingExtensionMessages.push(message);
 });
 
 host.post({ type: "ready" });

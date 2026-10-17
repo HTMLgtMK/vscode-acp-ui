@@ -158,6 +158,16 @@ export function buildAcpClientInfo(): acp.Implementation {
     );
 }
 
+function createAgentSpawnError(
+    err: NodeJS.ErrnoException,
+    config: AcpAgentSpawnConfig,
+): Error {
+    const code = err.code ?? "unknown";
+    return new Error(
+        `Failed to spawn ACP agent "${config.name}": cannot execute command "${config.command}" (${code}: ${err.message}). Check ib-acp-ui.agents and PATH.`,
+    );
+}
+
 /** Ensures the negotiated protocol version is supported by this client build. */
 export function assertNegotiatedProtocolVersion(
     response: acp.InitializeResponse,
@@ -255,12 +265,31 @@ export class AcpAgentProcess {
             );
         });
 
+        let spawnFailure: Error | undefined;
         this.child.on("error", (err) => {
             const nodeErr = err as NodeJS.ErrnoException;
             console.error(
                 `[ACP Agent ${this.options.config.name}] process error code=${nodeErr.code ?? "unknown"} message="${nodeErr.message}" command="${this.options.config.command}"`,
                 err,
             );
+            if (spawnFailure === undefined) {
+                spawnFailure = createAgentSpawnError(
+                    nodeErr,
+                    this.options.config,
+                );
+            }
+        });
+
+        const spawnFailurePromise = new Promise<never>((_, reject) => {
+            this.child!.once("error", () => {
+                reject(
+                    spawnFailure ??
+                        createAgentSpawnError(
+                            new Error("spawn failed") as NodeJS.ErrnoException,
+                            this.options.config,
+                        ),
+                );
+            });
         });
 
         this.child.on("exit", (code, signal) => {
@@ -311,11 +340,24 @@ export class AcpAgentProcess {
             stream,
         );
 
-        const response = await this.connection.initialize({
-            protocolVersion: acp.PROTOCOL_VERSION,
-            clientCapabilities: buildAcpClientCapabilities(this.options.config),
-            clientInfo: this.options.clientInfo ?? buildAcpClientInfo(),
-        });
+        let response: acp.InitializeResponse;
+        try {
+            response = await Promise.race([
+                this.connection.initialize({
+                    protocolVersion: acp.PROTOCOL_VERSION,
+                    clientCapabilities: buildAcpClientCapabilities(
+                        this.options.config,
+                    ),
+                    clientInfo: this.options.clientInfo ?? buildAcpClientInfo(),
+                }),
+                spawnFailurePromise,
+            ]);
+        } catch (err) {
+            if (spawnFailure !== undefined) {
+                throw spawnFailure;
+            }
+            throw err;
+        }
         assertNegotiatedProtocolVersion(response);
 
         this.initResponse = response;

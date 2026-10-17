@@ -47,6 +47,8 @@ import {
     renameAcpUiSession,
     setAcpUiSessionAgentName,
     setAcpUiSessionRuntimeSessionId,
+    persistAcpUiSessionTitleHeader,
+    setAcpUiSessionTitleInMemory,
     updateAcpUiSessionTitle,
 } from "./acpUiSessionsStore";
 import { getAcpUiExtensionActivation } from "./extensionServices";
@@ -70,13 +72,13 @@ export class AcpUiSessionController {
         | Promise<AcpSessionBridge | undefined>
         | undefined;
     private bridgeConnectGeneration = 0;
-    private bootstrapSent = false;
     private agentConfig: AcpAgentConfig | undefined;
     private pendingModelId: string | undefined;
     private pendingConfigOption:
         | { configId: string; value: string | boolean }
         | undefined;
     private agentLoadInProgress = false;
+    private deferredSessionTitleWrite: string | undefined;
     private readonly disposables: Array<{ dispose(): void }> = [];
 
     constructor(private readonly options: SessionControllerOptions) {
@@ -252,6 +254,15 @@ export class AcpUiSessionController {
         void this.options.webview.postMessage(message);
     }
 
+    private async flushDeferredSessionTitleWrite(): Promise<void> {
+        const title = this.deferredSessionTitleWrite;
+        if (title === undefined) {
+            return;
+        }
+        this.deferredSessionTitleWrite = undefined;
+        await persistAcpUiSessionTitleHeader(this.sessionId);
+    }
+
     private async applySessionInfoUpdate(update: {
         title?: string | null;
     }): Promise<void> {
@@ -260,6 +271,18 @@ export class AcpUiSessionController {
             return;
         }
         const nextTitle = title.trim();
+        if (this.bridge?.isPrompting) {
+            const updated = setAcpUiSessionTitleInMemory(
+                this.sessionId,
+                nextTitle,
+            );
+            if (updated) {
+                this.deferredSessionTitleWrite = nextTitle;
+                setAcpUiCustomEditorTabTitle(this.documentUri, nextTitle);
+                this.options.refreshChatsList?.();
+            }
+            return;
+        }
         const updated = await updateAcpUiSessionTitle(
             this.sessionId,
             nextTitle,
@@ -410,10 +433,6 @@ export class AcpUiSessionController {
         }
 
         if (parsed.type === "ready") {
-            if (this.bootstrapSent) {
-                return;
-            }
-            this.bootstrapSent = true;
             const header = parseSessionFile(
                 this.options.document.getText(),
             ).header;
@@ -468,7 +487,11 @@ export class AcpUiSessionController {
                     if (b.isPrompting) {
                         await b.cancel();
                     }
-                    await b.prompt(parsed.body);
+                    try {
+                        await b.prompt(parsed.body);
+                    } finally {
+                        await this.flushDeferredSessionTitleWrite();
+                    }
                 }
             })();
             return;

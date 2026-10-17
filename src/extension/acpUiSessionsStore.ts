@@ -151,6 +151,14 @@ export function listAcpUiSessions(): AcpUiSessionRecord[] {
     return [...sessions];
 }
 
+export function replaceAcpUiSessionsForTests(
+    rows: AcpUiSessionRecord[],
+): void {
+    sessions.length = 0;
+    sessions.push(...rows);
+    activeId = rows[0]?.id ?? null;
+}
+
 /** Sessions for one agent from the local `.acp` index. */
 export function listAcpUiSessionsForAgent(
     agentName: string,
@@ -324,6 +332,37 @@ export function touchAcpUiSession(id: string): void {
         return;
     }
     row.updatedAt = Date.now();
+}
+
+export function setAcpUiSessionTitleInMemory(
+    id: string,
+    nextTitle: string,
+): boolean {
+    const row = sessions.find((s) => s.id === id);
+    const title = nextTitle.trim();
+    if (row === undefined || title.length === 0) {
+        return false;
+    }
+    if (row.title === title) {
+        return true;
+    }
+    row.title = title;
+    row.updatedAt = Date.now();
+    return true;
+}
+
+export async function persistAcpUiSessionTitleHeader(
+    id: string,
+): Promise<boolean> {
+    const row = sessions.find((s) => s.id === id);
+    if (row === undefined) {
+        return false;
+    }
+    await updateSessionHeader(row.uri, {
+        title: row.title,
+        updatedAt: row.updatedAt,
+    });
+    return true;
 }
 
 /**

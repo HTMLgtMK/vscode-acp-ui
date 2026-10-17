@@ -89,7 +89,9 @@ export async function disposeAcpUiEditorForSession(
         for (const tab of group.tabs) {
             const input = tab.input;
             if (
-                input instanceof TabInputText &&
+                (input instanceof TabInputText ||
+                    (input instanceof TabInputCustom &&
+                        input.viewType === acpUiCustomEditorViewType)) &&
                 input.uri.toString() === target
             ) {
                 await window.tabGroups.close(tab);

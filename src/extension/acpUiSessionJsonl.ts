@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { basename, dirname, isAbsolute } from "node:path";
-import { type ExtensionContext, FileType, Uri, workspace } from "vscode";
+import {
+    type ExtensionContext,
+    FileType,
+    Range,
+    Uri,
+    WorkspaceEdit,
+    workspace,
+} from "vscode";
 import {
     ACP_UI_SESSION_FILE_SUFFIX,
     ACP_UI_SESSION_SCHEMA,
@@ -244,9 +251,18 @@ export async function createSessionFile(
     return { id: document.id, uri, header: document };
 }
 
+function openSessionTextDocument(uri: Uri) {
+    const key = uri.toString();
+    return workspace.textDocuments.find((doc) => doc.uri.toString() === key);
+}
+
 async function readSessionDocumentAtUri(
     uri: Uri,
 ): Promise<AcpUiSessionDocument | null> {
+    const open = openSessionTextDocument(uri);
+    if (open !== undefined) {
+        return parseSessionDocument(open.getText());
+    }
     try {
         const bytes = await workspace.fs.readFile(uri);
         return parseSessionDocument(Buffer.from(bytes).toString("utf8"));
@@ -255,12 +271,30 @@ async function readSessionDocumentAtUri(
     }
 }
 
+export async function writeSessionFileUtf8(
+    uri: Uri,
+    content: string,
+): Promise<void> {
+    const open = openSessionTextDocument(uri);
+    if (open !== undefined) {
+        const edit = new WorkspaceEdit();
+        const end = open.positionAt(open.getText().length);
+        edit.replace(open.uri, new Range(open.positionAt(0), end), content);
+        const applied = await workspace.applyEdit(edit);
+        if (applied) {
+            await open.save();
+            return;
+        }
+    }
+    await workspace.fs.writeFile(uri, Buffer.from(content, "utf8"));
+}
+
 async function persistSessionDocument(
     uri: Uri,
     document: AcpUiSessionDocument,
 ): Promise<void> {
     const content = serializeSessionDocument(document);
-    await workspace.fs.writeFile(uri, Buffer.from(content, "utf8"));
+    await writeSessionFileUtf8(uri, content);
 }
 
 async function mutateSessionDocument(

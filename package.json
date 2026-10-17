@@ -8,7 +8,7 @@
         "sync:playground-theme": "tsx scripts/sync-playground-theme.ts",
         "screenshots": "npm run build:fixtures && tsx scripts/capture-readme-screenshots.ts",
         "build": "npm run build:webview && node esbuild.mjs",
-        "watch": "node esbuild.mjs --watch",
+        "watch": "concurrently --names ext,webview 'node esbuild.mjs --watch' 'vite build --watch --config webview/acp-ui/vite.config.ts'",
         "package": "npm run build:webview && node esbuild.mjs --production",
         "check": "tsc --noEmit && tsc --noEmit -p webview/acp-ui/tsconfig.json && tsc --noEmit -p playground/tsconfig.json",
         "test": "vitest run",
