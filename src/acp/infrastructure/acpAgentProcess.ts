@@ -7,10 +7,7 @@ import {
     PARAMETERIZED_MODEL_PICKER_META_KEY,
 } from "../domain/agentSpawnConfig";
 import type { AcpHostFilesystem } from "../ports/hostFilesystem";
-import type {
-    AcpRpcNdjsonDirection,
-    AcpRpcNdjsonSink,
-} from "../ports/rpcNdjsonSink";
+import type { AcpRpcNdjsonDirection, AcpRpcNdjsonSink } from "../ports/rpcNdjsonSink";
 
 /** Node `fs` and VS Code `FileSystemError` both use distinct codes for a missing path. */
 function isFileNotFoundError(error: unknown): boolean {
@@ -31,11 +28,7 @@ function createNdjsonRpcLogTap(
 ): Transform {
     let buffer = "";
     return new Transform({
-        transform(
-            chunk: Buffer,
-            chunkEncoding: BufferEncoding,
-            callback,
-        ): void {
+        transform(chunk: Buffer, chunkEncoding: BufferEncoding, callback): void {
             void chunkEncoding;
             buffer += chunk.toString("utf8");
             const parts = buffer.split("\n");
@@ -73,21 +66,11 @@ function ndJsonStreamTapsForChild(
     if (!rpcNdjsonSink.isLoggingEnabled) {
         return {
             stdinWeb: Writable.toWeb(child.stdin!),
-            stdoutWeb: Readable.toWeb(
-                child.stdout!,
-            ) as ReadableStream<Uint8Array>,
+            stdoutWeb: Readable.toWeb(child.stdout!) as ReadableStream<Uint8Array>,
         };
     }
-    const towardAgent = createNdjsonRpcLogTap(
-        rpcNdjsonSink,
-        "toAgent",
-        agentName,
-    );
-    const fromAgent = createNdjsonRpcLogTap(
-        rpcNdjsonSink,
-        "fromAgent",
-        agentName,
-    );
+    const towardAgent = createNdjsonRpcLogTap(rpcNdjsonSink, "toAgent", agentName);
+    const fromAgent = createNdjsonRpcLogTap(rpcNdjsonSink, "fromAgent", agentName);
     towardAgent.pipe(child.stdin!);
     child.stdout!.pipe(fromAgent);
     return {
@@ -131,14 +114,9 @@ export function buildAcpClientInfoFromPackage(pkg: {
     version?: string;
     displayName?: string;
 }): acp.Implementation {
-    const name =
-        typeof pkg.name === "string" && pkg.name.length > 0
-            ? pkg.name
-            : "ib-acp-ui";
+    const name = typeof pkg.name === "string" && pkg.name.length > 0 ? pkg.name : "ib-acp-ui";
     const version =
-        typeof pkg.version === "string" && pkg.version.length > 0
-            ? pkg.version
-            : "0.0.0";
+        typeof pkg.version === "string" && pkg.version.length > 0 ? pkg.version : "0.0.0";
     const title =
         typeof pkg.displayName === "string" && pkg.displayName.length > 0
             ? pkg.displayName
@@ -158,10 +136,7 @@ export function buildAcpClientInfo(): acp.Implementation {
     );
 }
 
-function createAgentSpawnError(
-    err: NodeJS.ErrnoException,
-    config: AcpAgentSpawnConfig,
-): Error {
+function createAgentSpawnError(err: NodeJS.ErrnoException, config: AcpAgentSpawnConfig): Error {
     const code = err.code ?? "unknown";
     return new Error(
         `Failed to spawn ACP agent "${config.name}": cannot execute command "${config.command}" (${code}: ${err.message}). Check ib-acp-ui.agents and PATH.`,
@@ -169,21 +144,14 @@ function createAgentSpawnError(
 }
 
 /** Ensures the negotiated protocol version is supported by this client build. */
-export function assertNegotiatedProtocolVersion(
-    response: acp.InitializeResponse,
-): void {
+export function assertNegotiatedProtocolVersion(response: acp.InitializeResponse): void {
     if (response.protocolVersion !== acp.PROTOCOL_VERSION) {
-        throw new AcpProtocolVersionMismatchError(
-            response.protocolVersion,
-            acp.PROTOCOL_VERSION,
-        );
+        throw new AcpProtocolVersionMismatchError(response.protocolVersion, acp.PROTOCOL_VERSION);
     }
 }
 
 /** Client capabilities for the ACP initialize handshake (matches Zed for Cursor). */
-export function buildAcpClientCapabilities(
-    config: AcpAgentSpawnConfig,
-): acp.ClientCapabilities {
+export function buildAcpClientCapabilities(config: AcpAgentSpawnConfig): acp.ClientCapabilities {
     const capabilities: acp.ClientCapabilities = {
         fs: { readTextFile: true, writeTextFile: true },
     };
@@ -209,10 +177,7 @@ export type AcpAgentProcessOptions = {
         method: string,
         params: Record<string, unknown>,
     ) => Promise<Record<string, unknown>>;
-    extNotification?: (
-        method: string,
-        params: Record<string, unknown>,
-    ) => Promise<void>;
+    extNotification?: (method: string, params: Record<string, unknown>) => Promise<void>;
     /** Called after the agent reads a workspace file via ACP `fs/readTextFile`. */
     onHostFilesystemRead?: (path: string) => void;
     hostFilesystem: AcpHostFilesystem;
@@ -248,21 +213,15 @@ export class AcpAgentProcess {
             `[ACP Agent ${this.options.config.name}] spawning command="${this.options.config.command}" args=${JSON.stringify(this.options.config.args)} cwd="${cwd ?? "<undefined>"}"`,
         );
 
-        this.child = spawn(
-            this.options.config.command,
-            this.options.config.args,
-            {
-                stdio: ["pipe", "pipe", "pipe"],
-                cwd,
-                env,
-            },
-        );
+        this.child = spawn(this.options.config.command, this.options.config.args, {
+            stdio: ["pipe", "pipe", "pipe"],
+            cwd,
+            env,
+        });
 
         this.child.stderr?.on("data", (chunk: Buffer) => {
             const text = chunk.toString();
-            console.error(
-                `[ACP Agent ${this.options.config.name}] stderr: ${text}`,
-            );
+            console.error(`[ACP Agent ${this.options.config.name}] stderr: ${text}`);
         });
 
         let spawnFailure: Error | undefined;
@@ -273,10 +232,7 @@ export class AcpAgentProcess {
                 err,
             );
             if (spawnFailure === undefined) {
-                spawnFailure = createAgentSpawnError(
-                    nodeErr,
-                    this.options.config,
-                );
+                spawnFailure = createAgentSpawnError(nodeErr, this.options.config);
             }
         });
 
@@ -314,8 +270,7 @@ export class AcpAgentProcess {
         const stream = acp.ndJsonStream(stdinWeb, stdoutWeb);
 
         const client: acp.Client = {
-            requestPermission: async (params) =>
-                this.options.requestPermission(params),
+            requestPermission: async (params) => this.options.requestPermission(params),
             sessionUpdate: async (params) => {
                 this.sessionUpdateHandler?.(params);
             },
@@ -335,19 +290,14 @@ export class AcpAgentProcess {
             writeTextFile: async (params) => this.handleWriteTextFile(params),
         };
 
-        this.connection = new acp.ClientSideConnection(
-            (_agent) => client,
-            stream,
-        );
+        this.connection = new acp.ClientSideConnection((_agent) => client, stream);
 
         let response: acp.InitializeResponse;
         try {
             response = await Promise.race([
                 this.connection.initialize({
                     protocolVersion: acp.PROTOCOL_VERSION,
-                    clientCapabilities: buildAcpClientCapabilities(
-                        this.options.config,
-                    ),
+                    clientCapabilities: buildAcpClientCapabilities(this.options.config),
                     clientInfo: this.options.clientInfo ?? buildAcpClientInfo(),
                 }),
                 spawnFailurePromise,
@@ -387,10 +337,7 @@ export class AcpAgentProcess {
     }
 
     supportsListSessions(): boolean {
-        return (
-            this.initResponse?.agentCapabilities?.sessionCapabilities?.list !=
-            null
-        );
+        return this.initResponse?.agentCapabilities?.sessionCapabilities?.list != null;
     }
 
     supportsLoadSession(): boolean {
@@ -398,14 +345,13 @@ export class AcpAgentProcess {
     }
 
     supportsDeleteSessions(): boolean {
-        const sessionCapabilities = this.initResponse?.agentCapabilities
-            ?.sessionCapabilities as { delete?: unknown } | undefined;
+        const sessionCapabilities = this.initResponse?.agentCapabilities?.sessionCapabilities as
+            | { delete?: unknown }
+            | undefined;
         return sessionCapabilities?.delete != null;
     }
 
-    async listSessions(
-        params: acp.ListSessionsRequest = {},
-    ): Promise<acp.ListSessionsResponse> {
+    async listSessions(params: acp.ListSessionsRequest = {}): Promise<acp.ListSessionsResponse> {
         if (!this.connection) {
             throw new Error("Agent not started");
         }
@@ -422,9 +368,7 @@ export class AcpAgentProcess {
         do {
             const response = await this.listSessions({
                 ...(cwd !== undefined ? { cwd } : {}),
-                ...(cursor !== undefined && cursor !== null && cursor.length > 0
-                    ? { cursor }
-                    : {}),
+                ...(cursor !== undefined && cursor !== null && cursor.length > 0 ? { cursor } : {}),
             });
             sessions.push(...response.sessions);
             cursor = response.nextCursor;
@@ -511,9 +455,7 @@ export class AcpAgentProcess {
         params: acp.ReadTextFileRequest,
     ): Promise<acp.ReadTextFileResponse> {
         try {
-            const content = await this.options.hostFilesystem.readTextFile(
-                params.path,
-            );
+            const content = await this.options.hostFilesystem.readTextFile(params.path);
             this.options.onHostFilesystemRead?.(params.path);
             return { content };
         } catch (err) {
@@ -529,10 +471,7 @@ export class AcpAgentProcess {
     private async handleWriteTextFile(
         params: acp.WriteTextFileRequest,
     ): Promise<acp.WriteTextFileResponse> {
-        await this.options.hostFilesystem.writeTextFile(
-            params.path,
-            params.content,
-        );
+        await this.options.hostFilesystem.writeTextFile(params.path, params.content);
         return {};
     }
 }

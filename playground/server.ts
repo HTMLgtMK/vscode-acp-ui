@@ -64,8 +64,7 @@ const DEMO_MODE =
 const DEMO_FIXTURE = process.env.ACP_UI_DEMO_FIXTURE ?? "showcase";
 const DEMO_SEED = process.env.ACP_UI_DEMO_SEED ?? "cursor-model";
 const DEMO_REPLAY = !(
-    process.env.ACP_UI_DEMO_REPLAY === "0" ||
-    process.env.ACP_UI_DEMO_REPLAY === "false"
+    process.env.ACP_UI_DEMO_REPLAY === "0" || process.env.ACP_UI_DEMO_REPLAY === "false"
 );
 
 const contentWidthPercentSettingKey = "ib-acp-ui.contentWidthPercent";
@@ -80,14 +79,7 @@ function clampContentWidthPercent(value: number): number {
 function vscodeUserSettingsPath(): string {
     const home = resolveUserHomeDir();
     if (process.platform === "darwin") {
-        return join(
-            home,
-            "Library",
-            "Application Support",
-            "Code",
-            "User",
-            "settings.json",
-        );
+        return join(home, "Library", "Application Support", "Code", "User", "settings.json");
     }
     return join(home, ".config", "Code", "User", "settings.json");
 }
@@ -125,10 +117,7 @@ function stripJsoncComments(input: string): string {
         }
         if (ch === "/" && input[i + 1] === "*") {
             i += 2;
-            while (
-                i < input.length &&
-                !(input[i] === "*" && input[i + 1] === "/")
-            ) {
+            while (i < input.length && !(input[i] === "*" && input[i + 1] === "/")) {
                 i++;
             }
             i += 2;
@@ -159,9 +148,7 @@ function loadContentWidthPercent(): number {
         if (typeof parsed !== "object" || parsed === null) {
             return 100;
         }
-        const value = (parsed as Record<string, unknown>)[
-            contentWidthPercentSettingKey
-        ];
+        const value = (parsed as Record<string, unknown>)[contentWidthPercentSettingKey];
         if (typeof value !== "number") {
             return 100;
         }
@@ -189,9 +176,7 @@ const rpcLogPath: string | null = ((): string | null => {
 })();
 
 const sharedRpcSink =
-    rpcLogPath === null
-        ? new NullAcpRpcNdjsonSink()
-        : new FileAcpRpcNdjsonSink(rpcLogPath);
+    rpcLogPath === null ? new NullAcpRpcNdjsonSink() : new FileAcpRpcNdjsonSink(rpcLogPath);
 
 if (rpcLogPath !== null) {
     console.log(`ACP JSON-RPC log: ${rpcLogPath}`);
@@ -224,15 +209,10 @@ const ignoredWorkspaceDirs = new Set([
     ".next",
 ]);
 
-function workspaceFilesForAutocomplete(
-    workspaceRoot: string,
-): string[] | undefined {
+function workspaceFilesForAutocomplete(workspaceRoot: string): string[] | undefined {
     const out: string[] = [];
     const stack: string[] = [workspaceRoot];
-    while (
-        stack.length > 0 &&
-        out.length < maxWorkspaceFileAutocompleteEntries
-    ) {
+    while (stack.length > 0 && out.length < maxWorkspaceFileAutocompleteEntries) {
         const current = stack.pop();
         if (current === undefined) {
             continue;
@@ -255,9 +235,7 @@ function workspaceFilesForAutocomplete(
                 continue;
             }
             const absolutePath = join(current, entry.name);
-            const relativePath = absolutePath
-                .slice(workspaceRoot.length)
-                .replace(/^\/+/, "");
+            const relativePath = absolutePath.slice(workspaceRoot.length).replace(/^\/+/, "");
             if (relativePath.length > 0) {
                 out.push(relativePath);
             }
@@ -276,28 +254,17 @@ function resolveFixture(body: string): string | null {
         return null;
     }
     const fixturePrefix = "fixture-";
-    if (
-        candidate.startsWith(fixturePrefix) &&
-        candidate.length > fixturePrefix.length
-    ) {
+    if (candidate.startsWith(fixturePrefix) && candidate.length > fixturePrefix.length) {
         const stem = candidate.slice(fixturePrefix.length);
         if (/^[a-z0-9-]+$/.test(stem)) {
-            const chatPath = join(
-                PLAYGROUND_DIR,
-                "fixtures",
-                "chats",
-                `${stem}.ndjson`,
-            );
+            const chatPath = join(PLAYGROUND_DIR, "fixtures", "chats", `${stem}.ndjson`);
             if (existsSync(chatPath)) {
                 return chatPath;
             }
         }
     }
     const mockPrefix = "mock-";
-    if (
-        candidate.startsWith(mockPrefix) &&
-        candidate.length > mockPrefix.length
-    ) {
+    if (candidate.startsWith(mockPrefix) && candidate.length > mockPrefix.length) {
         const stem = candidate.slice(mockPrefix.length);
         if (/^[a-z0-9-]+$/.test(stem)) {
             const mockPath = join(PLAYGROUND_DIR, "mock", `${stem}.ndjson`);
@@ -323,23 +290,16 @@ async function replayFixture(
 
     for (let i = 0; i < lines.length; i++) {
         if (i > 0) {
-            await new Promise<void>((resolve) =>
-                setTimeout(resolve, fixtureLineDelayMs),
-            );
+            await new Promise<void>((resolve) => setTimeout(resolve, fixtureLineDelayMs));
         }
 
-        const msg = JSON.parse(lines[i]) as
-            | JsonRpcNotification
-            | JsonRpcResponse;
+        const msg = JSON.parse(lines[i]) as JsonRpcNotification | JsonRpcResponse;
 
         if ("method" in msg && msg.method === "session/update") {
             const params = (msg as JsonRpcNotification).params as {
                 update: acp.SessionUpdate;
             };
-            const messages = sessionUpdateToWebviewMessages(
-                params.update,
-                toolKindTracking,
-            );
+            const messages = sessionUpdateToWebviewMessages(params.update, toolKindTracking);
             for (const webviewMessage of messages) {
                 send(webviewMessage);
                 await new Promise<void>((resolve) => setImmediate(resolve));
@@ -348,13 +308,9 @@ async function replayFixture(
         }
 
         if ("method" in msg && msg.method === "session/request_permission") {
-            const params = (msg as JsonRpcNotification)
-                .params as acp.RequestPermissionRequest;
+            const params = (msg as JsonRpcNotification).params as acp.RequestPermissionRequest;
             const requestId = `perm-replay-${i}`;
-            for (const webviewMessage of extensionMessagesForPermissionRequest(
-                requestId,
-                params,
-            )) {
+            for (const webviewMessage of extensionMessagesForPermissionRequest(requestId, params)) {
                 send(webviewMessage);
                 await new Promise<void>((resolve) => setImmediate(resolve));
             }
@@ -397,9 +353,7 @@ function loadAgentConfigs(): AcpAgentSpawnConfig[] {
         parsed = JSON.parse(readFileSync(configPath, "utf-8"));
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-            `Failed to read or parse ACP agent config ${configPath}: ${message}`,
-        );
+        console.error(`Failed to read or parse ACP agent config ${configPath}: ${message}`);
         process.exit(1);
     }
     const list = parseAcpAgentsJsonFileContent(parsed);
@@ -422,9 +376,7 @@ function loadNamedComposerSeed(name: string): ReadmeSessionSeed {
         return { configOptions: null, modelSelection: null };
     }
     try {
-        return parseReadmeSessionSeedFromJson(
-            readFileSync(fixturePath, "utf-8"),
-        );
+        return parseReadmeSessionSeedFromJson(readFileSync(fixturePath, "utf-8"));
     } catch {
         return { configOptions: null, modelSelection: null };
     }
@@ -434,9 +386,7 @@ function loadReadmeSessionSeed(): ReadmeSessionSeed {
     const fixturePath = join(PLAYGROUND_DIR, "fixtures", "readme-seed.json");
     if (existsSync(fixturePath)) {
         try {
-            const seed = parseReadmeSessionSeedFromJson(
-                readFileSync(fixturePath, "utf-8"),
-            );
+            const seed = parseReadmeSessionSeedFromJson(readFileSync(fixturePath, "utf-8"));
             if (seed.configOptions !== null || seed.modelSelection !== null) {
                 return seed;
             }
@@ -449,9 +399,7 @@ function loadReadmeSessionSeed(): ReadmeSessionSeed {
         return { modelSelection: null, configOptions: null };
     }
     try {
-        return parseReadmeSessionSeedFromNdjson(
-            readFileSync(mockPath, "utf-8"),
-        );
+        return parseReadmeSessionSeedFromNdjson(readFileSync(mockPath, "utf-8"));
     } catch {
         return { modelSelection: null, configOptions: null };
     }
@@ -470,14 +418,10 @@ type PlaygroundFixtureCatalog = {
     seeds: PlaygroundFixtureEntry[];
 };
 
-const CHAT_FIXTURE_META: Record<
-    string,
-    { label: string; description: string }
-> = {
+const CHAT_FIXTURE_META: Record<string, { label: string; description: string }> = {
     showcase: {
         label: "Showcase",
-        description:
-            "Markdown, tool calls, thoughts, and a plan block in one trace.",
+        description: "Markdown, tool calls, thoughts, and a plan block in one trace.",
     },
     markdown: {
         label: "Markdown",
@@ -493,10 +437,7 @@ const CHAT_FIXTURE_META: Record<
     },
 };
 
-const SEED_FIXTURE_META: Record<
-    string,
-    { label: string; description: string }
-> = {
+const SEED_FIXTURE_META: Record<string, { label: string; description: string }> = {
     "cursor-model": {
         label: "Cursor-style picker",
         description: "Composer 2 with a derived Fast toggle.",
@@ -507,8 +448,7 @@ const SEED_FIXTURE_META: Record<
     },
     readme: {
         label: "Full Cursor session",
-        description:
-            "Captured session/new bootstrap with bracket-encoded models.",
+        description: "Captured session/new bootstrap with bracket-encoded models.",
     },
 };
 
@@ -532,9 +472,7 @@ function listPlaygroundFixtures(): PlaygroundFixtureCatalog {
             chats.push({
                 id,
                 label: meta?.label ?? humanizeFixtureId(id),
-                description:
-                    meta?.description ??
-                    `Replay ${name} through the playground bridge.`,
+                description: meta?.description ?? `Replay ${name} through the playground bridge.`,
             });
         }
     }
@@ -551,9 +489,7 @@ function listPlaygroundFixtures(): PlaygroundFixtureCatalog {
             seeds.push({
                 id,
                 label: meta?.label ?? humanizeFixtureId(id),
-                description:
-                    meta?.description ??
-                    `Load ${name} as the composer model/config seed.`,
+                description: meta?.description ?? `Load ${name} as the composer model/config seed.`,
             });
         }
     }
@@ -624,20 +560,11 @@ wss.on("connection", (ws: WebSocket) => {
     }
 
     function resolveDemoFixturePath(name: string): string | null {
-        const chatFixture = join(
-            PLAYGROUND_DIR,
-            "fixtures",
-            "chats",
-            `${name}.ndjson`,
-        );
+        const chatFixture = join(PLAYGROUND_DIR, "fixtures", "chats", `${name}.ndjson`);
         if (existsSync(chatFixture)) {
             return chatFixture;
         }
-        const legacyReplay = join(
-            PLAYGROUND_DIR,
-            "fixtures",
-            `${name}-replay.ndjson`,
-        );
+        const legacyReplay = join(PLAYGROUND_DIR, "fixtures", `${name}-replay.ndjson`);
         if (existsSync(legacyReplay)) {
             return legacyReplay;
         }
@@ -652,22 +579,18 @@ wss.on("connection", (ws: WebSocket) => {
             return loadNamedComposerSeed(seedId);
         }
         return {
-            configOptions:
-                cachedSeed.configOptions ?? readmeSeed.configOptions ?? null,
-            modelSelection:
-                cachedSeed.modelSelection ?? readmeSeed.modelSelection ?? null,
+            configOptions: cachedSeed.configOptions ?? readmeSeed.configOptions ?? null,
+            modelSelection: cachedSeed.modelSelection ?? readmeSeed.modelSelection ?? null,
         };
     }
 
     async function maybeReplayInitFixture(): Promise<void> {
-        const fixtureName =
-            sessionDemoFixture ?? (DEMO_MODE ? DEMO_FIXTURE : undefined);
+        const fixtureName = sessionDemoFixture ?? (DEMO_MODE ? DEMO_FIXTURE : undefined);
         if (fixtureName === undefined) {
             return;
         }
         const shouldReplay =
-            sessionDemoReplay ??
-            (sessionDemoFixture !== undefined ? true : DEMO_REPLAY);
+            sessionDemoReplay ?? (sessionDemoFixture !== undefined ? true : DEMO_REPLAY);
         if (!shouldReplay) {
             return;
         }
@@ -771,18 +694,13 @@ wss.on("connection", (ws: WebSocket) => {
             const workspaceFiles = workspaceFilesForAutocomplete(process.cwd());
             const seed = composerSeedForInit();
             const demoSession =
-                DEMO_MODE ||
-                sessionDemoSeed !== undefined ||
-                sessionDemoFixture !== undefined;
+                DEMO_MODE || sessionDemoSeed !== undefined || sessionDemoFixture !== undefined;
             const vscodeThemeVariables = vscodeThemeVariablesForInit();
             send({
                 type: "init",
                 sessionId,
                 title: demoSession ? "ACP UI (demo)" : "ACP UI (playground)",
-                workspaceLabel: formatPathWithTilde(
-                    process.cwd(),
-                    resolveUserHomeDir(),
-                ),
+                workspaceLabel: formatPathWithTilde(process.cwd(), resolveUserHomeDir()),
                 homeDir: resolveUserHomeDir(),
                 agentVersionLabel: undefined,
                 acpAgentName: selectedAgentName,
@@ -791,12 +709,8 @@ wss.on("connection", (ws: WebSocket) => {
                 ...(seed.configOptions !== null
                     ? { sessionConfigOptionsSeed: seed.configOptions }
                     : {}),
-                ...(seed.modelSelection !== null
-                    ? { sessionModels: seed.modelSelection }
-                    : {}),
-                ...(vscodeThemeVariables !== undefined
-                    ? { vscodeThemeVariables }
-                    : {}),
+                ...(seed.modelSelection !== null ? { sessionModels: seed.modelSelection } : {}),
+                ...(vscodeThemeVariables !== undefined ? { vscodeThemeVariables } : {}),
                 contentWidthRatio,
                 lockSessionAgent: false,
             });
@@ -875,8 +789,7 @@ wss.on("connection", (ws: WebSocket) => {
                 try {
                     await bridge.setSessionModel(parsed.modelId);
                 } catch (err: unknown) {
-                    const message =
-                        err instanceof Error ? err.message : String(err);
+                    const message = err instanceof Error ? err.message : String(err);
                     send({
                         type: "error",
                         message: `Model change failed: ${message}`,
@@ -889,13 +802,9 @@ wss.on("connection", (ws: WebSocket) => {
         if (parsed.type === "setSessionConfigOption") {
             if (bridge) {
                 try {
-                    await bridge.setSessionConfigOption(
-                        parsed.configId,
-                        parsed.value,
-                    );
+                    await bridge.setSessionConfigOption(parsed.configId, parsed.value);
                 } catch (err: unknown) {
-                    const message =
-                        err instanceof Error ? err.message : String(err);
+                    const message = err instanceof Error ? err.message : String(err);
                     send({
                         type: "error",
                         message: `Config change failed: ${message}`,
@@ -913,8 +822,7 @@ wss.on("connection", (ws: WebSocket) => {
                     const stopReason = await replayFixture(fixturePath, send);
                     send({ type: "turnComplete", stopReason });
                 } catch (err: unknown) {
-                    const message =
-                        err instanceof Error ? err.message : String(err);
+                    const message = err instanceof Error ? err.message : String(err);
                     send({
                         type: "error",
                         message: `Fixture replay error: ${message}`,
@@ -950,7 +858,15 @@ wss.on("connection", (ws: WebSocket) => {
     };
 
     ws.on("message", (data) => {
-        void handleMessage(data.toString());
+        const text =
+            typeof data === "string"
+                ? data
+                : Buffer.isBuffer(data)
+                  ? data.toString()
+                  : Array.isArray(data)
+                    ? Buffer.concat(data).toString()
+                    : Buffer.from(data).toString();
+        void handleMessage(text);
     });
 
     ws.on("close", () => {
@@ -962,16 +878,12 @@ wss.on("connection", (ws: WebSocket) => {
 httpServer.listen(PORT, () => {
     console.log(`WebSocket bridge listening on ws://localhost:${PORT}`);
     if (DEMO_MODE) {
-        console.log(
-            `Demo mode: seed=${DEMO_SEED}, fixture=${DEMO_FIXTURE}, replay=${DEMO_REPLAY}`,
-        );
+        console.log(`Demo mode: seed=${DEMO_SEED}, fixture=${DEMO_FIXTURE}, replay=${DEMO_REPLAY}`);
     }
     for (const c of agentConfigs) {
         const argLine = c.args.length > 0 ? ` ${c.args.join(" ")}` : "";
         console.log(`Agent "${c.name}": ${c.command}${argLine}`);
     }
-    console.log(
-        `Open http://localhost:5173 after starting the Vite dev server`,
-    );
+    console.log(`Open http://localhost:5173 after starting the Vite dev server`);
     console.log(`Fixture gallery: http://localhost:5173/fixtures`);
 });

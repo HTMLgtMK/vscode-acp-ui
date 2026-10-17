@@ -21,10 +21,7 @@ import {
     deleteAgentSession,
     fetchAgentSessionsForWorkspace,
 } from "./acpAgentSessionLister";
-import {
-    sessionInfoLabel,
-    sortSessionInfos,
-} from "./acpAgentSessionListFormat";
+import { sessionInfoLabel, sortSessionInfos } from "./acpAgentSessionListFormat";
 import {
     getActiveAgentConfig,
     initializeAcpUiActiveAgent,
@@ -96,20 +93,14 @@ type ParsedSessionTreeItemId =
     | { source: "local"; localSessionId: string }
     | { source: "agent"; runtimeSessionId: string };
 
-function parseSessionTreeItemId(
-    id: string,
-): ParsedSessionTreeItemId | undefined {
+function parseSessionTreeItemId(id: string): ParsedSessionTreeItemId | undefined {
     if (id.startsWith("local:")) {
         const localSessionId = id.slice("local:".length);
-        return localSessionId.length > 0
-            ? { source: "local", localSessionId }
-            : undefined;
+        return localSessionId.length > 0 ? { source: "local", localSessionId } : undefined;
     }
     if (id.startsWith("agent:")) {
         const runtimeSessionId = id.slice("agent:".length);
-        return runtimeSessionId.length > 0
-            ? { source: "agent", runtimeSessionId }
-            : undefined;
+        return runtimeSessionId.length > 0 ? { source: "agent", runtimeSessionId } : undefined;
     }
     return undefined;
 }
@@ -199,9 +190,7 @@ class AcpUiSessionTreeItem extends TreeItem {
     }
 }
 
-export class AcpUiSessionsViewProvider
-    implements TreeDataProvider<AcpUiSessionsTreeNode>
-{
+export class AcpUiSessionsViewProvider implements TreeDataProvider<AcpUiSessionsTreeNode> {
     private changeEvent = new EventEmitter<AcpUiSessionsTreeNode | undefined>();
     private focusedSession: FocusedAcpUiSession | null = null;
     private agentSessions: acp.SessionInfo[] = [];
@@ -284,16 +273,8 @@ export class AcpUiSessionsViewProvider
         watcher.onDidChange(onDiskChange);
         context.subscriptions.push(watcher);
 
-        registerCommandIB(
-            cmdRefreshAcpUiSessions,
-            () => void provider.refreshFromAgent(),
-            context,
-        );
-        registerCommandIB(
-            cmdSelectActiveAgent,
-            () => void provider.selectActiveAgent(),
-            context,
-        );
+        registerCommandIB(cmdRefreshAcpUiSessions, () => void provider.refreshFromAgent(), context);
+        registerCommandIB(cmdSelectActiveAgent, () => void provider.selectActiveAgent(), context);
         registerCommandIB(
             cmdOpenAcpUiSession,
             (...args: unknown[]) =>
@@ -307,9 +288,7 @@ export class AcpUiSessionsViewProvider
         registerCommandIB(
             cmdDeleteAcpUiSession,
             (...args: unknown[]) =>
-                void provider.deleteSession(
-                    args[0] as AcpUiSessionsTreeNode | undefined,
-                ),
+                void provider.deleteSession(args[0] as AcpUiSessionsTreeNode | undefined),
             context,
         );
         registerCommandIB(
@@ -320,9 +299,7 @@ export class AcpUiSessionsViewProvider
         registerCommandIB(
             cmdRenameAcpUiSession,
             (...args: unknown[]) =>
-                void provider.renameSession(
-                    args[0] as AcpUiSessionsTreeNode | undefined,
-                ),
+                void provider.renameSession(args[0] as AcpUiSessionsTreeNode | undefined),
             context,
         );
 
@@ -372,9 +349,7 @@ export class AcpUiSessionsViewProvider
             this.agentDeleteSupported = result.deleteSupported;
             const hidden = getHiddenAgentSessionIds(agent.name);
             this.agentSessions = result.supported
-                ? sortSessionInfos(result.sessions).filter(
-                      (row) => !hidden.has(row.sessionId),
-                  )
+                ? sortSessionInfos(result.sessions).filter((row) => !hidden.has(row.sessionId))
                 : [];
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
@@ -394,9 +369,7 @@ export class AcpUiSessionsViewProvider
         return element;
     }
 
-    async getChildren(
-        element?: AcpUiSessionsTreeNode,
-    ): Promise<AcpUiSessionsTreeNode[]> {
+    async getChildren(element?: AcpUiSessionsTreeNode): Promise<AcpUiSessionsTreeNode[]> {
         if (element) {
             return [];
         }
@@ -418,11 +391,7 @@ export class AcpUiSessionsViewProvider
         if (!this.agentListSupported) {
             const localSessions = listAcpUiSessionsForAgent(agent.name);
             if (localSessions.length === 0) {
-                return [
-                    new AcpUiPlaceholderTreeItem(
-                        "No chats yet. Use + to start a new chat.",
-                    ),
-                ];
+                return [new AcpUiPlaceholderTreeItem("No chats yet. Use + to start a new chat.")];
             }
             return localSessions.map(
                 (row) =>
@@ -438,11 +407,7 @@ export class AcpUiSessionsViewProvider
         }
 
         if (this.agentSessions.length === 0) {
-            return [
-                new AcpUiPlaceholderTreeItem(
-                    "No chats yet. Use + to start a new chat.",
-                ),
-            ];
+            return [new AcpUiPlaceholderTreeItem("No chats yet. Use + to start a new chat.")];
         }
 
         return this.agentSessions.map((row) => {
@@ -468,8 +433,7 @@ export class AcpUiSessionsViewProvider
         if (this.treeView === undefined) {
             return;
         }
-        this.treeView.message =
-            agent !== undefined ? `Agent: ${agent.name}` : undefined;
+        this.treeView.message = agent !== undefined ? `Agent: ${agent.name}` : undefined;
     }
 
     private async selectActiveAgent(): Promise<void> {
@@ -510,9 +474,7 @@ export class AcpUiSessionsViewProvider
         const agent = getActiveAgentConfig();
         const resolvedAgentName = agentName ?? agent?.name;
         if (resolvedAgentName === undefined || agent === undefined) {
-            window.showErrorMessage(
-                "Cannot open chat because no ACP agents are configured.",
-            );
+            window.showErrorMessage("Cannot open chat because no ACP agents are configured.");
             return;
         }
 
@@ -526,24 +488,16 @@ export class AcpUiSessionsViewProvider
             setActiveAcpUiSessionId(row.id);
             this.refresh();
             touchAcpUiSession(row.id);
-            await openOrRevealAcpUiEditor(
-                this.extensionContext,
-                row.id,
-                row.title,
-                agent,
-            );
+            await openOrRevealAcpUiEditor(this.extensionContext, row.id, row.title, agent);
             return;
         }
 
         const runtimeSessionId = sessionId;
-        const listed = this.agentSessions.find(
-            (row) => row.sessionId === runtimeSessionId,
-        );
+        const listed = this.agentSessions.find((row) => row.sessionId === runtimeSessionId);
         const title =
             listed !== undefined
                 ? sessionInfoLabel(listed)
-                : (findByRuntimeSessionId(resolvedAgentName, runtimeSessionId)
-                      ?.title ?? "Chat");
+                : (findByRuntimeSessionId(resolvedAgentName, runtimeSessionId)?.title ?? "Chat");
 
         const local = await ensureLocalSessionForAgentSession({
             agentName: resolvedAgentName,
@@ -553,12 +507,7 @@ export class AcpUiSessionsViewProvider
         setActiveAcpUiSessionId(local.id);
         this.refresh();
         touchAcpUiSession(local.id);
-        await openOrRevealAcpUiEditor(
-            this.extensionContext,
-            local.id,
-            local.title,
-            agent,
-        );
+        await openOrRevealAcpUiEditor(this.extensionContext, local.id, local.title, agent);
     }
 
     private async notifyAgentSessionDelete(
@@ -576,10 +525,7 @@ export class AcpUiSessionsViewProvider
         }
     }
 
-    private reportAgentDeleteOutcome(
-        result: DeleteAgentSessionResult,
-        labelText: string,
-    ): void {
+    private reportAgentDeleteOutcome(result: DeleteAgentSessionResult, labelText: string): void {
         if (result.deleted) {
             return;
         }
@@ -594,24 +540,16 @@ export class AcpUiSessionsViewProvider
         );
     }
 
-    private async deleteSession(
-        item: AcpUiSessionsTreeNode | undefined,
-    ): Promise<void> {
+    private async deleteSession(item: AcpUiSessionsTreeNode | undefined): Promise<void> {
         const agent = getActiveAgentConfig();
-        const target = resolveSessionTarget(
-            item,
-            this.focusedSession,
-            agent?.name,
-        );
+        const target = resolveSessionTarget(item, this.focusedSession, agent?.name);
         if (target === undefined) {
             window.showErrorMessage("Select a chat in the Chats list");
             return;
         }
 
         if (target.source === "local") {
-            const local = listAcpUiSessions().find(
-                (row) => row.id === target.localSessionId,
-            );
+            const local = listAcpUiSessions().find((row) => row.id === target.localSessionId);
             if (local === undefined) {
                 window.showErrorMessage("That chat no longer exists");
                 this.refresh();
@@ -634,10 +572,7 @@ export class AcpUiSessionsViewProvider
                 local.sessionId !== undefined &&
                 local.sessionId.length > 0
             ) {
-                deleteResult = await this.notifyAgentSessionDelete(
-                    agent,
-                    local.sessionId,
-                );
+                deleteResult = await this.notifyAgentSessionDelete(agent, local.sessionId);
                 await hideAgentSession(target.agentName, local.sessionId);
             }
             await disposeAcpUiEditorForSession(local.id);
@@ -652,19 +587,13 @@ export class AcpUiSessionsViewProvider
         }
 
         const runtimeSessionId = target.runtimeSessionId;
-        const listed = this.agentSessions.find(
-            (row) => row.sessionId === runtimeSessionId,
-        );
+        const listed = this.agentSessions.find((row) => row.sessionId === runtimeSessionId);
         const local =
             target.localSessionId !== undefined
-                ? listAcpUiSessions().find(
-                      (row) => row.id === target.localSessionId,
-                  )
+                ? listAcpUiSessions().find((row) => row.id === target.localSessionId)
                 : findByRuntimeSessionId(target.agentName, runtimeSessionId);
         const labelText =
-            listed !== undefined
-                ? sessionInfoLabel(listed)
-                : (local?.title ?? "chat");
+            listed !== undefined ? sessionInfoLabel(listed) : (local?.title ?? "chat");
         const answer = await window.showWarningMessage(
             `Delete chat "${labelText}"? This cannot be undone.`,
             { modal: true },
@@ -675,9 +604,7 @@ export class AcpUiSessionsViewProvider
         }
 
         await hideAgentSession(target.agentName, runtimeSessionId);
-        this.agentSessions = this.agentSessions.filter(
-            (row) => row.sessionId !== runtimeSessionId,
-        );
+        this.agentSessions = this.agentSessions.filter((row) => row.sessionId !== runtimeSessionId);
         this.refresh();
 
         let deleteResult: DeleteAgentSessionResult = {
@@ -685,10 +612,7 @@ export class AcpUiSessionsViewProvider
             deleted: false,
         };
         if (agent !== undefined) {
-            deleteResult = await this.notifyAgentSessionDelete(
-                agent,
-                runtimeSessionId,
-            );
+            deleteResult = await this.notifyAgentSessionDelete(agent, runtimeSessionId);
         }
         this.reportAgentDeleteOutcome(deleteResult, labelText);
 
@@ -699,9 +623,7 @@ export class AcpUiSessionsViewProvider
         await this.refreshFromAgent();
     }
 
-    private async renameSession(
-        item: AcpUiSessionsTreeNode | undefined,
-    ): Promise<void> {
+    private async renameSession(item: AcpUiSessionsTreeNode | undefined): Promise<void> {
         const target = resolveSessionTarget(
             item,
             this.focusedSession,
@@ -714,21 +636,12 @@ export class AcpUiSessionsViewProvider
 
         const local =
             target.source === "local"
-                ? listAcpUiSessions().find(
-                      (row) => row.id === target.localSessionId,
-                  )
+                ? listAcpUiSessions().find((row) => row.id === target.localSessionId)
                 : target.localSessionId !== undefined
-                  ? listAcpUiSessions().find(
-                        (row) => row.id === target.localSessionId,
-                    )
-                  : findByRuntimeSessionId(
-                        target.agentName,
-                        target.runtimeSessionId,
-                    );
+                  ? listAcpUiSessions().find((row) => row.id === target.localSessionId)
+                  : findByRuntimeSessionId(target.agentName, target.runtimeSessionId);
         if (local === undefined) {
-            window.showErrorMessage(
-                "Open this chat before renaming it locally.",
-            );
+            window.showErrorMessage("Open this chat before renaming it locally.");
             return;
         }
         const nextTitle = await window.showInputBox({

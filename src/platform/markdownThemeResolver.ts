@@ -18,10 +18,7 @@ type ThemeScopedTokenCustomizations = {
 
 export type TokenColorCustomizations = {
     textMateRules?: TokenColorRule[];
-    [themeName: string]:
-        | TokenColorRule[]
-        | ThemeScopedTokenCustomizations
-        | undefined;
+    [themeName: string]: TokenColorRule[] | ThemeScopedTokenCustomizations | undefined;
 };
 
 const HEADING_LEVELS = [1, 2, 3, 4] as const;
@@ -33,10 +30,7 @@ function normalizeRuleScopes(scope: string | string[] | undefined): string[] {
     return Array.isArray(scope) ? scope : [scope];
 }
 
-function selectorMatchesScopeList(
-    selector: string,
-    scopeList: readonly string[],
-): boolean {
+function selectorMatchesScopeList(selector: string, scopeList: readonly string[]): boolean {
     const required = selector.trim().split(/\s+/).filter(Boolean);
     if (required.length === 0) {
         return false;
@@ -110,8 +104,7 @@ const MARKDOWN_INLINE_EDITOR_COLOR_KEYS = [
     "inlineCodeBorder",
 ] as const;
 
-export type MarkdownInlineEditorColorKey =
-    (typeof MARKDOWN_INLINE_EDITOR_COLOR_KEYS)[number];
+export type MarkdownInlineEditorColorKey = (typeof MARKDOWN_INLINE_EDITOR_COLOR_KEYS)[number];
 
 /** Keys accepted by `applyMarkdownInlineEditorColors` (from `markdownInlineEditor.colors.*`). */
 export function markdownInlineEditorColorKeys(): readonly MarkdownInlineEditorColorKey[] {
@@ -126,9 +119,7 @@ export function applyMarkdownInlineEditorColors(
     variables: Record<string, string>,
     colors: Readonly<Partial<Record<MarkdownInlineEditorColorKey, string>>>,
 ): void {
-    const headingMap: ReadonlyArray<
-        readonly [MarkdownInlineEditorColorKey, string]
-    > = [
+    const headingMap: ReadonlyArray<readonly [MarkdownInlineEditorColorKey, string]> = [
         ["heading1", "--acp-markdown-h1-foreground"],
         ["heading2", "--acp-markdown-h2-foreground"],
         ["heading3", "--acp-markdown-h3-foreground"],
@@ -150,16 +141,10 @@ export function applyMarkdownInlineEditorColors(
     }
 }
 
-export function mergeColorThemeJson(
-    base: ColorThemeJson,
-    overlay: ColorThemeJson,
-): ColorThemeJson {
+export function mergeColorThemeJson(base: ColorThemeJson, overlay: ColorThemeJson): ColorThemeJson {
     return {
         colors: { ...base.colors, ...overlay.colors },
-        tokenColors: [
-            ...(base.tokenColors ?? []),
-            ...(overlay.tokenColors ?? []),
-        ],
+        tokenColors: [...(base.tokenColors ?? []), ...(overlay.tokenColors ?? [])],
     };
 }
 
@@ -172,9 +157,7 @@ export function tokenColorRulesFromCustomizations(
     }
     const globalRules = customizations.textMateRules ?? [];
     const themeEntry = customizations[themeLabel];
-    const scopedRules = Array.isArray(themeEntry)
-        ? themeEntry
-        : (themeEntry?.textMateRules ?? []);
+    const scopedRules = Array.isArray(themeEntry) ? themeEntry : (themeEntry?.textMateRules ?? []);
     return [...globalRules, ...scopedRules];
 }
 
@@ -188,12 +171,11 @@ export function buildMarkdownThemeCssVariables(
     const variables: Record<string, string> = {};
 
     for (const level of HEADING_LEVELS) {
-        variables[`--acp-markdown-h${level}-foreground`] =
-            resolveForegroundFromScopeList(
-                headingScopeList(level),
-                rules,
-                editorForeground,
-            );
+        variables[`--acp-markdown-h${level}-foreground`] = resolveForegroundFromScopeList(
+            headingScopeList(level),
+            rules,
+            editorForeground,
+        );
     }
 
     const inlineCodeForeground = resolveForegroundFromScopeList(
@@ -233,12 +215,7 @@ export function buildSyntaxHighlightCssVariables(
             "#c586c0",
         ),
         "--vscode-stringForeground": resolveForegroundFromScopeList(
-            [
-                "string",
-                "string.quoted",
-                "string.quoted.double",
-                "string.quoted.double.json",
-            ],
+            ["string", "string.quoted", "string.quoted.double", "string.quoted.double.json"],
             rules,
             semanticColors.stringLiteral ?? "#ce9178",
         ),

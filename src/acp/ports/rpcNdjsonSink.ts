@@ -40,10 +40,7 @@ export interface AcpRpcNdjsonSink {
 /** No-op sink for tests or hosts that do not surface RPC traffic. */
 export class NullAcpRpcNdjsonSink implements AcpRpcNdjsonSink {
     readonly isLoggingEnabled = false;
-    appendRawNdjsonLine(
-        _line: string,
-        _context?: AcpRpcNdjsonLineContext,
-    ): void {}
+    appendRawNdjsonLine(_line: string, _context?: AcpRpcNdjsonLineContext): void {}
 }
 
 /** Forwards each NDJSON line to every configured sink. */

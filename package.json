@@ -1,332 +1,330 @@
 {
-  "name": "ib-acp-ui",
-  "displayName": "ACP UI",
-  "version": "0.5.0",
-  "description": "Agent Client Protocol (ACP) UI integration",
-  "categories": [
-    "Other"
-  ],
-  "license": "MIT",
-  "author": "Ethan Conneely",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/IrishBruse/vscode-acp-ui.git"
-  },
-  "publisher": "irishbruse",
-  "main": "./dist/extension.js",
-  "scripts": {
-    "vscode:prepublish": "npm run package",
-    "build:webview": "vp build --config webview/acp-ui/vite.config.ts",
-    "dev:playground": "concurrently --names FE,BE --prefix-colors cyan,yellow 'vite --config playground/vite.config.ts' 'tsx --watch playground/server.ts'",
-    "dev:playground:demo": "ACP_UI_DEMO=1 concurrently --names FE,BE --prefix-colors cyan,yellow 'vite --config playground/vite.config.ts' 'tsx --watch playground/server.ts'",
-    "build:fixtures": "tsx scripts/build-showcase-fixtures.ts",
-    "sync:playground-theme": "tsx scripts/sync-playground-theme.ts",
-    "screenshots": "npm run build:fixtures && tsx scripts/capture-readme-screenshots.ts",
-    "build": "npm run build:webview && node esbuild.mjs",
-    "watch": "concurrently --names ext,webview 'node esbuild.mjs --watch' 'vite build --watch --config webview/acp-ui/vite.config.ts'",
-    "package": "npm run build:webview && node esbuild.mjs --production",
-    "check": "tsc --noEmit && tsc --noEmit -p webview/acp-ui/tsconfig.json && tsc --noEmit -p playground/tsconfig.json",
-    "test": "vp test run",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
-    "format": "biome format --write .",
-    "verify": "concurrently --names Build,Check,Test,Lint 'npm run build' 'npm run check' 'npm run test' 'npm run lint'",
-    "publish:vscode": "bash scripts/publish.sh",
-    "install:local": "bash scripts/install-local.sh",
-    "sync:docs": "bash scripts/sync-docs.sh",
-    "prepare": "vp config"
-  },
-  "dependencies": {
-    "@agentclientprotocol/sdk": "^1.1.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
-    "ws": "^8.21.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.5.2",
-    "@types/node": "^26.1.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.0",
-    "@types/vscode": "^1.125.0",
-    "@types/ws": "^8.18.0",
-    "@vitejs/plugin-react": "^6.0.3",
-    "@vscode/vsce": "^3.9.2",
-    "concurrently": "^10.0.3",
-    "esbuild": "^0.28.1",
-    "playwright": "^1.55.0",
-    "tsx": "^4.23.0",
-    "typescript": "^6.0.3",
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
-    "vite-plus": "1.3.0"
-  },
-  "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0"
-  },
-  "contributes": {
-    "configuration": {
-      "type": "object",
-      "title": "ACP UI",
-      "properties": {
-        "ib-acp-ui.agents": {
-          "type": "array",
-          "description": "ACP agent configurations. Each entry defines an agent subprocess to launch.",
-          "items": {
+    "name": "ib-acp-ui",
+    "displayName": "ACP UI",
+    "version": "0.5.0",
+    "description": "Agent Client Protocol (ACP) UI integration",
+    "categories": [
+        "Other"
+    ],
+    "license": "MIT",
+    "author": "Ethan Conneely",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/IrishBruse/vscode-acp-ui.git"
+    },
+    "publisher": "irishbruse",
+    "main": "./dist/extension.js",
+    "scripts": {
+        "vscode:prepublish": "npm run package",
+        "build:webview": "vp build --config webview/acp-ui/vite.config.ts",
+        "dev:playground": "concurrently --names FE,BE --prefix-colors cyan,yellow 'vite --config playground/vite.config.ts' 'tsx --watch playground/server.ts'",
+        "dev:playground:demo": "ACP_UI_DEMO=1 concurrently --names FE,BE --prefix-colors cyan,yellow 'vite --config playground/vite.config.ts' 'tsx --watch playground/server.ts'",
+        "build:fixtures": "tsx scripts/build-showcase-fixtures.ts",
+        "sync:playground-theme": "tsx scripts/sync-playground-theme.ts",
+        "screenshots": "npm run build:fixtures && tsx scripts/capture-readme-screenshots.ts",
+        "build:extension": "vp pack --sourcemap",
+        "build": "npm run build:webview && npm run build:extension",
+        "watch": "concurrently --names ext,webview 'vp pack --watch --sourcemap' 'vp build --watch --config webview/acp-ui/vite.config.ts'",
+        "package": "npm run build:webview && vp pack --minify",
+        "check": "vp check",
+        "test": "vp test run",
+        "lint": "vp lint",
+        "format": "vp fmt --write",
+        "verify": "concurrently --names Build,Check,Test 'npm run build' 'npm run check' 'npm run test'",
+        "publish:vscode": "bash scripts/publish.sh",
+        "install:local": "bash scripts/install-local.sh",
+        "sync:docs": "bash scripts/sync-docs.sh",
+        "prepare": "vp config"
+    },
+    "dependencies": {
+        "@agentclientprotocol/sdk": "^1.9.0",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1",
+        "react-markdown": "^10.1.0",
+        "remark-gfm": "^4.0.1",
+        "ws": "^8.21.0"
+    },
+    "devDependencies": {
+        "@types/node": "^26.6.5",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@types/vscode": "^1.140.0",
+        "@types/ws": "^8.18.2",
+        "@vitejs/plugin-react": "^6.1.2",
+        "@vscode/vsce": "^4.0.0",
+        "concurrently": "^10.0.6",
+        "playwright": "^1.64.1",
+        "tsx": "^4.23.15",
+        "typescript": "^7.0.2",
+        "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+        "vite-plus": "1.3.0"
+    },
+    "overrides": {
+        "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0"
+    },
+    "contributes": {
+        "configuration": {
             "type": "object",
-            "required": [
-              "name",
-              "command"
-            ],
+            "title": "ACP UI",
             "properties": {
-              "name": {
-                "type": "string",
-                "description": "Display name for the agent."
-              },
-              "command": {
-                "type": "string",
-                "description": "Executable to spawn (e.g. 'npx', 'gemini', 'claude')."
-              },
-              "args": {
-                "type": "array",
-                "items": {
-                  "type": "string"
+                "ib-acp-ui.agents": {
+                    "type": "array",
+                    "description": "ACP agent configurations. Each entry defines an agent subprocess to launch.",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "name",
+                            "command"
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Display name for the agent."
+                            },
+                            "command": {
+                                "type": "string",
+                                "description": "Executable to spawn (e.g. 'npx', 'gemini', 'claude')."
+                            },
+                            "args": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Arguments passed to the command."
+                            },
+                            "env": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "description": "Extra environment variables for the agent process."
+                            },
+                            "authMethodId": {
+                                "type": "string",
+                                "description": "ACP authenticate methodId to use when the agent advertises multiple auth methods."
+                            }
+                        }
+                    },
+                    "default": [
+                        {
+                            "name": "Cursor",
+                            "command": "agent",
+                            "args": [
+                                "acp"
+                            ]
+                        },
+                        {
+                            "name": "Gemini",
+                            "command": "gemini",
+                            "args": [
+                                "--acp"
+                            ]
+                        }
+                    ]
                 },
-                "description": "Arguments passed to the command."
-              },
-              "env": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "string"
+                "ib-acp-ui.sessionsDirectory": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Directory for chat .acp files. Empty uses extension global storage. Absolute path or workspace-relative."
                 },
-                "description": "Extra environment variables for the agent process."
-              },
-              "authMethodId": {
-                "type": "string",
-                "description": "ACP authenticate methodId to use when the agent advertises multiple auth methods."
-              }
+                "ib-acp-ui.toolCallVerbosity": {
+                    "type": "string",
+                    "enum": [
+                        "minimal",
+                        "compact",
+                        "verbose"
+                    ],
+                    "default": "verbose",
+                    "description": "How tool calls appear in the chat trace. Minimal groups tool calls with a summary and shows the last three details. Compact shows one line per tool call. Verbose shows full file previews and diffs."
+                },
+                "ib-acp-ui.contentWidthPercent": {
+                    "type": "number",
+                    "default": 100,
+                    "minimum": 10,
+                    "maximum": 100,
+                    "order": 40,
+                    "title": "Chat content width (%)",
+                    "markdownDescription": "Percentage of the chat panel width used by the transcript and composer. `100` is full width; `50` is half width with equal side margins."
+                }
             }
-          },
-          "default": [
+        },
+        "customEditors": [
             {
-              "name": "Cursor",
-              "command": "agent",
-              "args": [
-                "acp"
-              ]
+                "viewType": "ibAcpUi.session",
+                "displayName": "ACP UI",
+                "selector": [
+                    {
+                        "filenamePattern": "*.acp"
+                    }
+                ],
+                "priority": "default"
+            }
+        ],
+        "configurationDefaults": {
+            "files.associations": {
+                "*.acp": "json"
+            },
+            "files.readonlyInclude": {
+                "**/*.acp": true
+            }
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "acpUiContainer",
+                    "title": "ACP UI",
+                    "icon": "media/acp-icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "acpUiContainer": [
+                {
+                    "id": "acpUiSessionsView",
+                    "name": "Chats",
+                    "type": "tree",
+                    "icon": "media/acp-icon.svg"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "ib-acp-ui.openChat",
+                "title": "Open ACP UI",
+                "icon": "$(comment-discussion)",
+                "category": "IrishBruse ACP"
             },
             {
-              "name": "Gemini",
-              "command": "gemini",
-              "args": [
-                "--acp"
-              ]
+                "command": "ib-acp-ui.focusAcpUiSessions",
+                "title": "Focus ACP UI Chats list",
+                "shortTitle": "Focus Chats list",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.newAcpUiInEditor",
+                "title": "New ACP UI Chat (Default Agent)",
+                "shortTitle": "New in Editor",
+                "icon": "$(add)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.selectActiveAgent",
+                "title": "Select Active ACP Agent",
+                "shortTitle": "Agent",
+                "icon": "$(list-selection)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.refreshAcpUiSessions",
+                "title": "Refresh ACP UI list",
+                "shortTitle": "Refresh",
+                "icon": "$(refresh)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.openAcpUiSession",
+                "title": "Open ACP UI session",
+                "shortTitle": "Open",
+                "icon": "$(comment-discussion)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.deleteAcpUiSession",
+                "title": "Delete ACP UI",
+                "shortTitle": "Delete",
+                "icon": "$(trash)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.renameAcpUiSession",
+                "title": "Rename ACP UI",
+                "shortTitle": "Rename",
+                "icon": "$(edit)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.showAcpRpcLog",
+                "title": "Show ACP RPC Log",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.openAcpUiView",
+                "title": "Open ACP UI",
+                "shortTitle": "ACP UI",
+                "icon": "$(comment-discussion)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.openAcpUiTextEditor",
+                "title": "Open Text Editor",
+                "shortTitle": "Text Editor",
+                "icon": "$(file-text)",
+                "category": "IrishBruse ACP"
             }
-          ]
-        },
-        "ib-acp-ui.sessionsDirectory": {
-          "type": "string",
-          "default": "",
-          "description": "Directory for chat .acp files. Empty uses extension global storage. Absolute path or workspace-relative."
-        },
-        "ib-acp-ui.toolCallVerbosity": {
-          "type": "string",
-          "enum": [
-            "minimal",
-            "compact",
-            "verbose"
-          ],
-          "default": "verbose",
-          "description": "How tool calls appear in the chat trace. Minimal groups tool calls with a summary and shows the last three details. Compact shows one line per tool call. Verbose shows full file previews and diffs."
-        },
-        "ib-acp-ui.contentWidthPercent": {
-          "type": "number",
-          "default": 100,
-          "minimum": 10,
-          "maximum": 100,
-          "order": 40,
-          "title": "Chat content width (%)",
-          "markdownDescription": "Percentage of the chat panel width used by the transcript and composer. `100` is full width; `50` is half width with equal side margins."
-        }
-      }
-    },
-    "customEditors": [
-      {
-        "viewType": "ibAcpUi.session",
-        "displayName": "ACP UI",
-        "selector": [
-          {
-            "filenamePattern": "*.acp"
-          }
         ],
-        "priority": "default"
-      }
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "ib-acp-ui.openAcpUiView",
+                    "when": "resourceExtname == '.acp' && activeCustomEditorId != 'ibAcpUi.session'",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-acp-ui.openAcpUiTextEditor",
+                    "when": "activeCustomEditorId == 'ibAcpUi.session'",
+                    "group": "navigation"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "ib-acp-ui.deleteAcpUiSession",
+                    "when": "view == acpUiSessionsView && viewItem == session",
+                    "group": "inline"
+                },
+                {
+                    "command": "ib-acp-ui.renameAcpUiSession",
+                    "when": "view == acpUiSessionsView && viewItem == session",
+                    "group": "inline"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "ib-acp-ui.newAcpUiInEditor",
+                    "when": "view == acpUiSessionsView",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-acp-ui.selectActiveAgent",
+                    "when": "view == acpUiSessionsView",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-acp-ui.refreshAcpUiSessions",
+                    "when": "view == acpUiSessionsView",
+                    "group": "navigation"
+                }
+            ]
+        },
+        "keybindings": [
+            {
+                "command": "ib-acp-ui.openChat",
+                "key": "ctrl+t",
+                "mac": "cmd+t",
+                "when": "activeCustomEditorId == 'ibAcpUi.session' || focusedView == 'acpUiSessionsView'"
+            },
+            {
+                "command": "ib-acp-ui.renameAcpUiSession",
+                "key": "f2",
+                "when": "view == acpUiSessionsView && viewItem == session && listFocus"
+            }
+        ]
+    },
+    "activationEvents": [
+        "onCustomEditor:ibAcpUi.session",
+        "onStartupFinished"
     ],
-    "configurationDefaults": {
-      "files.associations": {
-        "*.acp": "json"
-      },
-      "files.readonlyInclude": {
-        "**/*.acp": true
-      }
-    },
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "acpUiContainer",
-          "title": "ACP UI",
-          "icon": "media/acp-icon.svg"
-        }
-      ]
-    },
-    "views": {
-      "acpUiContainer": [
-        {
-          "id": "acpUiSessionsView",
-          "name": "Chats",
-          "type": "tree",
-          "icon": "media/acp-icon.svg"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "ib-acp-ui.openChat",
-        "title": "Open ACP UI",
-        "icon": "$(comment-discussion)",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.focusAcpUiSessions",
-        "title": "Focus ACP UI Chats list",
-        "shortTitle": "Focus Chats list",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.newAcpUiInEditor",
-        "title": "New ACP UI Chat (Default Agent)",
-        "shortTitle": "New in Editor",
-        "icon": "$(add)",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.selectActiveAgent",
-        "title": "Select Active ACP Agent",
-        "shortTitle": "Agent",
-        "icon": "$(list-selection)",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.refreshAcpUiSessions",
-        "title": "Refresh ACP UI list",
-        "shortTitle": "Refresh",
-        "icon": "$(refresh)",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.openAcpUiSession",
-        "title": "Open ACP UI session",
-        "shortTitle": "Open",
-        "icon": "$(comment-discussion)",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.deleteAcpUiSession",
-        "title": "Delete ACP UI",
-        "shortTitle": "Delete",
-        "icon": "$(trash)",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.renameAcpUiSession",
-        "title": "Rename ACP UI",
-        "shortTitle": "Rename",
-        "icon": "$(edit)",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.showAcpRpcLog",
-        "title": "Show ACP RPC Log",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.openAcpUiView",
-        "title": "Open ACP UI",
-        "shortTitle": "ACP UI",
-        "icon": "$(comment-discussion)",
-        "category": "IrishBruse ACP"
-      },
-      {
-        "command": "ib-acp-ui.openAcpUiTextEditor",
-        "title": "Open Text Editor",
-        "shortTitle": "Text Editor",
-        "icon": "$(file-text)",
-        "category": "IrishBruse ACP"
-      }
-    ],
-    "menus": {
-      "editor/title": [
-        {
-          "command": "ib-acp-ui.openAcpUiView",
-          "when": "resourceExtname == '.acp' && activeCustomEditorId != 'ibAcpUi.session'",
-          "group": "navigation"
-        },
-        {
-          "command": "ib-acp-ui.openAcpUiTextEditor",
-          "when": "activeCustomEditorId == 'ibAcpUi.session'",
-          "group": "navigation"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "ib-acp-ui.deleteAcpUiSession",
-          "when": "view == acpUiSessionsView && viewItem == session",
-          "group": "inline"
-        },
-        {
-          "command": "ib-acp-ui.renameAcpUiSession",
-          "when": "view == acpUiSessionsView && viewItem == session",
-          "group": "inline"
-        }
-      ],
-      "view/title": [
-        {
-          "command": "ib-acp-ui.newAcpUiInEditor",
-          "when": "view == acpUiSessionsView",
-          "group": "navigation"
-        },
-        {
-          "command": "ib-acp-ui.selectActiveAgent",
-          "when": "view == acpUiSessionsView",
-          "group": "navigation"
-        },
-        {
-          "command": "ib-acp-ui.refreshAcpUiSessions",
-          "when": "view == acpUiSessionsView",
-          "group": "navigation"
-        }
-      ]
-    },
-    "keybindings": [
-      {
-        "command": "ib-acp-ui.openChat",
-        "key": "ctrl+t",
-        "mac": "cmd+t",
-        "when": "activeCustomEditorId == 'ibAcpUi.session' || focusedView == 'acpUiSessionsView'"
-      },
-      {
-        "command": "ib-acp-ui.renameAcpUiSession",
-        "key": "f2",
-        "when": "view == acpUiSessionsView && viewItem == session && listFocus"
-      }
-    ]
-  },
-  "activationEvents": [
-    "onCustomEditor:ibAcpUi.session",
-    "onStartupFinished"
-  ],
-  "icon": "icon.png",
-  "engines": {
-    "vscode": "^1.125.0"
-  }
+    "icon": "icon.png",
+    "engines": {
+        "vscode": "^1.125.0"
+    }
 }

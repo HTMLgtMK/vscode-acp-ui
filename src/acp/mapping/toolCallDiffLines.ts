@@ -21,10 +21,7 @@ function splitLinesNormalized(text: string): string[] {
 /**
  * Computes a Myers-style line diff (LCS backtrack) for git-style red/green presentation.
  */
-export function computeToolCallDiffRows(
-    oldText: string,
-    newText: string,
-): ToolCallDiffRow[] {
+export function computeToolCallDiffRows(oldText: string, newText: string): ToolCallDiffRow[] {
     const oldLines = splitLinesNormalized(oldText);
     const newLines = splitLinesNormalized(newText);
     const m = oldLines.length;
@@ -33,7 +30,7 @@ export function computeToolCallDiffRows(
         return [];
     }
     const lcs: number[][] = Array.from({ length: m + 1 }, () =>
-        new Array(n + 1).fill(0),
+        Array.from({ length: n + 1 }, () => 0),
     );
     for (let i = 1; i <= m; i++) {
         for (let j = 1; j <= n; j++) {

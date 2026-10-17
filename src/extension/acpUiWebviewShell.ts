@@ -8,25 +8,12 @@ const webviewStyleName = "main.css";
 /**
  * HTML shell for the ACP UI webview: CSP, asset URIs, and root mount node.
  */
-export function getAcpUiWebviewHtml(
-    extensionRoot: Uri,
-    webview: Webview,
-): string {
+export function getAcpUiWebviewHtml(extensionRoot: Uri, webview: Webview): string {
     const scriptUri = webview.asWebviewUri(
-        Uri.joinPath(
-            extensionRoot,
-            webviewMediaSegment,
-            webviewBundleDir,
-            webviewScriptName,
-        ),
+        Uri.joinPath(extensionRoot, webviewMediaSegment, webviewBundleDir, webviewScriptName),
     );
     const styleUri = webview.asWebviewUri(
-        Uri.joinPath(
-            extensionRoot,
-            webviewMediaSegment,
-            webviewBundleDir,
-            webviewStyleName,
-        ),
+        Uri.joinPath(extensionRoot, webviewMediaSegment, webviewBundleDir, webviewStyleName),
     );
     const cspSource = webview.cspSource;
     const contentSecurityPolicy = [
@@ -41,11 +28,11 @@ export function getAcpUiWebviewHtml(
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="${contentSecurityPolicy}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="${styleUri}" />
+  <link rel="stylesheet" href="${styleUri.toString()}" />
 </head>
 <body>
   <div id="root"></div>
-  <script src="${scriptUri}"></script>
+  <script src="${scriptUri.toString()}"></script>
 </body>
 </html>`;
 }

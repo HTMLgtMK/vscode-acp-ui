@@ -42,13 +42,7 @@ const BOOLEAN_PARAM_KEYS = new Set(["fast", "thinking"]);
 
 const SKIP_DERIVED_PARAM_KEYS = new Set(["max"]);
 
-const DERIVED_PARAM_ORDER = [
-    "context",
-    "effort",
-    "reasoning",
-    "thinking",
-    "fast",
-] as const;
+const DERIVED_PARAM_ORDER = ["context", "effort", "reasoning", "thinking", "fast"] as const;
 
 const PARAM_LABELS: Record<string, string> = {
     context: "Context",
@@ -94,10 +88,7 @@ const LINEAGE_KNOWN_SCALAR_VALUES: Record<string, readonly string[]> = {
     effort: ["low", "medium", "high"],
 };
 
-const LINES_WITH_KNOWN_SCALAR_FALLBACK = new Set([
-    "claude-opus",
-    "claude-sonnet",
-]);
+const LINES_WITH_KNOWN_SCALAR_FALLBACK = new Set(["claude-opus", "claude-sonnet"]);
 
 function humanizeParamKey(key: string): string {
     return PARAM_LABELS[key] ?? key.replace(/_/g, " ");
@@ -114,10 +105,7 @@ function humanizeParamValue(key: string, value: string): string {
     return value;
 }
 
-function normalizedParamValue(
-    params: Record<string, string>,
-    key: string,
-): string {
+function normalizedParamValue(params: Record<string, string>, key: string): string {
     if (BOOLEAN_PARAM_KEYS.has(key)) {
         return params[key] === "true" ? "true" : "false";
     }
@@ -125,9 +113,7 @@ function normalizedParamValue(
 }
 
 function derivedParamSortKey(key: string): number {
-    const idx = DERIVED_PARAM_ORDER.indexOf(
-        key as (typeof DERIVED_PARAM_ORDER)[number],
-    );
+    const idx = DERIVED_PARAM_ORDER.indexOf(key as (typeof DERIVED_PARAM_ORDER)[number]);
     return idx === -1 ? DERIVED_PARAM_ORDER.length : idx;
 }
 
@@ -141,9 +127,7 @@ function currentFamilyName(
     modelOption: Extract<AcpUiSessionConfigOption, { type: "select" }>,
     currentValue: string,
 ): string {
-    const currentChoice = modelOption.options.find(
-        (choice) => choice.value === currentValue,
-    );
+    const currentChoice = modelOption.options.find((choice) => choice.value === currentValue);
     if (currentChoice !== undefined) {
         return choiceFamilyName(currentChoice);
     }
@@ -158,11 +142,7 @@ export function modelLinePrefix(base: string): string {
     if (parts[0] === "claude" && parts.length >= 2) {
         return `${parts[0]}-${parts[1]}`;
     }
-    if (
-        parts[0] === "gpt" ||
-        parts[0] === "composer" ||
-        parts[0] === "gemini"
-    ) {
+    if (parts[0] === "gpt" || parts[0] === "composer" || parts[0] === "gemini") {
         return parts[0];
     }
     if (parts[0] === "grok") {
@@ -295,32 +275,15 @@ function effectiveFamilyParamValues(
     key: string,
 ): Set<string> {
     const linePrefix = modelLinePrefix(currentBase);
-    let values = collectFamilyParamValues(
-        modelOption,
-        currentBase,
-        currentFamilyName,
-        key,
-    );
-    if (
-        !BOOLEAN_PARAM_KEYS.has(key) &&
-        paramKeyAllowedForLine(linePrefix, key)
-    ) {
+    let values = collectFamilyParamValues(modelOption, currentBase, currentFamilyName, key);
+    if (!BOOLEAN_PARAM_KEYS.has(key) && paramKeyAllowedForLine(linePrefix, key)) {
         if (values.size <= 1) {
-            const lineage = collectLineageParamValues(
-                modelOption,
-                linePrefix,
-                key,
-            );
+            const lineage = collectLineageParamValues(modelOption, linePrefix, key);
             for (const value of lineage) {
                 values.add(value);
             }
         }
-        values = supplementKnownScalarValues(
-            linePrefix,
-            key,
-            values,
-            currentParams,
-        );
+        values = supplementKnownScalarValues(linePrefix, key, values, currentParams);
     }
     if (values.size > 1) {
         return values;
@@ -374,9 +337,7 @@ function flattenSelectChoices(
                 choices.push({
                     value: option.value,
                     name: option.name,
-                    ...(option.description
-                        ? { description: option.description }
-                        : {}),
+                    ...(option.description ? { description: option.description } : {}),
                 });
             }
             continue;
@@ -405,9 +366,7 @@ export function sessionConfigOptionsFromAgent(
             options.push({
                 configId: option.id,
                 name: option.name,
-                ...(option.description
-                    ? { description: option.description }
-                    : {}),
+                ...(option.description ? { description: option.description } : {}),
                 ...(option.category ? { category: option.category } : {}),
                 type: "boolean",
                 currentValue: option.currentValue,
@@ -444,9 +403,7 @@ export function findSessionConfigOption(
 export function modelConfigOption(
     state: AcpUiSessionConfigState | null,
 ): Extract<AcpUiSessionConfigOption, { type: "select" }> | undefined {
-    const option = state?.options.find(
-        (row) => row.type === "select" && row.category === "model",
-    );
+    const option = state?.options.find((row) => row.type === "select" && row.category === "model");
     return option?.type === "select" ? option : undefined;
 }
 
@@ -459,16 +416,12 @@ export function modeConfigOption(
     if (byCategory?.type === "select") {
         return byCategory;
     }
-    const byId = state?.options.find(
-        (row) => row.type === "select" && row.configId === "mode",
-    );
+    const byId = state?.options.find((row) => row.type === "select" && row.configId === "mode");
     return byId?.type === "select" ? byId : undefined;
 }
 
 /** Param controls (context, effort, fast, ...) excluding model and mode. */
-export function isModelParamConfigOption(
-    option: AcpUiSessionConfigOption,
-): boolean {
+export function isModelParamConfigOption(option: AcpUiSessionConfigOption): boolean {
     if (option.type === "select" && option.category === "model") {
         return false;
     }
@@ -510,12 +463,8 @@ export function replaceModelParamConfigOptions(
     if (paramOptions.length === 0) {
         return withModel;
     }
-    const clonedParams = structuredClone(
-        paramOptions,
-    ) as AcpUiSessionConfigOption[];
-    const modelIndex = withModel.findIndex(
-        (option) => option.configId === modelConfigId,
-    );
+    const clonedParams = structuredClone(paramOptions) as AcpUiSessionConfigOption[];
+    const modelIndex = withModel.findIndex((option) => option.configId === modelConfigId);
     if (modelIndex === -1) {
         return [...withModel, ...clonedParams];
     }
@@ -537,12 +486,7 @@ export function resolvedModelParamOptionsForModelPick(
     cachedParams: ReadonlyArray<AcpUiSessionConfigOption> | null,
 ): AcpUiSessionConfigOption[] {
     if (cachedParams !== null && cachedParams.length > 0) {
-        return replaceModelParamConfigOptions(
-            options,
-            modelConfigId,
-            newModelValue,
-            cachedParams,
-        );
+        return replaceModelParamConfigOptions(options, modelConfigId, newModelValue, cachedParams);
     }
     const core = options.filter((option) => !isModelParamConfigOption(option));
     const withModel = core.map((option) =>
@@ -551,21 +495,14 @@ export function resolvedModelParamOptionsForModelPick(
             : option,
     );
     const modelOption = withModel.find(
-        (
-            option,
-        ): option is Extract<AcpUiSessionConfigOption, { type: "select" }> =>
+        (option): option is Extract<AcpUiSessionConfigOption, { type: "select" }> =>
             option.configId === modelConfigId && option.type === "select",
     );
     const derived = deriveModelParamOptionsFromModelSelect(modelOption);
     if (derived.length === 0) {
         return withModel;
     }
-    return replaceModelParamConfigOptions(
-        withModel,
-        modelConfigId,
-        newModelValue,
-        derived,
-    );
+    return replaceModelParamConfigOptions(withModel, modelConfigId, newModelValue, derived);
 }
 
 /**
@@ -577,11 +514,8 @@ export function nextCycledConfigSelectValue(
     if (option.options.length <= 1) {
         return null;
     }
-    const currentIndex = option.options.findIndex(
-        (choice) => choice.value === option.currentValue,
-    );
-    const nextIndex =
-        currentIndex === -1 ? 0 : (currentIndex + 1) % option.options.length;
+    const currentIndex = option.options.findIndex((choice) => choice.value === option.currentValue);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % option.options.length;
     const nextChoice = option.options[nextIndex];
     return nextChoice?.value ?? null;
 }
@@ -606,19 +540,13 @@ export function cycleSessionModePick(
  * `thought_level`, etc.) instead of encoding tuning in bracketed model ids.
  * Session `mode` is excluded; it is rendered by {@link SessionModeIndicator}.
  */
-export function usesAgentOrderedConfigLayout(
-    state: AcpUiSessionConfigState | null,
-): boolean {
+export function usesAgentOrderedConfigLayout(state: AcpUiSessionConfigState | null): boolean {
     if (state === null || state.options.length === 0) {
         return false;
     }
     const hasToolbarConfigCategory = state.options.some((option) => {
         const category = option.category;
-        if (
-            category === undefined ||
-            category === "model" ||
-            category === "mode"
-        ) {
+        if (category === undefined || category === "model" || category === "mode") {
             return false;
         }
         return true;
@@ -634,15 +562,11 @@ export function usesAgentOrderedConfigLayout(
 }
 
 /** Human-readable label for the active value of a config option control. */
-export function configOptionDisplayValue(
-    option: AcpUiSessionConfigOption,
-): string {
+export function configOptionDisplayValue(option: AcpUiSessionConfigOption): string {
     if (option.type === "boolean") {
         return option.currentValue ? "On" : "Off";
     }
-    const choice = option.options.find(
-        (row) => row.value === option.currentValue,
-    );
+    const choice = option.options.find((row) => row.value === option.currentValue);
     if (choice !== undefined) {
         return choice.name;
     }
@@ -693,10 +617,7 @@ export function resolveModelSelectOption(
     if (fromConfig !== undefined) {
         return fromConfig;
     }
-    if (
-        modelSelection === null ||
-        modelSelection.availableModels.length === 0
-    ) {
+    if (modelSelection === null || modelSelection.availableModels.length === 0) {
         return undefined;
     }
     return modelSelectOptionFromModels(modelSelection);
@@ -708,9 +629,7 @@ export function modelParameterOptions(
 ): AcpUiSessionConfigOption[] {
     const explicit =
         state?.options.filter(
-            (option) =>
-                option.category === "model_config" ||
-                option.category === "thought_level",
+            (option) => option.category === "model_config" || option.category === "thought_level",
         ) ?? [];
     const modelOption = resolveModelSelectOption(state, modelSelection);
     const derived = deriveModelParamOptionsFromModelSelect(modelOption);
@@ -730,9 +649,7 @@ export function modelParameterOptions(
             if (!isDerivedConfigId(option.configId)) {
                 return true;
             }
-            return !coveredKeys.has(
-                derivedParamKeyFromConfigId(option.configId),
-            );
+            return !coveredKeys.has(derivedParamKeyFromConfigId(option.configId));
         }),
     ];
     return sortModelParameterOptions(merged);
@@ -760,9 +677,7 @@ export function sortModelParameterOptions(
 /**
  * Compact summary for the model-config popover trigger.
  */
-export function modelConfigSummaryLabel(
-    options: AcpUiSessionConfigOption[],
-): string {
+export function modelConfigSummaryLabel(options: AcpUiSessionConfigOption[]): string {
     const parts: string[] = [];
     for (const option of options) {
         if (option.type === "boolean") {
@@ -774,9 +689,7 @@ export function modelConfigSummaryLabel(
         if (option.currentValue.length === 0) {
             continue;
         }
-        const choice = option.options.find(
-            (row) => row.value === option.currentValue,
-        );
+        const choice = option.options.find((row) => row.value === option.currentValue);
         if (choice !== undefined) {
             parts.push(choice.name);
         }
@@ -789,9 +702,7 @@ export function modelConfigSummaryLabel(
  * selectors by scanning all model option values for the active model family.
  */
 export function deriveModelParamOptionsFromModelSelect(
-    modelOption:
-        | Extract<AcpUiSessionConfigOption, { type: "select" }>
-        | undefined,
+    modelOption: Extract<AcpUiSessionConfigOption, { type: "select" }> | undefined,
 ): AcpUiSessionConfigOption[] {
     if (modelOption === undefined) {
         return [];
@@ -803,9 +714,7 @@ export function deriveModelParamOptionsFromModelSelect(
             parseModelIdBracketParams(choice.value).base === current.base ||
             choiceFamilyName(choice) === familyName,
     );
-    const variantParams = siblings.map(
-        (choice) => parseModelIdBracketParams(choice.value).params,
-    );
+    const variantParams = siblings.map((choice) => parseModelIdBracketParams(choice.value).params);
 
     const keys = new Set<string>();
     const linePrefix = modelLinePrefix(current.base);
@@ -838,16 +747,9 @@ export function deriveModelParamOptionsFromModelSelect(
     }
 
     const derived: AcpUiSessionConfigOption[] = [];
-    for (const key of [...keys].sort(
-        (a, b) => derivedParamSortKey(a) - derivedParamSortKey(b),
-    )) {
+    for (const key of [...keys].sort((a, b) => derivedParamSortKey(a) - derivedParamSortKey(b))) {
         if (!paramKeyAllowedForLine(linePrefix, key)) {
-            const familyOnly = collectFamilyParamValues(
-                modelOption,
-                current.base,
-                familyName,
-                key,
-            );
+            const familyOnly = collectFamilyParamValues(modelOption, current.base, familyName, key);
             if (familyOnly.size <= 1) {
                 continue;
             }
@@ -901,10 +803,7 @@ function paramsSignature(params: Record<string, string>): string {
     return JSON.stringify(params, keys);
 }
 
-function scoreParamMatch(
-    params: Record<string, string>,
-    desired: Record<string, string>,
-): number {
+function scoreParamMatch(params: Record<string, string>, desired: Record<string, string>): number {
     let score = 0;
     for (const [key, value] of Object.entries(desired)) {
         if (SKIP_DERIVED_PARAM_KEYS.has(key)) {
@@ -933,9 +832,7 @@ export function resolveAdvertisedModelOptionValue(
     modelOption: Extract<AcpUiSessionConfigOption, { type: "select" }>,
     candidateId: string,
 ): string | null {
-    const exact = modelOption.options.find(
-        (choice) => choice.value === candidateId,
-    );
+    const exact = modelOption.options.find((choice) => choice.value === candidateId);
     if (exact !== undefined) {
         return exact.value;
     }
@@ -944,8 +841,7 @@ export function resolveAdvertisedModelOptionValue(
     const paramMatch = modelOption.options.find((choice) => {
         const parsed = parseModelIdBracketParams(choice.value);
         return (
-            parsed.base === candidate.base &&
-            paramsSignature(parsed.params) === candidateSignature
+            parsed.base === candidate.base && paramsSignature(parsed.params) === candidateSignature
         );
     });
     return paramMatch?.value ?? null;
@@ -991,19 +887,12 @@ export function resolveModelConfigWireValue(
     modelOption: Extract<AcpUiSessionConfigOption, { type: "select" }>,
     candidateId: string,
 ): string {
-    const advertised = resolveAdvertisedModelOptionValue(
-        modelOption,
-        candidateId,
-    );
+    const advertised = resolveAdvertisedModelOptionValue(modelOption, candidateId);
     if (advertised !== null) {
         return advertised;
     }
     const candidate = parseModelIdBracketParams(candidateId);
-    const best = resolveBestAdvertisedModelOption(
-        modelOption,
-        candidate.base,
-        candidate.params,
-    );
+    const best = resolveBestAdvertisedModelOption(modelOption, candidate.base, candidate.params);
     if (best !== null) {
         const bestParams = parseModelIdBracketParams(best).params;
         if (paramsSignature(bestParams) === paramsSignature(candidate.params)) {
@@ -1025,10 +914,7 @@ export function resolveModelConfigWireValue(
         }
         if (fullMatch) {
             for (const key of BOOLEAN_PARAM_KEYS) {
-                if (
-                    bestParams[key] === "true" &&
-                    candidate.params[key] !== "true"
-                ) {
+                if (bestParams[key] === "true" && candidate.params[key] !== "true") {
                     fullMatch = false;
                 }
             }
@@ -1059,9 +945,7 @@ function applyParamChange(
         if (nextValue) {
             nextParams[paramKey] = "true";
         } else {
-            const usesExplicitFalse = variantParams.some(
-                (params) => params[paramKey] === "false",
-            );
+            const usesExplicitFalse = variantParams.some((params) => params[paramKey] === "false");
             if (usesExplicitFalse) {
                 nextParams[paramKey] = "false";
             } else {
@@ -1098,19 +982,9 @@ export function composeModelIdAfterDerivedChange(
             parseModelIdBracketParams(choice.value).base === current.base ||
             choiceFamilyName(choice) === familyName,
     );
-    const variantParams = siblings.map(
-        (choice) => parseModelIdBracketParams(choice.value).params,
-    );
-    const nextParams = applyParamChange(
-        current.params,
-        paramKey,
-        nextValue,
-        variantParams,
-    );
-    return resolveModelConfigWireValue(
-        modelOption,
-        buildModelId(current.base, nextParams),
-    );
+    const variantParams = siblings.map((choice) => parseModelIdBracketParams(choice.value).params);
+    const nextParams = applyParamChange(current.params, paramKey, nextValue, variantParams);
+    return resolveModelConfigWireValue(modelOption, buildModelId(current.base, nextParams));
 }
 
 /**

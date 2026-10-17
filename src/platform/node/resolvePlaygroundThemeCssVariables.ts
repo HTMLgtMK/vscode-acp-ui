@@ -45,9 +45,7 @@ export function parseVscodeUserSettings(text: string): VscodeSettingsSnapshot {
     const parsed = parseJsonc(text) as Record<string, unknown> | undefined;
     const record = parsed ?? {};
 
-    const colorCustomizations = readStringRecord(
-        record["workbench.colorCustomizations"],
-    );
+    const colorCustomizations = readStringRecord(record["workbench.colorCustomizations"]);
     const tokenColorCustomizations = readTokenColorCustomizations(
         record["editor.tokenColorCustomizations"],
     );
@@ -59,9 +57,7 @@ export function parseVscodeUserSettings(text: string): VscodeSettingsSnapshot {
             typeof value === "string" &&
             value.length > 0
         ) {
-            markdownInlineEditorColors[
-                key.slice(MARKDOWN_INLINE_EDITOR_PREFIX.length)
-            ] = value;
+            markdownInlineEditorColors[key.slice(MARKDOWN_INLINE_EDITOR_PREFIX.length)] = value;
         }
     }
 
@@ -72,12 +68,8 @@ export function parseVscodeUserSettings(text: string): VscodeSettingsSnapshot {
         markdownInlineEditorColors,
         editorFontFamily: readString(record["editor.fontFamily"]),
         editorFontSize: readPositiveNumber(record["editor.fontSize"]),
-        markdownPreviewFontSize: readPositiveNumber(
-            record["markdown.preview.fontSize"],
-        ),
-        markdownPreviewLineHeight: readPositiveNumber(
-            record["markdown.preview.lineHeight"],
-        ),
+        markdownPreviewFontSize: readPositiveNumber(record["markdown.preview.fontSize"]),
+        markdownPreviewLineHeight: readPositiveNumber(record["markdown.preview.lineHeight"]),
     };
 }
 
@@ -102,9 +94,7 @@ function readStringRecord(value: unknown): Record<string, string> {
     return out;
 }
 
-function readTokenColorCustomizations(
-    value: unknown,
-): TokenColorCustomizations | undefined {
+function readTokenColorCustomizations(value: unknown): TokenColorCustomizations | undefined {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
         return undefined;
     }
@@ -174,22 +164,15 @@ export function readColorThemeJsonSync(
         return {};
     }
     visited.add(resolved);
-    const parsed = JSON.parse(
-        readFileSync(resolved, "utf-8"),
-    ) as ColorThemeJson;
+    const parsed = JSON.parse(readFileSync(resolved, "utf-8")) as ColorThemeJson;
     if (parsed.include === undefined) {
         return parsed;
     }
-    const included = readColorThemeJsonSync(
-        join(dirname(resolved), parsed.include),
-        visited,
-    );
+    const included = readColorThemeJsonSync(join(dirname(resolved), parsed.include), visited);
     return mergeColorThemeJson(included, parsed);
 }
 
-function workbenchColorCssVariables(
-    colors: Record<string, string>,
-): Record<string, string> {
+function workbenchColorCssVariables(colors: Record<string, string>): Record<string, string> {
     const variables: Record<string, string> = {};
     for (const [key, value] of Object.entries(colors)) {
         variables[`--vscode-${key.replace(/\./g, "-")}`] = value;
@@ -200,8 +183,7 @@ function workbenchColorCssVariables(
         variables["--vscode-foreground"] = foreground;
     }
 
-    const widgetBorder =
-        colors["widget.border"] ?? colors["editorWidget.border"];
+    const widgetBorder = colors["widget.border"] ?? colors["editorWidget.border"];
     if (widgetBorder !== undefined) {
         variables["--vscode-widget-border"] = widgetBorder;
     }
@@ -212,23 +194,19 @@ function workbenchColorCssVariables(
     }
 
     const inactiveSelection =
-        colors["editor.inactiveSelectionBackground"] ??
-        colors["list.inactiveSelectionBackground"];
+        colors["editor.inactiveSelectionBackground"] ?? colors["list.inactiveSelectionBackground"];
     if (inactiveSelection !== undefined) {
-        variables["--vscode-editor-inactiveSelectionBackground"] =
-            inactiveSelection;
+        variables["--vscode-editor-inactiveSelectionBackground"] = inactiveSelection;
     }
 
-    const dropdownBorder =
-        colors["dropdown.border"] ?? colors["input.border"] ?? widgetBorder;
+    const dropdownBorder = colors["dropdown.border"] ?? colors["input.border"] ?? widgetBorder;
     if (dropdownBorder !== undefined) {
         variables["--vscode-dropdown-border"] = dropdownBorder;
     }
 
     const codeSpanBorder = colors["markdown.extension.editor.codeSpan.border"];
     if (codeSpanBorder !== undefined) {
-        variables["--vscode-markdown-extension-editor-codeSpan-border"] =
-            codeSpanBorder;
+        variables["--vscode-markdown-extension-editor-codeSpan-border"] = codeSpanBorder;
     }
 
     const textPreformatBorder = colors["textPreformat.border"];
@@ -238,16 +216,13 @@ function workbenchColorCssVariables(
 
     const textPreformatForeground = colors["textPreformat.foreground"];
     if (textPreformatForeground !== undefined) {
-        variables["--vscode-textPreformat-foreground"] =
-            textPreformatForeground;
+        variables["--vscode-textPreformat-foreground"] = textPreformatForeground;
     }
 
     return variables;
 }
 
-function chartAliasesFromColors(
-    colors: Record<string, string>,
-): Record<string, string> {
+function chartAliasesFromColors(colors: Record<string, string>): Record<string, string> {
     const aliases: Record<string, string> = {};
     const green = colors["terminal.ansiGreen"];
     if (green !== undefined) {
@@ -273,13 +248,8 @@ export function buildPlaygroundThemeCssVariables(
 ): Record<string, string> {
     const themeLabel = settings.colorTheme;
     const baseThemePath =
-        themeLabel !== undefined
-            ? findContributedThemePath(themeLabel, extensionRoots)
-            : undefined;
-    const baseTheme =
-        baseThemePath !== undefined
-            ? readColorThemeJsonSync(baseThemePath)
-            : {};
+        themeLabel !== undefined ? findContributedThemePath(themeLabel, extensionRoots) : undefined;
+    const baseTheme = baseThemePath !== undefined ? readColorThemeJsonSync(baseThemePath) : {};
     const theme = mergeColorThemeJson(baseTheme, {
         colors: settings.colorCustomizations,
     });
@@ -288,8 +258,7 @@ export function buildPlaygroundThemeCssVariables(
         themeLabel ?? "",
     );
 
-    const fontSizePx =
-        settings.markdownPreviewFontSize ?? settings.editorFontSize ?? 14;
+    const fontSizePx = settings.markdownPreviewFontSize ?? settings.editorFontSize ?? 14;
     const lineHeight = settings.markdownPreviewLineHeight ?? 1.6;
 
     const variables: Record<string, string> = {
@@ -307,10 +276,7 @@ export function buildPlaygroundThemeCssVariables(
         variables["--vscode-editor-font-family"] = settings.editorFontFamily;
     }
 
-    applyMarkdownInlineEditorColors(
-        variables,
-        settings.markdownInlineEditorColors,
-    );
+    applyMarkdownInlineEditorColors(variables, settings.markdownInlineEditorColors);
 
     return variables;
 }
@@ -319,18 +285,12 @@ export function resolvePlaygroundThemeCssVariables(options?: {
     settingsPath?: string;
     extensionRoots?: string[];
 }): PlaygroundThemeResolution {
-    const settingsPath =
-        options?.settingsPath ?? defaultVscodeUserSettingsPath();
+    const settingsPath = options?.settingsPath ?? defaultVscodeUserSettingsPath();
     if (!existsSync(settingsPath)) {
         throw new Error(`VS Code settings not found: ${settingsPath}`);
     }
-    const settings = parseVscodeUserSettings(
-        readFileSync(settingsPath, "utf-8"),
-    );
-    const variables = buildPlaygroundThemeCssVariables(
-        settings,
-        options?.extensionRoots,
-    );
+    const settings = parseVscodeUserSettings(readFileSync(settingsPath, "utf-8"));
+    const variables = buildPlaygroundThemeCssVariables(settings, options?.extensionRoots);
     return {
         variables,
         source: settingsPath,

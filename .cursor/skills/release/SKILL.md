@@ -32,22 +32,22 @@ Otherwise pick `patch` for:
 ## Required Workflow
 
 1. Inspect current changes:
-   - `git status --short`
-   - `git diff -- .`
-   - optionally `git log --oneline -n 15` for context
+    - `git status --short`
+    - `git diff -- .`
+    - optionally `git log --oneline -n 15` for context
 2. Decide release type (`patch` or `minor`) using the rules above.
 3. Update `changelog.md`:
-   - Ensure a top section exists for the new version.
-   - Summarize user-facing changes first, then internal fixes.
-   - Keep entries concise and actionable.
+    - Ensure a top section exists for the new version.
+    - Summarize user-facing changes first, then internal fixes.
+    - Keep entries concise and actionable.
 4. Bump version in `package.json` using npm:
-   - `npm version patch --no-git-tag-version` or
-   - `npm version minor --no-git-tag-version`
+    - `npm version patch --no-git-tag-version` or
+    - `npm version minor --no-git-tag-version`
 5. Re-open `package.json` and `changelog.md` to verify results.
 6. Report exactly what changed:
-   - old version -> new version
-   - selected bump type and short reason
-   - changelog section added/updated
+    - old version -> new version
+    - selected bump type and short reason
+    - changelog section added/updated
 
 ## Output Format
 

@@ -3,9 +3,7 @@ import type { AcpUiExtensionActivation } from "./activateAcpUiExtension";
 let activation: AcpUiExtensionActivation | undefined;
 
 /** Called once from the extension `activate` function. */
-export function setAcpUiExtensionActivation(
-    next: AcpUiExtensionActivation,
-): void {
+export function setAcpUiExtensionActivation(next: AcpUiExtensionActivation): void {
     activation = next;
 }
 

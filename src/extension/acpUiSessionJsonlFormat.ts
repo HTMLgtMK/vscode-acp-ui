@@ -4,10 +4,7 @@ export const ACP_UI_SESSION_SCHEMA = "acpUi/session/1" as const;
 export const ACP_UI_SESSION_FILE_SUFFIX = ".acp";
 
 /** True when the session file sits directly under the chats root (legacy layout). */
-export function isFlatSessionFilePath(
-    sessionFilePath: string,
-    sessionsDirPath: string,
-): boolean {
+export function isFlatSessionFilePath(sessionFilePath: string, sessionsDirPath: string): boolean {
     return dirname(sessionFilePath) === sessionsDirPath;
 }
 
@@ -57,9 +54,7 @@ export function uniqueSessionFileBaseNameFromTitle(
 ): string {
     const excludeKey = excludeFileName?.toLowerCase();
     const reserved = new Set(
-        [...usedFileNames]
-            .map((name) => name.toLowerCase())
-            .filter((name) => name !== excludeKey),
+        [...usedFileNames].map((name) => name.toLowerCase()).filter((name) => name !== excludeKey),
     );
     const first = sessionFileBaseNameFromTitle(title);
     if (!reserved.has(first.toLowerCase())) {
@@ -87,8 +82,7 @@ export function enqueueSessionFileWrite<T>(
     sessionFileKey: string,
     operation: () => Promise<T>,
 ): Promise<T> {
-    const prior =
-        sessionFileWriteTails.get(sessionFileKey) ?? Promise.resolve();
+    const prior = sessionFileWriteTails.get(sessionFileKey) ?? Promise.resolve();
     const next = prior.catch(() => undefined).then(() => operation());
     sessionFileWriteTails.set(sessionFileKey, next);
     return next as Promise<T>;
@@ -136,12 +130,9 @@ function metadataFromParsedValue(value: unknown): AcpUiSessionMetadata | null {
         return null;
     }
     const agentName =
-        typeof row.agentName === "string" && row.agentName.length > 0
-            ? row.agentName
-            : undefined;
+        typeof row.agentName === "string" && row.agentName.length > 0 ? row.agentName : undefined;
     const runtimeSessionId =
-        typeof row.runtimeSessionId === "string" &&
-        row.runtimeSessionId.length > 0
+        typeof row.runtimeSessionId === "string" && row.runtimeSessionId.length > 0
             ? row.runtimeSessionId
             : undefined;
     return {
@@ -198,18 +189,14 @@ function userMessageHistoryFromRow(row: Record<string, unknown>): string[] {
 /**
  * Serializes a session document as pretty-printed JSON.
  */
-export function serializeSessionDocument(
-    document: AcpUiSessionDocument,
-): string {
+export function serializeSessionDocument(document: AcpUiSessionDocument): string {
     return `${JSON.stringify(document, null, 2)}\n`;
 }
 
 /**
  * Parses a session document from pretty-printed JSON.
  */
-export function parseSessionDocument(
-    text: string,
-): AcpUiSessionDocument | null {
+export function parseSessionDocument(text: string): AcpUiSessionDocument | null {
     const trimmed = text.trim();
     if (trimmed.length === 0) {
         return null;
@@ -264,9 +251,7 @@ export function parseSessionHeaderBlock(text: string): {
 /**
  * Parses the session header from a single JSON line (legacy).
  */
-export function parseSessionHeaderLine(
-    line: string,
-): AcpUiSessionDocument | null {
+export function parseSessionHeaderLine(line: string): AcpUiSessionDocument | null {
     const trimmed = line.trim();
     if (trimmed.length === 0 || trimmed.startsWith("// ")) {
         return null;
@@ -291,9 +276,7 @@ export function parseSessionHeaderLine(
 /**
  * True when chat open should wait for ACP `session/load` before showing transcript.
  */
-export function shouldDeferJsonlHistoryReplay(header: {
-    runtimeSessionId?: string;
-}): boolean {
+export function shouldDeferJsonlHistoryReplay(header: { runtimeSessionId?: string }): boolean {
     const runtimeSessionId = header.runtimeSessionId?.trim();
     return runtimeSessionId !== undefined && runtimeSessionId.length > 0;
 }

@@ -81,12 +81,7 @@ export async function fetchAgentSessionsForWorkspace(
             return { supported: false, deleteSupported: false, sessions: [] };
         }
         await ensureAuthenticated(agent, init, config);
-        const sessions = await listSessionsWithAuthRetry(
-            agent,
-            init,
-            config,
-            cwd,
-        );
+        const sessions = await listSessionsWithAuthRetry(agent, init, config, cwd);
         return {
             supported: true,
             deleteSupported: agent.supportsDeleteSessions(),

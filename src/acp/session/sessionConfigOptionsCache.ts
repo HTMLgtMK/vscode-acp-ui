@@ -50,9 +50,7 @@ export function writeCachedSessionConfigOptions(
     cacheModelParamOptionsFromSession(agentName, options);
 }
 
-export function readCachedSessionModels(
-    agentName: string,
-): AcpUiSessionModelSelection | null {
+export function readCachedSessionModels(agentName: string): AcpUiSessionModelSelection | null {
     const key = normalizeAgentName(agentName);
     if (key.length === 0) {
         return null;
@@ -72,10 +70,7 @@ export function writeCachedSessionModels(
     if (key.length === 0 || selection.availableModels.length === 0) {
         return;
     }
-    modelsCacheByAgentName.set(
-        key,
-        structuredClone(selection) as AcpUiSessionModelSelection,
-    );
+    modelsCacheByAgentName.set(key, structuredClone(selection) as AcpUiSessionModelSelection);
 }
 
 export type CachedComposerSeed = {
@@ -102,9 +97,7 @@ export function readCachedModelParamOptions(
     if (agent.length === 0 || model.length === 0) {
         return null;
     }
-    const cached = paramCacheByAgentAndModel.get(
-        paramCacheStorageKey(agent, model),
-    );
+    const cached = paramCacheByAgentAndModel.get(paramCacheStorageKey(agent, model));
     if (cached === undefined || cached.length === 0) {
         return null;
     }
@@ -121,10 +114,7 @@ export function writeCachedModelParamOptions(
     if (agent.length === 0 || model.length === 0 || params.length === 0) {
         return;
     }
-    paramCacheByAgentAndModel.set(
-        paramCacheStorageKey(agent, model),
-        cloneOptions(params),
-    );
+    paramCacheByAgentAndModel.set(paramCacheStorageKey(agent, model), cloneOptions(params));
 }
 
 export function cacheModelParamOptionsFromSession(
@@ -148,9 +138,7 @@ export function cacheModelParamOptionsFromSession(
     );
 }
 
-export function sessionConfigOptionsInReplayEvents(
-    events: ReadonlyArray<unknown>,
-): boolean {
+export function sessionConfigOptionsInReplayEvents(events: ReadonlyArray<unknown>): boolean {
     return events.some(
         (event) =>
             typeof event === "object" &&

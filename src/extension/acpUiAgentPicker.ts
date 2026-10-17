@@ -8,9 +8,7 @@ import {
  * Lets the user pick an ACP agent from configured entries. Returns undefined if
  * none are configured or the user dismisses the picker.
  */
-export async function pickAcpAgentConfig(): Promise<
-    AcpAgentConfig | undefined
-> {
+export async function pickAcpAgentConfig(): Promise<AcpAgentConfig | undefined> {
     const configs = getAcpAgentConfigsFromSettings();
     if (configs.length === 0) {
         void window.showInformationMessage(

@@ -65,9 +65,7 @@ function readStringRecord(value: unknown): Record<string, string> {
     return out;
 }
 
-function resolveWorkbenchColorCustomizations(
-    themeLabel: string,
-): Record<string, string> {
+function resolveWorkbenchColorCustomizations(themeLabel: string): Record<string, string> {
     const raw = workspace
         .getConfiguration("workbench")
         .get<Record<string, unknown>>("colorCustomizations");
@@ -97,12 +95,8 @@ function readMarkdownInlineEditorColors(): Record<string, string> {
  * Resolves markdown heading colors and preview typography from the active VS Code
  * theme, editor settings, and markdown preview settings.
  */
-export async function resolveMarkdownThemeVariables(): Promise<
-    Record<string, string>
-> {
-    const themeLabel = workspace
-        .getConfiguration("workbench")
-        .get<string>("colorTheme");
+export async function resolveMarkdownThemeVariables(): Promise<Record<string, string>> {
+    const themeLabel = workspace.getConfiguration("workbench").get<string>("colorTheme");
 
     const markdownConfig = workspace.getConfiguration("markdown");
     const editorConfig = workspace.getConfiguration("editor");
@@ -116,9 +110,7 @@ export async function resolveMarkdownThemeVariables(): Promise<
               : 14;
     const previewLineHeight = markdownConfig.get<number>("preview.lineHeight");
     const lineHeight =
-        typeof previewLineHeight === "number" && previewLineHeight > 0
-            ? previewLineHeight
-            : 1.6;
+        typeof previewLineHeight === "number" && previewLineHeight > 0 ? previewLineHeight : 1.6;
 
     const typography = buildMarkdownTypographyCssVariables({
         fontSizePx,
@@ -139,21 +131,13 @@ export async function resolveMarkdownThemeVariables(): Promise<
     const mergedTheme = mergeColorThemeJson(theme, {
         colors: colorCustomizations,
     });
-    const customizations = editorConfig.get<TokenColorCustomizations>(
-        "tokenColorCustomizations",
-    );
-    const customRules = tokenColorRulesFromCustomizations(
-        customizations,
-        themeLabel,
-    );
+    const customizations = editorConfig.get<TokenColorCustomizations>("tokenColorCustomizations");
+    const customRules = tokenColorRulesFromCustomizations(customizations, themeLabel);
     const variables: Record<string, string> = {
         ...buildMarkdownThemeCssVariables(mergedTheme, customRules),
         ...buildSyntaxHighlightCssVariables(mergedTheme, customRules),
         ...typography,
     };
-    applyMarkdownInlineEditorColors(
-        variables,
-        readMarkdownInlineEditorColors(),
-    );
+    applyMarkdownInlineEditorColors(variables, readMarkdownInlineEditorColors());
     return variables;
 }

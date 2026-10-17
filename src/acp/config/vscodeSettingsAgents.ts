@@ -1,8 +1,5 @@
 import { workspace } from "vscode";
-import {
-    type AcpAgentSpawnConfig,
-    parseAcpAgentSpawnConfig,
-} from "../domain/agentSpawnConfig";
+import { type AcpAgentSpawnConfig, parseAcpAgentSpawnConfig } from "../domain/agentSpawnConfig";
 
 export type AcpAgentConfig = AcpAgentSpawnConfig;
 
@@ -22,8 +19,6 @@ export function getAcpAgentConfigsFromSettings(): AcpAgentConfig[] {
 }
 
 /** Returns the agent configuration with the given display name, if present. */
-export function getAcpAgentConfigByName(
-    name: string,
-): AcpAgentConfig | undefined {
+export function getAcpAgentConfigByName(name: string): AcpAgentConfig | undefined {
     return getAcpAgentConfigsFromSettings().find((c) => c.name === name);
 }

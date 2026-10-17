@@ -9,11 +9,7 @@ type PlaygroundFixtureCatalog = {
     seeds: PlaygroundFixtureEntry[];
 };
 
-function chatFixtureUrl(
-    id: string,
-    seed = "cursor-model",
-    replay = true,
-): string {
+function chatFixtureUrl(id: string, seed = "cursor-model", replay = true): string {
     const params = new URLSearchParams({
         fixture: id,
         seed,
@@ -98,17 +94,13 @@ async function main(): Promise<void> {
 
     if (catalog.chats.length > 0) {
         root.appendChild(
-            renderSection("Chat replays", catalog.chats, (entry) =>
-                chatFixtureUrl(entry.id),
-            ),
+            renderSection("Chat replays", catalog.chats, (entry) => chatFixtureUrl(entry.id)),
         );
     }
 
     if (catalog.seeds.length > 0) {
         root.appendChild(
-            renderSection("Model picker seeds", catalog.seeds, (entry) =>
-                seedFixtureUrl(entry.id),
-            ),
+            renderSection("Model picker seeds", catalog.seeds, (entry) => seedFixtureUrl(entry.id)),
         );
     }
 

@@ -15,10 +15,10 @@ Zed sends for every agent:
 
 ```json
 {
-  "clientCapabilities": {
-    "_meta": { "terminal-auth": true },
-    "auth": { "terminal": true }
-  }
+    "clientCapabilities": {
+        "_meta": { "terminal-auth": true },
+        "auth": { "terminal": true }
+    }
 }
 ```
 

@@ -47,9 +47,7 @@ export function resolveAuthMethodId(
         return undefined;
     }
     if (configuredId !== undefined && configuredId.length > 0) {
-        const match = methods.find(
-            (m) => m.id === configuredId && isAgentAuthMethod(m),
-        );
+        const match = methods.find((m) => m.id === configuredId && isAgentAuthMethod(m));
         if (match === undefined) {
             const advertised = methods.map((m) => m.id).join(", ");
             throw new Error(
@@ -62,18 +60,14 @@ export function resolveAuthMethodId(
     if (agentMethod !== undefined) {
         return agentMethod.id;
     }
-    throw new Error(
-        "Agent requires env_var/terminal auth; ACP UI supports agent auth only.",
-    );
+    throw new Error("Agent requires env_var/terminal auth; ACP UI supports agent auth only.");
 }
 
 /**
  * Parses `acp-agent.json`: a non-empty array of agent objects, or a single agent object
  * (accepted for backward compatibility).
  */
-export function parseAcpAgentsJsonFileContent(
-    content: unknown,
-): AcpAgentSpawnConfig[] | undefined {
+export function parseAcpAgentsJsonFileContent(content: unknown): AcpAgentSpawnConfig[] | undefined {
     if (Array.isArray(content)) {
         const result: AcpAgentSpawnConfig[] = [];
         for (const entry of content) {
@@ -89,9 +83,7 @@ export function parseAcpAgentsJsonFileContent(
 }
 
 /** Parses one agent entry from settings or a JSON file. Returns undefined if invalid. */
-export function parseAcpAgentSpawnConfig(
-    entry: unknown,
-): AcpAgentSpawnConfig | undefined {
+export function parseAcpAgentSpawnConfig(entry: unknown): AcpAgentSpawnConfig | undefined {
     if (entry === null || typeof entry !== "object") {
         return undefined;
     }
@@ -103,23 +95,16 @@ export function parseAcpAgentSpawnConfig(
         ? record.args.filter((a): a is string => typeof a === "string")
         : [];
     let env: Record<string, string> | undefined;
-    if (
-        record.env !== null &&
-        typeof record.env === "object" &&
-        !Array.isArray(record.env)
-    ) {
+    if (record.env !== null && typeof record.env === "object" && !Array.isArray(record.env)) {
         env = {};
-        for (const [k, v] of Object.entries(
-            record.env as Record<string, unknown>,
-        )) {
+        for (const [k, v] of Object.entries(record.env as Record<string, unknown>)) {
             if (typeof v === "string") {
                 env[k] = v;
             }
         }
     }
     const authMethodId =
-        typeof record.authMethodId === "string" &&
-        record.authMethodId.trim().length > 0
+        typeof record.authMethodId === "string" && record.authMethodId.trim().length > 0
             ? record.authMethodId.trim()
             : undefined;
     return {

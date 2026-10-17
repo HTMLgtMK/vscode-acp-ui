@@ -1,8 +1,5 @@
 import { createWriteStream, type WriteStream } from "node:fs";
-import type {
-    AcpRpcNdjsonLineContext,
-    AcpRpcNdjsonSink,
-} from "../../acp/ports/rpcNdjsonSink";
+import type { AcpRpcNdjsonLineContext, AcpRpcNdjsonSink } from "../../acp/ports/rpcNdjsonSink";
 import { formatAcpRpcNdjsonDebugLine } from "../../acp/ports/rpcNdjsonSink";
 
 /**

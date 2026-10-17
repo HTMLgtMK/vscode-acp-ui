@@ -163,18 +163,18 @@ Store registry installs in extension global storage, not in user `settings.json`
 
 ```json
 {
-  "schemaVersion": 1,
-  "agents": {
-    "claude-acp": {
-      "registryId": "claude-acp",
-      "installedVersion": "0.55.0",
-      "spawn": {
-        "name": "Claude Agent",
-        "command": "npx",
-        "args": ["-y", "@agentclientprotocol/claude-agent-acp@0.55.0"]
-      }
+    "schemaVersion": 1,
+    "agents": {
+        "claude-acp": {
+            "registryId": "claude-acp",
+            "installedVersion": "0.55.0",
+            "spawn": {
+                "name": "Claude Agent",
+                "command": "npx",
+                "args": ["-y", "@agentclientprotocol/claude-agent-acp@0.55.0"]
+            }
+        }
     }
-  }
 }
 ```
 

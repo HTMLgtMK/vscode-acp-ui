@@ -24,8 +24,7 @@ function fallbackThemeVariables(): Record<string, string> {
     if (foreground !== undefined) {
         variables["--vscode-foreground"] = foreground;
     }
-    const widgetBorder =
-        colors["widget.border"] ?? colors["editorWidget.border"];
+    const widgetBorder = colors["widget.border"] ?? colors["editorWidget.border"];
     if (widgetBorder !== undefined) {
         variables["--vscode-widget-border"] = widgetBorder;
     }
@@ -47,9 +46,7 @@ export function applyCssVariables(variables: Record<string, string>): void {
     }
 }
 
-export async function fetchPlaygroundThemeVariables(): Promise<
-    Record<string, string>
-> {
+export async function fetchPlaygroundThemeVariables(): Promise<Record<string, string>> {
     try {
         const response = await fetch("/api/playground-theme");
         if (!response.ok) {

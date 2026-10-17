@@ -24,15 +24,8 @@ function normalizeEntries(entries: string[]): string[] {
 }
 
 function readMap(context: ExtensionContext): PromptHistoryMap {
-    const raw = context.workspaceState.get<PromptHistoryMap | undefined>(
-        promptHistoryMementoKey,
-    );
-    if (
-        raw === undefined ||
-        raw === null ||
-        typeof raw !== "object" ||
-        Array.isArray(raw)
-    ) {
+    const raw = context.workspaceState.get<PromptHistoryMap | undefined>(promptHistoryMementoKey);
+    if (raw === undefined || raw === null || typeof raw !== "object" || Array.isArray(raw)) {
         return {};
     }
     return raw;

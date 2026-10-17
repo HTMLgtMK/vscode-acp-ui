@@ -5,9 +5,7 @@ import type { SessionMode, SessionModeState } from "@agentclientprotocol/sdk";
  */
 export type AcpUiSessionModelSelection = {
     currentModelId: string;
-    availableModels: Array<
-        Pick<{ modelId: string; name: string }, "modelId" | "name">
-    >;
+    availableModels: Array<Pick<{ modelId: string; name: string }, "modelId" | "name">>;
 };
 
 /**

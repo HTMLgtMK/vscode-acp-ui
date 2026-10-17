@@ -15,9 +15,7 @@ export function clampContentWidthPercent(value: number): number {
 
 /** Reads the chat content column width ratio (0.1 to 1) from VS Code settings. */
 export function readContentWidthRatioFromSettings(): number {
-    const raw = workspace
-        .getConfiguration()
-        .get<number>(settingKey, defaultPercent);
+    const raw = workspace.getConfiguration().get<number>(settingKey, defaultPercent);
     return clampContentWidthPercent(raw) / 100;
 }
 

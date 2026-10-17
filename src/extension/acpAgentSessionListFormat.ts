@@ -6,8 +6,7 @@ export function sessionInfoLabel(info: acp.SessionInfo): string {
     if (title !== undefined && title.length > 0) {
         return title;
     }
-    const shortId =
-        info.sessionId.length > 8 ? info.sessionId.slice(-8) : info.sessionId;
+    const shortId = info.sessionId.length > 8 ? info.sessionId.slice(-8) : info.sessionId;
     return `Session ${shortId}`;
 }
 
@@ -20,10 +19,6 @@ export function sessionInfoSortKey(info: acp.SessionInfo): number {
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export function sortSessionInfos(
-    sessions: acp.SessionInfo[],
-): acp.SessionInfo[] {
-    return [...sessions].sort(
-        (a, b) => sessionInfoSortKey(b) - sessionInfoSortKey(a),
-    );
+export function sortSessionInfos(sessions: acp.SessionInfo[]): acp.SessionInfo[] {
+    return [...sessions].sort((a, b) => sessionInfoSortKey(b) - sessionInfoSortKey(a));
 }

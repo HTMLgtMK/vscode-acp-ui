@@ -13,25 +13,25 @@ _Streaming markdown, tool calls, thoughts, and plans in the ACP UI trace._
 - **ACP UI** webview: ACP-backed chat in an editor tab or panel.
   Theme-aware markdown with colored headings and syntax-highlighted fenced code:
 
-  ![ACP UI markdown rendering](docs/Markdown.png)
+    ![ACP UI markdown rendering](docs/Markdown.png)
 
 - **Tool calls** inline in the trace: read output, terminal runs, and file diffs:
 
-  ![ACP UI tool call with diff](docs/Tool-call.png)
+    ![ACP UI tool call with diff](docs/Tool-call.png)
 
 - **Agent plans** rendered as structured plan blocks:
 
-  ![ACP UI plan block](docs/Plan.png)
+    ![ACP UI plan block](docs/Plan.png)
 
 - **Chats** sidebar under the **ACP UI** activity bar: list sessions, open, refresh, delete.
 - **Session config** in the composer when the agent advertises model and tuning options.
   Cursor-style bracketed models show a family picker plus derived params (for example **Fast**):
 
-  ![Cursor-style model picker](docs/Model-picker-cursor.png)
+    ![Cursor-style model picker](docs/Model-picker-cursor.png)
 
-  Agents that advertise explicit `model_config` options use a Zed-style toolbar (model, thinking, context, effort, and more):
+    Agents that advertise explicit `model_config` options use a Zed-style toolbar (model, thinking, context, effort, and more):
 
-  ![Agent-ordered model picker](docs/Model-picker-opus.png)
+    ![Agent-ordered model picker](docs/Model-picker-opus.png)
 
 - **ACP UI RPC** output channel for debugging protocol traffic.
 - **Agent configuration** via `ib-acp-ui.agents` in settings (command, args, env per agent).
@@ -93,11 +93,13 @@ Fields:
 
 ```bash
 npm ci
-npm run build      # webview + extension bundle
-npm run watch      # extension esbuild watch (run build:webview first or after UI changes)
-npm run check      # TypeScript
-npm run test       # vitest
-npm run verify     # build + check + test + lint
+npm run build      # webview + extension bundle (vp pack)
+npm run watch      # extension vp pack watch + webview vp build watch
+npm run check      # vp check (lint, format, types)
+npm run test       # vp test
+npm run lint       # vp lint
+npm run format     # vp fmt --write
+npm run verify     # build + check + test
 npm run install:local  # package .vsix and install into local VS Code (`code`)
 ```
 

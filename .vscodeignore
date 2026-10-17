@@ -17,9 +17,7 @@ docs/**
 
 # Build, test, and lint config
 tsconfig.json
-esbuild.mjs
-biome.json
-vitest.config.ts
+vite.config.ts
 package-lock.json
 
 # Repo metadata

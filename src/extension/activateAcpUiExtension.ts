@@ -1,9 +1,4 @@
-import {
-    Disposable,
-    type ExtensionContext,
-    type OutputChannel,
-    window,
-} from "vscode";
+import { Disposable, type ExtensionContext, type OutputChannel, window } from "vscode";
 import {
     buildAcpClientInfoFromPackage,
     configureAcpClientInfo,
@@ -20,9 +15,7 @@ export type AcpUiExtensionActivation = {
 /**
  * Registers the ACP RPC output channel and related commands.
  */
-export function activateAcpUiExtension(
-    context: ExtensionContext,
-): AcpUiExtensionActivation {
+export function activateAcpUiExtension(context: ExtensionContext): AcpUiExtensionActivation {
     configureAcpClientInfo(
         buildAcpClientInfoFromPackage(
             context.extension.packageJSON as {

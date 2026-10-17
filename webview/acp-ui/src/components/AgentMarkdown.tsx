@@ -28,6 +28,19 @@ function codeTextFromPreChild(children: ReactNode): string {
   return child.props[CODE_TEXT_ATTR] ?? "";
 }
 
+function reactNodeToPlainText(node: ReactNode): string {
+  if (typeof node === "string") {
+    return node;
+  }
+  if (typeof node === "number") {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(reactNodeToPlainText).join("");
+  }
+  return "";
+}
+
 async function copyTextToClipboard(text: string): Promise<void> {
   if (navigator.clipboard?.writeText !== undefined) {
     await navigator.clipboard.writeText(text);
@@ -122,7 +135,7 @@ export function AgentMarkdown({ text }: AgentMarkdownProps): ReactElement {
           code(props) {
             const { className, children, ...rest } = props;
             const language = languageFromClassName(className);
-            const codeText = String(children).replace(/\n$/, "");
+            const codeText = reactNodeToPlainText(children).replace(/\n$/, "");
             if (!className) {
               return (
                 <code {...rest} className={className}>

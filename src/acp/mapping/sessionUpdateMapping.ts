@@ -31,9 +31,7 @@ function clipToolDisplayText(text: string): string {
     return `${text.slice(0, maxToolDisplayChars)}\n\n... (truncated for display)`;
 }
 
-function formatContentBlockForTool(
-    block: acp.ContentBlock,
-): string | undefined {
+function formatContentBlockForTool(block: acp.ContentBlock): string | undefined {
     if (block.type === "text") {
         const t = block.text.trim();
         return t.length > 0 ? t : undefined;
@@ -41,9 +39,7 @@ function formatContentBlockForTool(
     return `[${block.type}]`;
 }
 
-function formatDiffPieceAsFullText(
-    piece: acp.ToolCallContent & { type: "diff" },
-): string {
+function formatDiffPieceAsFullText(piece: acp.ToolCallContent & { type: "diff" }): string {
     const pathLabel = piece.path.trim();
     const oldRaw = piece.oldText;
     const newText = piece.newText;
@@ -60,9 +56,7 @@ function formatDiffPieceAsFullText(
     return clipToolDisplayText(body);
 }
 
-function formatDiffSummaryOnly(
-    piece: acp.ToolCallContent & { type: "diff" },
-): string {
+function formatDiffSummaryOnly(piece: acp.ToolCallContent & { type: "diff" }): string {
     const pathLabel = piece.path.trim();
     const oldRaw = piece.oldText;
     const newText = piece.newText;
@@ -95,9 +89,7 @@ export function toolCallExecuteCommandSubtitle(call: {
     rawOutput?: unknown;
 }): string | undefined {
     const kindStr =
-        call.kind !== undefined &&
-        call.kind !== null &&
-        String(call.kind).length > 0
+        call.kind !== undefined && call.kind !== null && String(call.kind).length > 0
             ? String(call.kind)
             : "";
     const isExecute = kindStr === "execute" || kindStr === "terminal";
@@ -203,10 +195,7 @@ function extractShellCommandLine(raw: unknown): string | undefined {
             return parts.join(" ");
         }
     }
-    if (
-        typeof record.program === "string" &&
-        record.program.trim().length > 0
-    ) {
+    if (typeof record.program === "string" && record.program.trim().length > 0) {
         const prog = record.program.trim();
         const args = Array.isArray(record.args)
             ? record.args.filter((x): x is string => typeof x === "string")
@@ -216,9 +205,7 @@ function extractShellCommandLine(raw: unknown): string | undefined {
     return undefined;
 }
 
-function commandLineHintForToolUpdate(
-    update: acp.ToolCallUpdate,
-): string | undefined {
+function commandLineHintForToolUpdate(update: acp.ToolCallUpdate): string | undefined {
     const fromInput = extractShellCommandLine(update.rawInput);
     if (fromInput !== undefined) {
         return fromInput;
@@ -244,11 +231,7 @@ function formatToolCallContentPiece(
             lines.push(`Terminal: ${id}`);
         }
         const joined = lines.filter((l) => l.length > 0).join("\n");
-        return joined.length > 0
-            ? joined
-            : id.length > 0
-              ? `[Terminal ${id}]`
-              : "[Terminal]";
+        return joined.length > 0 ? joined : id.length > 0 ? `[Terminal ${id}]` : "[Terminal]";
     }
     if (piece.type === "content") {
         return formatContentBlockForTool(piece.content);
@@ -270,10 +253,7 @@ function formatRawToolOutput(raw: unknown): string | undefined {
             const t = record.content.trim();
             return t.length > 0 ? clipToolDisplayText(t) : undefined;
         }
-        if (
-            typeof record.stdout === "string" ||
-            typeof record.stderr === "string"
-        ) {
+        if (typeof record.stdout === "string" || typeof record.stderr === "string") {
             let combined = "";
             if (typeof record.exitCode === "number") {
                 combined += `exit ${record.exitCode}\n`;
@@ -313,10 +293,16 @@ function formatRawToolOutput(raw: unknown): string | undefined {
         try {
             return clipToolDisplayText(JSON.stringify(raw, null, 2));
         } catch {
-            return clipToolDisplayText(String(raw));
+            return undefined;
         }
     }
-    return clipToolDisplayText(String(raw));
+    if (typeof raw === "number" || typeof raw === "boolean" || typeof raw === "bigint") {
+        return clipToolDisplayText(String(raw));
+    }
+    if (typeof raw === "symbol") {
+        return clipToolDisplayText(raw.toString());
+    }
+    return undefined;
 }
 
 function toolCallUpdateToDisplayParts(update: acp.ToolCallUpdate): {
@@ -326,11 +312,7 @@ function toolCallUpdateToDisplayParts(update: acp.ToolCallUpdate): {
     let diffRows: ToolCallDiffRow[] | undefined;
     const segments: string[] = [];
     let hadTerminalPiece = false;
-    if (
-        update.content !== undefined &&
-        update.content !== null &&
-        update.content.length > 0
-    ) {
+    if (update.content !== undefined && update.content !== null && update.content.length > 0) {
         for (const piece of update.content) {
             if (piece.type === "diff") {
                 if (diffRows === undefined) {
@@ -360,9 +342,7 @@ function toolCallUpdateToDisplayParts(update: acp.ToolCallUpdate): {
         if (hadTerminalPiece) {
             const rawFormatted = formatRawToolOutput(update.rawOutput);
             if (rawFormatted !== undefined && rawFormatted.trim().length > 0) {
-                contentText = clipToolDisplayText(
-                    `${contentText}\n\n${rawFormatted.trim()}`,
-                );
+                contentText = clipToolDisplayText(`${contentText}\n\n${rawFormatted.trim()}`);
             }
         }
         return {
@@ -402,18 +382,14 @@ function formatToolRawInput(raw: unknown): string | undefined {
         const t = raw.trim();
         return t.length > 0 ? t : undefined;
     }
-    if (
-        typeof raw === "object" &&
-        !Array.isArray(raw) &&
-        Object.keys(raw as object).length === 0
-    ) {
+    if (typeof raw === "object" && !Array.isArray(raw) && Object.keys(raw as object).length === 0) {
         return undefined;
     }
     try {
         const s = JSON.stringify(raw);
         return s !== undefined && s !== "{}" && s !== "[]" ? s : undefined;
     } catch {
-        return String(raw);
+        return undefined;
     }
 }
 
@@ -435,9 +411,7 @@ function searchSubtitleFromRawInput(
     update: acp.ToolCallUpdate,
     pendingKind: string | undefined,
 ): string | undefined {
-    const pattern =
-        patternHintFromStructuredUnknown(raw) ??
-        patternHintFromPlainObject(raw);
+    const pattern = patternHintFromStructuredUnknown(raw) ?? patternHintFromPlainObject(raw);
     const pathHint = pathHintFromStructuredUnknown(raw);
     if (pattern !== undefined && pathHint !== undefined) {
         return `"${pattern}" in ${pathHint}`;
@@ -459,11 +433,7 @@ function patternHintFromStructuredUnknown(raw: unknown): string | undefined {
     if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) {
         const record = raw as Record<string, unknown>;
         const nested = record._meta;
-        if (
-            nested !== null &&
-            typeof nested === "object" &&
-            !Array.isArray(nested)
-        ) {
+        if (nested !== null && typeof nested === "object" && !Array.isArray(nested)) {
             return patternHintFromPlainObject(nested);
         }
     }
@@ -477,8 +447,7 @@ export function toolCallUpdateSubtitleHint(
     const kind = effectiveToolKindForUpdate(update, options?.pendingKind);
     if (kind === "execute" || kind === "terminal") {
         const cmd =
-            extractShellCommandLine(update.rawInput) ??
-            extractShellCommandLine(update.rawOutput);
+            extractShellCommandLine(update.rawInput) ?? extractShellCommandLine(update.rawOutput);
         if (cmd !== undefined) {
             return cmd;
         }
@@ -509,37 +478,21 @@ export function toolCallUpdateSubtitleHint(
     }
     const fromRawOutputPath = pathHintFromStructuredUnknown(update.rawOutput);
     if (fromRawOutputPath !== undefined) {
-        return formatSubtitlePathForKind(
-            fromRawOutputPath,
-            update,
-            options?.pendingKind,
-        );
+        return formatSubtitlePathForKind(fromRawOutputPath, update, options?.pendingKind);
     }
     const fromRawOutputError = pathHintFromErrorField(update.rawOutput);
     if (fromRawOutputError !== undefined) {
-        return formatSubtitlePathForKind(
-            fromRawOutputError,
-            update,
-            options?.pendingKind,
-        );
+        return formatSubtitlePathForKind(fromRawOutputError, update, options?.pendingKind);
     }
     const fromRawInputPath = pathHintFromStructuredUnknown(update.rawInput);
     if (fromRawInputPath !== undefined) {
-        return formatSubtitlePathForKind(
-            fromRawInputPath,
-            update,
-            options?.pendingKind,
-        );
+        return formatSubtitlePathForKind(fromRawInputPath, update, options?.pendingKind);
     }
     const rawInputText = formatToolRawInput(update.rawInput);
     if (rawInputText !== undefined && rawInputText.trim().length > 0) {
         const fromJsonPath = pathHintFromJsonishRawInput(rawInputText);
         if (fromJsonPath !== undefined) {
-            return formatSubtitlePathForKind(
-                fromJsonPath,
-                update,
-                options?.pendingKind,
-            );
+            return formatSubtitlePathForKind(fromJsonPath, update, options?.pendingKind);
         }
     }
     if (kind === "search" || kind === "grep" || kind === "glob") {
@@ -559,11 +512,7 @@ function pathHintFromStructuredUnknown(raw: unknown): string | undefined {
     if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) {
         const record = raw as Record<string, unknown>;
         const nested = record._meta;
-        if (
-            nested !== null &&
-            typeof nested === "object" &&
-            !Array.isArray(nested)
-        ) {
+        if (nested !== null && typeof nested === "object" && !Array.isArray(nested)) {
             return pathHintFromPlainObject(nested);
         }
     }
@@ -627,9 +576,7 @@ function pathHintFromErrorText(text: string): string | undefined {
     if (trimmed.length === 0) {
         return undefined;
     }
-    const pathDoesNotExist = trimmed.match(
-        /^Path does not exist:\s*(.+)$/i,
-    )?.[1];
+    const pathDoesNotExist = trimmed.match(/^Path does not exist:\s*(.+)$/i)?.[1];
     if (pathDoesNotExist !== undefined && pathDoesNotExist.length > 0) {
         return pathDoesNotExist.trim();
     }
@@ -648,9 +595,7 @@ function pathHintFromErrorField(raw: unknown): string | undefined {
 }
 
 /** Compact count label for Cursor-style search completions (`totalMatches` / `totalFiles`). */
-export function searchStatsSubtitleFromRawOutput(
-    raw: unknown,
-): string | undefined {
+export function searchStatsSubtitleFromRawOutput(raw: unknown): string | undefined {
     if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
         return undefined;
     }
@@ -687,11 +632,7 @@ function effectiveToolKindForUpdate(
     update: acp.ToolCallUpdate,
     pendingKind: string | undefined,
 ): string | undefined {
-    if (
-        update.kind !== undefined &&
-        update.kind !== null &&
-        String(update.kind).length > 0
-    ) {
+    if (update.kind !== undefined && update.kind !== null && String(update.kind).length > 0) {
         return update.kind;
     }
     return pendingKind;
@@ -723,15 +664,12 @@ function fileNameFromPath(pathText: string): string {
 /**
  * Builds the dim subtitle line for a tool call (paths, arguments, or inline text from the agent).
  */
-export function toolCallSubtitleFromToolCall(
-    call: acp.ToolCall,
-): string | undefined {
+export function toolCallSubtitleFromToolCall(call: acp.ToolCall): string | undefined {
     const execLine = toolCallExecuteCommandSubtitle(call);
     if (execLine !== undefined) {
         return execLine;
     }
-    const kindStr =
-        call.kind !== undefined && call.kind !== null ? String(call.kind) : "";
+    const kindStr = call.kind !== undefined && call.kind !== null ? String(call.kind) : "";
     if (kindStr === "execute" || kindStr === "terminal") {
         if (call.locations && call.locations.length > 0) {
             const locPath = call.locations[0]!.path.trim();
@@ -786,9 +724,7 @@ export function sessionUpdateToWebviewMessages(
                 duration_ms?: number;
             };
             const textFromBlock =
-                thoughtUpdate.content?.type === "text"
-                    ? thoughtUpdate.content.text
-                    : undefined;
+                thoughtUpdate.content?.type === "text" ? thoughtUpdate.content.text : undefined;
             const text = textFromBlock ?? thoughtUpdate.text ?? "";
             if (text.length === 0) {
                 return [];
@@ -839,42 +775,28 @@ export function sessionUpdateToWebviewMessages(
         }
         case "tool_call_update": {
             const parts = toolCallUpdateToDisplayParts(update);
-            const pendingKind = toolKindTracking?.kindByToolId.get(
-                update.toolCallId,
-            );
+            const pendingKind = toolKindTracking?.kindByToolId.get(update.toolCallId);
             const subtitleHint = toolCallUpdateSubtitleHint(update, {
                 pendingKind,
             });
             const kindFromUpdate =
-                update.kind !== undefined &&
-                update.kind !== null &&
-                String(update.kind).length > 0
+                update.kind !== undefined && update.kind !== null && String(update.kind).length > 0
                     ? String(update.kind)
                     : undefined;
             if (kindFromUpdate !== undefined) {
-                toolKindTracking?.kindByToolId.set(
-                    update.toolCallId,
-                    kindFromUpdate,
-                );
+                toolKindTracking?.kindByToolId.set(update.toolCallId, kindFromUpdate);
             }
             return [
                 {
                     type: "updateToolCall",
                     toolCallId: update.toolCallId,
                     status: update.status ?? "completed",
-                    ...(kindFromUpdate !== undefined
-                        ? { kind: kindFromUpdate }
-                        : {}),
-                    ...(parts.contentText !== undefined
-                        ? { content: parts.contentText }
-                        : {}),
-                    ...(parts.diffRows !== undefined &&
-                    parts.diffRows.length > 0
+                    ...(kindFromUpdate !== undefined ? { kind: kindFromUpdate } : {}),
+                    ...(parts.contentText !== undefined ? { content: parts.contentText } : {}),
+                    ...(parts.diffRows !== undefined && parts.diffRows.length > 0
                         ? { diffRows: parts.diffRows }
                         : {}),
-                    ...(subtitleHint !== undefined
-                        ? { subtitle: subtitleHint }
-                        : {}),
+                    ...(subtitleHint !== undefined ? { subtitle: subtitleHint } : {}),
                 },
             ];
         }
@@ -890,12 +812,9 @@ export function sessionUpdateToWebviewMessages(
                         return null;
                     }
                     const o = entry as Record<string, unknown>;
-                    const name =
-                        typeof o.name === "string" ? o.name.trim() : "";
+                    const name = typeof o.name === "string" ? o.name.trim() : "";
                     const description =
-                        typeof o.description === "string"
-                            ? o.description.trim()
-                            : "";
+                        typeof o.description === "string" ? o.description.trim() : "";
                     if (name.length === 0) {
                         return null;
                     }
@@ -903,24 +822,14 @@ export function sessionUpdateToWebviewMessages(
                     const input = o.input;
                     if (input !== null && typeof input === "object") {
                         const hint = (input as Record<string, unknown>).hint;
-                        if (
-                            typeof hint === "string" &&
-                            hint.trim().length > 0
-                        ) {
+                        if (typeof hint === "string" && hint.trim().length > 0) {
                             inputHint = hint.trim();
                         }
                     }
-                    const sourceCandidates = [
-                        o.source,
-                        o.scope,
-                        o.skillSource,
-                    ] as unknown[];
+                    const sourceCandidates = [o.source, o.scope, o.skillSource] as unknown[];
                     let source: string | undefined;
                     for (const candidate of sourceCandidates) {
-                        if (
-                            typeof candidate === "string" &&
-                            candidate.trim().length > 0
-                        ) {
+                        if (typeof candidate === "string" && candidate.trim().length > 0) {
                             source = candidate.trim();
                             break;
                         }
@@ -947,9 +856,7 @@ export function sessionUpdateToWebviewMessages(
                 },
             ];
         case "config_option_update": {
-            const normalized = sessionConfigOptionsFromAgent(
-                update.configOptions,
-            );
+            const normalized = sessionConfigOptionsFromAgent(update.configOptions);
             if (normalized === null) {
                 return [];
             }

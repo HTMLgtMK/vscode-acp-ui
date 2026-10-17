@@ -4,10 +4,7 @@ import type { AcpUiSessionModelSelection } from "../acp/session/sessionModels";
 /** Replayable session log events (user submit + post-init extension messages). */
 export type AcpUiHistoryReplayEvent =
     | { type: "submit"; body: string }
-    | Exclude<
-          ExtensionToWebviewMessage,
-          { type: "init" } | { type: "historyReplay" }
-      >;
+    | Exclude<ExtensionToWebviewMessage, { type: "init" } | { type: "historyReplay" }>;
 
 /** Plan entry forwarded from an ACP agent plan update. */
 export type PlanEntry = {
@@ -276,9 +273,7 @@ export function isPotentiallyExtensionPostMessageData(
 /**
  * Parses an untrusted `postMessage` payload from a webview.
  */
-export function tryParseWebviewMessage(
-    raw: unknown,
-): WebviewToExtensionMessage | null {
+export function tryParseWebviewMessage(raw: unknown): WebviewToExtensionMessage | null {
     if (raw === null || typeof raw !== "object") {
         return null;
     }
@@ -291,10 +286,7 @@ export function tryParseWebviewMessage(
         if (typeof record.demoSeed === "string" && record.demoSeed.length > 0) {
             ready.demoSeed = record.demoSeed;
         }
-        if (
-            typeof record.demoFixture === "string" &&
-            record.demoFixture.length > 0
-        ) {
+        if (typeof record.demoFixture === "string" && record.demoFixture.length > 0) {
             ready.demoFixture = record.demoFixture;
         }
         if (typeof record.demoReplay === "boolean") {
@@ -352,10 +344,7 @@ export function tryParseWebviewMessage(
                 cancelled: true,
             };
         }
-        if (
-            typeof record.selectedOptionId === "string" &&
-            record.selectedOptionId.length > 0
-        ) {
+        if (typeof record.selectedOptionId === "string" && record.selectedOptionId.length > 0) {
             return {
                 type: "permissionResponse",
                 requestId: record.requestId,
@@ -419,9 +408,7 @@ export function tryParseWebviewMessage(
         record.path.trim().length > 0
     ) {
         const target =
-            record.target === "auto" || record.target === "file"
-                ? record.target
-                : undefined;
+            record.target === "auto" || record.target === "file" ? record.target : undefined;
         return {
             type: "openWorkspacePath",
             path: record.path.trim(),

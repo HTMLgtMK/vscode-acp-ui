@@ -22,9 +22,7 @@ export function getActiveAgentConfig(): AcpAgentConfig | undefined {
     if (configs.length === 0) {
         return undefined;
     }
-    const stored = extensionContext?.globalState.get<string>(
-        activeAgentStorageKey,
-    );
+    const stored = extensionContext?.globalState.get<string>(activeAgentStorageKey);
     if (stored !== undefined && stored.length > 0) {
         const match = getAcpAgentConfigByName(stored);
         if (match !== undefined) {

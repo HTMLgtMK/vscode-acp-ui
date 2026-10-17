@@ -45,12 +45,7 @@ function agentText(text: string): string {
     });
 }
 
-function toolCall(
-    toolCallId: string,
-    title: string,
-    kind: string,
-    subtitle?: string,
-): string {
+function toolCall(toolCallId: string, title: string, kind: string, subtitle?: string): string {
     return line({
         sessionUpdate: "tool_call",
         toolCallId,
@@ -62,10 +57,7 @@ function toolCall(
     });
 }
 
-function toolComplete(
-    toolCallId: string,
-    payload: Record<string, unknown>,
-): string {
+function toolComplete(toolCallId: string, payload: Record<string, unknown>): string {
     return line({
         sessionUpdate: "tool_call_update",
         toolCallId,
@@ -142,10 +134,7 @@ mkdirSync(chatsDir, { recursive: true });
 
 writeFixture("markdown", [
     userText("Show me how assistant markdown renders in ACP UI."),
-    thoughtText(
-        "Prepare a compact markdown sample with headings and code.",
-        2400,
-    ),
+    thoughtText("Prepare a compact markdown sample with headings and code.", 2400),
     agentText(markdownAgentMessage),
 ]);
 
@@ -167,9 +156,7 @@ writeFixture("tools", [
             },
         ],
     }),
-    agentText(
-        "Updated `src/extension.ts` so activation uses the new message string.",
-    ),
+    agentText("Updated `src/extension.ts` so activation uses the new message string."),
 ]);
 
 writeFixture("plan", [
@@ -198,18 +185,14 @@ writeFixture("plan", [
 
 writeFixture("showcase", [
     userText("Walk me through the main ACP UI rendering features."),
-    thoughtText(
-        "Show markdown, a read tool, a write diff, and the plan block.",
-        3200,
-    ),
+    thoughtText("Show markdown, a read tool, a write diff, and the plan block.", 3200),
     agentText(
         "## Overview\n\nACP UI renders streaming assistant markdown, tool calls, thoughts, and agent plans in one trace.\n",
     ),
     toolCall("tool-read-readme", "Read File", "read"),
     toolComplete("tool-read-readme", {
         rawOutput: {
-            content:
-                "# ACP UI\n\nVS Code extension for Agent Client Protocol chat.\n",
+            content: "# ACP UI\n\nVS Code extension for Agent Client Protocol chat.\n",
         },
     }),
     agentText(markdownAgentMessage),
@@ -256,8 +239,7 @@ const modeOption = {
         {
             value: "plan",
             name: "Plan",
-            description:
-                "Read-only mode for planning and designing before implementation",
+            description: "Read-only mode for planning and designing before implementation",
         },
         {
             value: "ask",

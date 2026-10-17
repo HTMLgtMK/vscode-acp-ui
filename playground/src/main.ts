@@ -47,9 +47,7 @@ function mountPlaygroundDevNav(): void {
     document.body.appendChild(link);
 }
 
-function playgroundHistoryStorageKey(
-    workspaceLabel: string | undefined,
-): string {
+function playgroundHistoryStorageKey(workspaceLabel: string | undefined): string {
     const base =
         workspaceLabel !== undefined && workspaceLabel.trim().length > 0
             ? workspaceLabel.trim()
@@ -57,9 +55,7 @@ function playgroundHistoryStorageKey(
     return `ib-acp-ui.playground.history:${base}`;
 }
 
-function loadPlaygroundHistory(
-    workspaceLabel: string | undefined,
-): string[] | undefined {
+function loadPlaygroundHistory(workspaceLabel: string | undefined): string[] | undefined {
     try {
         const storage = globalThis.localStorage;
         if (storage === undefined) {
@@ -78,28 +74,20 @@ function loadPlaygroundHistory(
         if (!Array.isArray(parsed)) {
             return undefined;
         }
-        const entries = parsed.filter(
-            (x): x is string => typeof x === "string",
-        );
+        const entries = parsed.filter((x): x is string => typeof x === "string");
         return entries.length > 0 ? entries : undefined;
     } catch {
         return undefined;
     }
 }
 
-function savePlaygroundHistory(
-    workspaceLabel: string | undefined,
-    entries: string[],
-): void {
+function savePlaygroundHistory(workspaceLabel: string | undefined, entries: string[]): void {
     try {
         const storage = globalThis.localStorage;
         if (storage === undefined) {
             return;
         }
-        storage.setItem(
-            playgroundHistoryStorageKey(workspaceLabel),
-            JSON.stringify(entries),
-        );
+        storage.setItem(playgroundHistoryStorageKey(workspaceLabel), JSON.stringify(entries));
     } catch {
         /* private mode or quota */
     }
@@ -107,9 +95,7 @@ function savePlaygroundHistory(
 
 function createWebSocketHost(): {
     post(message: WebviewToExtensionMessage): void;
-    onExtensionMessage(
-        handler: (message: ExtensionToWebviewMessage) => void,
-    ): void;
+    onExtensionMessage(handler: (message: ExtensionToWebviewMessage) => void): void;
 } {
     const ws = new WebSocket(WS_URL);
     const pending: WebviewToExtensionMessage[] = [];
@@ -143,9 +129,7 @@ function createWebSocketHost(): {
                 pending.push(message);
             }
         },
-        onExtensionMessage(
-            h: (message: ExtensionToWebviewMessage) => void,
-        ): void {
+        onExtensionMessage(h: (message: ExtensionToWebviewMessage) => void): void {
             handler = h;
         },
     };
@@ -226,9 +210,7 @@ async function bootstrap(): Promise<void> {
                     host.post({
                         type: "openWorkspacePath",
                         path,
-                        ...(options?.target === "auto"
-                            ? { target: "auto" }
-                            : {}),
+                        ...(options?.target === "auto" ? { target: "auto" } : {}),
                     });
                 },
             );

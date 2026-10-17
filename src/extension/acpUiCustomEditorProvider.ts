@@ -10,10 +10,7 @@ import {
     workspace,
 } from "vscode";
 import { AcpUiSessionController } from "./acpUiSessionController";
-import {
-    ensureSessionFileNameMatchesTitle,
-    parseSessionFile,
-} from "./acpUiSessionJsonl";
+import { ensureSessionFileNameMatchesTitle, parseSessionFile } from "./acpUiSessionJsonl";
 import { updateAcpUiSessionFileUri } from "./acpUiSessionsStore";
 import { getAcpUiWebviewHtml } from "./acpUiWebviewShell";
 
@@ -55,9 +52,7 @@ export function moveAcpUiCustomEditorUri(from: Uri, to: Uri): void {
     }
 }
 
-export function setAcpUiCustomEditorRefreshHandler(
-    refreshChatsList: () => void,
-): void {
+export function setAcpUiCustomEditorRefreshHandler(refreshChatsList: () => void): void {
     refreshChatsListHandler = refreshChatsList;
 }
 
@@ -141,9 +136,7 @@ export class AcpUiCustomEditorProvider implements CustomTextEditorProvider {
     }
 }
 
-export function registerAcpUiCustomEditorProvider(
-    context: ExtensionContext,
-): void {
+export function registerAcpUiCustomEditorProvider(context: ExtensionContext): void {
     context.subscriptions.push(
         window.registerCustomEditorProvider(
             acpUiCustomEditorViewType,

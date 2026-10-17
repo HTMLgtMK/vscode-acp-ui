@@ -1,10 +1,7 @@
 import type { SessionConfigOption } from "@agentclientprotocol/sdk";
 import { parseSessionModelsFromReadmeNdjson } from "./readmeSessionModels";
 import type { AcpUiSessionConfigOption } from "./sessionConfigOptions";
-import {
-    modelConfigOption,
-    sessionConfigOptionsFromAgent,
-} from "./sessionConfigOptions";
+import { modelConfigOption, sessionConfigOptionsFromAgent } from "./sessionConfigOptions";
 import type { AcpUiSessionModelSelection } from "./sessionModels";
 
 export type ReadmeSessionSeed = {
@@ -16,9 +13,7 @@ function configOptionsFromRaw(raw: unknown): AcpUiSessionConfigOption[] | null {
     if (!Array.isArray(raw) || raw.length === 0) {
         return null;
     }
-    const normalized = sessionConfigOptionsFromAgent(
-        raw as SessionConfigOption[],
-    );
+    const normalized = sessionConfigOptionsFromAgent(raw as SessionConfigOption[]);
     return normalized?.options ?? null;
 }
 
@@ -41,9 +36,7 @@ function modelSelectionFromConfigOptions(
     };
 }
 
-function modelSelectionFromRaw(
-    raw: unknown,
-): AcpUiSessionModelSelection | null {
+function modelSelectionFromRaw(raw: unknown): AcpUiSessionModelSelection | null {
     if (raw === null || typeof raw !== "object") {
         return null;
     }
@@ -51,10 +44,7 @@ function modelSelectionFromRaw(
         currentModelId?: unknown;
         availableModels?: unknown;
     };
-    if (
-        typeof models.currentModelId !== "string" ||
-        !Array.isArray(models.availableModels)
-    ) {
+    if (typeof models.currentModelId !== "string" || !Array.isArray(models.availableModels)) {
         return null;
     }
     const availableModels = models.availableModels
@@ -82,9 +72,7 @@ function modelSelectionFromRaw(
  * Extracts bootstrap `models` and `configOptions` from a captured ACP NDJSON log
  * (e.g. `playground/mock/readme.ndjson`).
  */
-export function parseReadmeSessionSeedFromNdjson(
-    text: string,
-): ReadmeSessionSeed {
+export function parseReadmeSessionSeedFromNdjson(text: string): ReadmeSessionSeed {
     let modelSelection = parseSessionModelsFromReadmeNdjson(text);
     let configOptions: AcpUiSessionConfigOption[] | null = null;
 
@@ -124,9 +112,7 @@ export function parseReadmeSessionSeedFromNdjson(
 /**
  * Reads a committed JSON fixture with raw agent `configOptions` and/or `modelSelection`.
  */
-export function parseReadmeSessionSeedFromJson(
-    text: string,
-): ReadmeSessionSeed {
+export function parseReadmeSessionSeedFromJson(text: string): ReadmeSessionSeed {
     let parsed: unknown;
     try {
         parsed = JSON.parse(text) as unknown;

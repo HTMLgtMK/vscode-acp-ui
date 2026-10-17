@@ -77,9 +77,7 @@ export async function openOrRevealAcpUiEditor(
 /**
  * Closes editor tabs for a session file if open.
  */
-export async function disposeAcpUiEditorForSession(
-    sessionId: string,
-): Promise<void> {
+export async function disposeAcpUiEditorForSession(sessionId: string): Promise<void> {
     const record = getAcpUiSession(sessionId);
     if (record === undefined) {
         return;
@@ -104,10 +102,7 @@ export async function disposeAcpUiEditorForSession(
  * Registers ACP UI commands. Pass {@link refreshChatsList} from {@link AcpUiSessionsViewProvider.activate}
  * so new chats update the sidebar tree.
  */
-export function registerAcpUiPanel(
-    context: ExtensionContext,
-    refreshChatsList: () => void,
-): void {
+export function registerAcpUiPanel(context: ExtensionContext, refreshChatsList: () => void): void {
     refreshChatsListHandler = refreshChatsList;
     setAcpUiCustomEditorRefreshHandler(refreshChatsList);
     registerCommandIB(
@@ -130,11 +125,7 @@ export function registerAcpUiPanel(
         () => void openNewAcpUiWithAgentPicker(context, refreshChatsList),
         context,
     );
-    registerCommandIB(
-        "ib-acp-ui.openAcpUiView",
-        () => void openActiveAcpFileInView(),
-        context,
-    );
+    registerCommandIB("ib-acp-ui.openAcpUiView", () => void openActiveAcpFileInView(), context);
     registerCommandIB(
         "ib-acp-ui.openAcpUiTextEditor",
         () => void openActiveAcpFileInTextEditor(),
@@ -189,12 +180,7 @@ async function openActiveAcpFileInTextEditor(): Promise<void> {
     if (uri === undefined) {
         return;
     }
-    await commands.executeCommand(
-        "vscode.openWith",
-        uri,
-        "default",
-        ViewColumn.Active,
-    );
+    await commands.executeCommand("vscode.openWith", uri, "default", ViewColumn.Active);
 }
 
 async function openNewAcpUiWithDefaultAgent(
@@ -232,11 +218,6 @@ async function openNewAcpUi(
         agentName: agentConfig.name,
     });
     setActiveAcpUiSessionId(created.id);
-    await openOrRevealAcpUiEditor(
-        context,
-        created.id,
-        created.title,
-        agentConfig,
-    );
+    await openOrRevealAcpUiEditor(context, created.id, created.title, agentConfig);
     refreshChatsList();
 }

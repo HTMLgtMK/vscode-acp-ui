@@ -55,14 +55,10 @@ export function sessionModeIndicatorFromOption(
     if (option === undefined) {
         return { visible: false };
     }
-    const choice = option.options.find(
-        (row) => row.value === option.currentValue,
-    );
+    const choice = option.options.find((row) => row.value === option.currentValue);
     return resolveSessionModeIndicator(option.currentValue, choice?.name);
 }
 
-export function isSessionModeConfigOption(
-    option: AcpUiSessionConfigOption,
-): boolean {
+export function isSessionModeConfigOption(option: AcpUiSessionConfigOption): boolean {
     return option.category === "mode" || option.configId === "mode";
 }

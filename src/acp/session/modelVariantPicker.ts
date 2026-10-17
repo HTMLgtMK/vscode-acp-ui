@@ -150,10 +150,7 @@ export function formatModelDisplayName(name: string, modelId: string): string {
 }
 
 /** Rebuilds a Cursor-style model id from a base slug and bracket params. */
-export function buildModelId(
-    base: string,
-    params: Record<string, string>,
-): string {
+export function buildModelId(base: string, params: Record<string, string>): string {
     const keys = Object.keys(params).sort();
     if (keys.length === 0) {
         return `${base}[]`;
@@ -223,14 +220,11 @@ export function buildModelPickerState(
     }
 
     const currentEntry =
-        availableModels.find((model) => model.modelId === currentModelId) ??
-        availableModels[0];
+        availableModels.find((model) => model.modelId === currentModelId) ?? availableModels[0];
     const currentBase = parseModelIdBracketParams(currentEntry.modelId).base;
-    const currentGroup =
-        groups.find((group) => group.name === currentBase) ?? null;
+    const currentGroup = groups.find((group) => group.name === currentBase) ?? null;
     const currentGroupLabel =
-        currentGroup?.label ??
-        formatModelDisplayName(currentEntry.name, currentEntry.modelId);
+        currentGroup?.label ?? formatModelDisplayName(currentEntry.name, currentEntry.modelId);
 
     return {
         groups,

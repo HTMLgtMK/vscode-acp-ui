@@ -22,10 +22,7 @@ export function normalizePathForCompare(fsPath: string): string {
 }
 
 /** Resolves a workspace-relative or absolute tool path to an absolute filesystem path. */
-export function resolveWorkspacePath(
-    path: string,
-    workspaceRoot: string | undefined,
-): string {
+export function resolveWorkspacePath(path: string, workspaceRoot: string | undefined): string {
     const expanded = expandTildeInPath(path);
     if (isAbsolute(expanded)) {
         return expanded;

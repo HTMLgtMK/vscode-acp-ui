@@ -44,12 +44,7 @@ export function normalizeSlashCommandSource(
     return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
-const GROUP_SCOPE_ORDER = [
-    "workspace",
-    "user skill",
-    "user",
-    "global",
-] as const;
+const GROUP_SCOPE_ORDER = ["workspace", "user skill", "user", "global"] as const;
 
 const GROUP_SORT_ORDER: Record<string, number> = {
     "built-in": 0,
@@ -74,9 +69,7 @@ export function slashCommandGroupLabel(source: string | undefined): string {
     const tokens = sourceTokens(source);
     for (const scope of GROUP_SCOPE_ORDER) {
         const hit = tokens.find(
-            (token) =>
-                token.toLowerCase() === scope ||
-                token.toLowerCase().includes(scope),
+            (token) => token.toLowerCase() === scope || token.toLowerCase().includes(scope),
         );
         if (hit !== undefined) {
             return hit;
@@ -85,10 +78,7 @@ export function slashCommandGroupLabel(source: string | undefined): string {
     return tokens[0] ?? source;
 }
 
-export function compareSlashCommandGroups(
-    leftLabel: string,
-    rightLabel: string,
-): number {
+export function compareSlashCommandGroups(leftLabel: string, rightLabel: string): number {
     const leftKey = leftLabel.toLowerCase();
     const rightKey = rightLabel.toLowerCase();
     const leftOrder = GROUP_SORT_ORDER[leftKey] ?? 50;

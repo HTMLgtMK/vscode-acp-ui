@@ -126,10 +126,7 @@ async function stopProcesses(processes: RunningProcess[]): Promise<void> {
     );
 }
 
-async function waitForComposer(
-    page: Page,
-    requireTrace: boolean,
-): Promise<void> {
+async function waitForComposer(page: Page, requireTrace: boolean): Promise<void> {
     await page.waitForSelector(".composer-frame", { timeout: 30_000 });
     await page.waitForSelector(".composer-footer-model", { timeout: 30_000 });
     if (requireTrace) {
@@ -138,10 +135,7 @@ async function waitForComposer(
     await page.waitForTimeout(400);
 }
 
-async function captureSpec(
-    browser: Browser,
-    capture: CaptureSpec,
-): Promise<void> {
+async function captureSpec(browser: Browser, capture: CaptureSpec): Promise<void> {
     const vitePort = await reservePort();
     const wsPort = await reservePort();
     const baseUrl = `http://127.0.0.1:${vitePort}`;
@@ -171,19 +165,12 @@ async function captureSpec(
         ],
         demoEnv,
     );
-    const server = startProcess(
-        "server",
-        "npx",
-        ["tsx", "playground/server.ts"],
-        demoEnv,
-    );
+    const server = startProcess("server", "npx", ["tsx", "playground/server.ts"], demoEnv);
 
     try {
         await waitForUrl(baseUrl);
         if (server.child.exitCode !== null) {
-            throw new Error(
-                `Playground demo server exited before capturing ${capture.filename}.`,
-            );
+            throw new Error(`Playground demo server exited before capturing ${capture.filename}.`);
         }
         const page = await browser.newPage({
             viewport: { width: 1280, height: 900 },

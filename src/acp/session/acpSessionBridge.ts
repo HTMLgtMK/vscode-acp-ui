@@ -84,19 +84,10 @@ export class AcpSessionBridge {
     /** Read tool calls awaiting `fs/readTextFile` path correlation (FIFO). */
     private readToolCallQueue: string[] = [];
     private nextPermissionRequestId = 0;
-    private permissionWaiters = new Map<
-        string,
-        (outcome: acp.RequestPermissionResponse) => void
-    >();
+    private permissionWaiters = new Map<string, (outcome: acp.RequestPermissionResponse) => void>();
     private nextCursorExtensionRequestId = 0;
-    private askQuestionWaiters = new Map<
-        string,
-        (result: Record<string, unknown>) => void
-    >();
-    private createPlanWaiters = new Map<
-        string,
-        (result: Record<string, unknown>) => void
-    >();
+    private askQuestionWaiters = new Map<string, (result: Record<string, unknown>) => void>();
+    private createPlanWaiters = new Map<string, (result: Record<string, unknown>) => void>();
 
     constructor(
         private readonly config: AcpAgentSpawnConfig,
@@ -107,19 +98,15 @@ export class AcpSessionBridge {
         this.agentProcess = new AcpAgentProcess({
             config,
             requestPermission: (params) => this.queuePermissionRequest(params),
-            extMethod: (method, params) =>
-                this.handleExtensionMethod(method, params),
-            extNotification: (method, params) =>
-                this.handleExtensionNotification(method, params),
+            extMethod: (method, params) => this.handleExtensionMethod(method, params),
+            extNotification: (method, params) => this.handleExtensionNotification(method, params),
             hostFilesystem: host.hostFilesystem,
             rpcNdjsonSink: host.rpcNdjsonSink,
             getWorkspaceRoot: host.getWorkspaceRoot,
             onHostFilesystemRead: (path) => this.handleHostFilesystemRead(path),
             onProcessExit: () => this.handleAgentProcessExit(),
         });
-        this.agentProcess.onSessionUpdate((params) =>
-            this.handleSessionUpdate(params),
-        );
+        this.agentProcess.onSessionUpdate((params) => this.handleSessionUpdate(params));
     }
 
     private async queuePermissionRequest(
@@ -128,10 +115,7 @@ export class AcpSessionBridge {
         const requestId = `perm-${this.nextPermissionRequestId++}`;
         return new Promise((resolve) => {
             this.permissionWaiters.set(requestId, resolve);
-            for (const msg of extensionMessagesForPermissionRequest(
-                requestId,
-                params,
-            )) {
+            for (const msg of extensionMessagesForPermissionRequest(requestId, params)) {
                 this.postToWebview(msg);
             }
         });
@@ -141,10 +125,7 @@ export class AcpSessionBridge {
      * Completes a pending `session/request_permission` from the UI (e.g. webview dialog).
      */
     handlePermissionResponse(
-        message: Extract<
-            WebviewToExtensionMessage,
-            { type: "permissionResponse" }
-        >,
+        message: Extract<WebviewToExtensionMessage, { type: "permissionResponse" }>,
     ): void {
         const resolve = this.permissionWaiters.get(message.requestId);
         if (resolve === undefined) {
@@ -168,10 +149,7 @@ export class AcpSessionBridge {
     }
 
     handleCursorAskQuestionResponse(
-        message: Extract<
-            WebviewToExtensionMessage,
-            { type: "cursorAskQuestionResponse" }
-        >,
+        message: Extract<WebviewToExtensionMessage, { type: "cursorAskQuestionResponse" }>,
     ): void {
         const resolve = this.askQuestionWaiters.get(message.requestId);
         if (resolve === undefined) {
@@ -182,10 +160,7 @@ export class AcpSessionBridge {
     }
 
     handleCursorCreatePlanResponse(
-        message: Extract<
-            WebviewToExtensionMessage,
-            { type: "cursorCreatePlanResponse" }
-        >,
+        message: Extract<WebviewToExtensionMessage, { type: "cursorCreatePlanResponse" }>,
     ): void {
         const resolve = this.createPlanWaiters.get(message.requestId);
         if (resolve === undefined) {
@@ -232,65 +207,38 @@ export class AcpSessionBridge {
                               return null;
                           }
                           const record = q as Record<string, unknown>;
-                          const id =
-                              typeof record.id === "string"
-                                  ? record.id.trim()
-                                  : "";
+                          const id = typeof record.id === "string" ? record.id.trim() : "";
                           const prompt =
-                              typeof record.prompt === "string"
-                                  ? record.prompt.trim()
-                                  : "";
+                              typeof record.prompt === "string" ? record.prompt.trim() : "";
                           const optionsRaw = record.options;
                           const options = Array.isArray(optionsRaw)
                               ? optionsRaw
                                     .map((o) => {
-                                        if (
-                                            o === null ||
-                                            typeof o !== "object"
-                                        ) {
+                                        if (o === null || typeof o !== "object") {
                                             return null;
                                         }
-                                        const option = o as Record<
-                                            string,
-                                            unknown
-                                        >;
+                                        const option = o as Record<string, unknown>;
                                         const optionId =
-                                            typeof option.id === "string"
-                                                ? option.id.trim()
-                                                : "";
+                                            typeof option.id === "string" ? option.id.trim() : "";
                                         const label =
                                             typeof option.label === "string"
                                                 ? option.label.trim()
                                                 : "";
-                                        if (
-                                            optionId.length === 0 ||
-                                            label.length === 0
-                                        ) {
+                                        if (optionId.length === 0 || label.length === 0) {
                                             return null;
                                         }
                                         return { id: optionId, label };
                                     })
-                                    .filter(
-                                        (
-                                            o,
-                                        ): o is { id: string; label: string } =>
-                                            o !== null,
-                                    )
+                                    .filter((o): o is { id: string; label: string } => o !== null)
                               : [];
-                          if (
-                              id.length === 0 ||
-                              prompt.length === 0 ||
-                              options.length === 0
-                          ) {
+                          if (id.length === 0 || prompt.length === 0 || options.length === 0) {
                               return null;
                           }
                           return {
                               id,
                               prompt,
                               options,
-                              ...(record.allowMultiple === true
-                                  ? { allowMultiple: true }
-                                  : {}),
+                              ...(record.allowMultiple === true ? { allowMultiple: true } : {}),
                           };
                       })
                       .filter((q): q is NonNullable<typeof q> => q !== null)
@@ -301,8 +249,7 @@ export class AcpSessionBridge {
             this.postToWebview({
                 type: "cursorAskQuestionRequest",
                 requestId,
-                ...(typeof params.title === "string" &&
-                params.title.trim().length > 0
+                ...(typeof params.title === "string" && params.title.trim().length > 0
                     ? { title: params.title.trim() }
                     : {}),
                 questions,
@@ -313,8 +260,7 @@ export class AcpSessionBridge {
         }
         if (method === "cursor/create_plan") {
             const requestId = this.nextCursorRequestId("cursor-create-plan");
-            const plan =
-                typeof params.plan === "string" ? params.plan.trim() : "";
+            const plan = typeof params.plan === "string" ? params.plan.trim() : "";
             if (plan.length === 0) {
                 return { outcome: { outcome: "cancelled" } };
             }
@@ -341,21 +287,15 @@ export class AcpSessionBridge {
                           ) {
                               return null;
                           }
-                          const status:
-                              | "pending"
-                              | "in_progress"
-                              | "completed"
-                              | "cancelled" = statusRaw;
+                          const status: "pending" | "in_progress" | "completed" | "cancelled" =
+                              statusRaw;
                           return {
                               id: record.id,
                               content: record.content,
                               status,
                           };
                       })
-                      .filter(
-                          (todo): todo is NonNullable<typeof todo> =>
-                              todo !== null,
-                      )
+                      .filter((todo): todo is NonNullable<typeof todo> => todo !== null)
                 : [];
             this.postToWebview({
                 type: "cursorCreatePlanRequest",
@@ -363,8 +303,7 @@ export class AcpSessionBridge {
                 ...(typeof params.name === "string" && params.name.length > 0
                     ? { name: params.name }
                     : {}),
-                ...(typeof params.overview === "string" &&
-                params.overview.length > 0
+                ...(typeof params.overview === "string" && params.overview.length > 0
                     ? { overview: params.overview }
                     : {}),
                 plan,
@@ -384,9 +323,7 @@ export class AcpSessionBridge {
     ): Promise<void> {
         if (method === "cursor/update_todos") {
             const toolCallId =
-                typeof params.toolCallId === "string"
-                    ? params.toolCallId
-                    : "cursor-update-todos";
+                typeof params.toolCallId === "string" ? params.toolCallId : "cursor-update-todos";
             const todos = Array.isArray(params.todos)
                 ? (params.todos as unknown[])
                       .map((todo) => {
@@ -410,21 +347,15 @@ export class AcpSessionBridge {
                           ) {
                               return null;
                           }
-                          const status:
-                              | "pending"
-                              | "in_progress"
-                              | "completed"
-                              | "cancelled" = statusRaw;
+                          const status: "pending" | "in_progress" | "completed" | "cancelled" =
+                              statusRaw;
                           return {
                               id: record.id,
                               content: record.content,
                               status,
                           };
                       })
-                      .filter(
-                          (todo): todo is NonNullable<typeof todo> =>
-                              todo !== null,
-                      )
+                      .filter((todo): todo is NonNullable<typeof todo> => todo !== null)
                 : [];
             this.postToWebview({
                 type: "cursorUpdateTodos",
@@ -441,31 +372,19 @@ export class AcpSessionBridge {
                     ? rawSubagentType
                     : rawSubagentType !== null &&
                         typeof rawSubagentType === "object" &&
-                        typeof (rawSubagentType as { custom?: unknown })
-                            .custom === "string"
+                        typeof (rawSubagentType as { custom?: unknown }).custom === "string"
                       ? (rawSubagentType as { custom: string }).custom
                       : "unspecified";
             this.postToWebview({
                 type: "cursorTask",
                 toolCallId:
-                    typeof params.toolCallId === "string"
-                        ? params.toolCallId
-                        : "cursor-task",
-                description:
-                    typeof params.description === "string"
-                        ? params.description
-                        : "Task",
+                    typeof params.toolCallId === "string" ? params.toolCallId : "cursor-task",
+                description: typeof params.description === "string" ? params.description : "Task",
                 prompt: typeof params.prompt === "string" ? params.prompt : "",
                 subagentType,
-                ...(typeof params.model === "string"
-                    ? { model: params.model }
-                    : {}),
-                ...(typeof params.agentId === "string"
-                    ? { agentId: params.agentId }
-                    : {}),
-                ...(typeof params.durationMs === "number"
-                    ? { durationMs: params.durationMs }
-                    : {}),
+                ...(typeof params.model === "string" ? { model: params.model } : {}),
+                ...(typeof params.agentId === "string" ? { agentId: params.agentId } : {}),
+                ...(typeof params.durationMs === "number" ? { durationMs: params.durationMs } : {}),
             });
             return;
         }
@@ -477,17 +396,13 @@ export class AcpSessionBridge {
                         ? params.toolCallId
                         : "cursor-generate-image",
                 description:
-                    typeof params.description === "string"
-                        ? params.description
-                        : "Generated image",
-                ...(typeof params.filePath === "string"
-                    ? { filePath: params.filePath }
-                    : {}),
+                    typeof params.description === "string" ? params.description : "Generated image",
+                ...(typeof params.filePath === "string" ? { filePath: params.filePath } : {}),
                 ...(Array.isArray(params.referenceImagePaths)
                     ? {
-                          referenceImagePaths: (
-                              params.referenceImagePaths as unknown[]
-                          ).filter((p): p is string => typeof p === "string"),
+                          referenceImagePaths: (params.referenceImagePaths as unknown[]).filter(
+                              (p): p is string => typeof p === "string",
+                          ),
                       }
                     : {}),
             });
@@ -511,10 +426,7 @@ export class AcpSessionBridge {
         if (useLoad && runtimeSessionId !== undefined) {
             await this.hooks?.onResumeSession?.();
             try {
-                bootstrap = await this.loadSessionWithAuthRetry(
-                    init,
-                    runtimeSessionId,
-                );
+                bootstrap = await this.loadSessionWithAuthRetry(init, runtimeSessionId);
                 this.acpSessionId = runtimeSessionId;
             } catch {
                 await this.hooks?.onLoadSessionFailed?.();
@@ -528,10 +440,7 @@ export class AcpSessionBridge {
             this.acpSessionId = created.sessionId;
         }
         const preferredModelId = options?.preferredModelId;
-        if (
-            bootstrap.configOptions !== undefined &&
-            bootstrap.configOptions !== null
-        ) {
+        if (bootstrap.configOptions !== undefined && bootstrap.configOptions !== null) {
             this.applyConfigOptions(bootstrap.configOptions);
         } else if (bootstrap.modes) {
             let state = bootstrap.modes;
@@ -541,10 +450,7 @@ export class AcpSessionBridge {
                 this.acpSessionId !== null
             ) {
                 try {
-                    await this.agentProcess.setSessionModel(
-                        this.acpSessionId,
-                        preferredModelId,
-                    );
+                    await this.agentProcess.setSessionModel(this.acpSessionId, preferredModelId);
                     state = { ...state, currentModeId: preferredModelId };
                 } catch {}
             }
@@ -560,18 +466,11 @@ export class AcpSessionBridge {
             preferredModelId !== undefined
         ) {
             const modelOption = this.lastConfigOptions?.options.find(
-                (option) =>
-                    option.type === "select" && option.category === "model",
+                (option) => option.type === "select" && option.category === "model",
             );
-            if (
-                modelOption?.type === "select" &&
-                preferredModelId !== modelOption.currentValue
-            ) {
+            if (modelOption?.type === "select" && preferredModelId !== modelOption.currentValue) {
                 try {
-                    await this.setSessionConfigOption(
-                        modelOption.configId,
-                        preferredModelId,
-                    );
+                    await this.setSessionConfigOption(modelOption.configId, preferredModelId);
                 } catch {}
             }
         }
@@ -587,10 +486,7 @@ export class AcpSessionBridge {
         );
         if (modelConfig?.type === "select") {
             const wireValue = resolveModelConfigWireValue(modelConfig, modelId);
-            await this.applySessionModelWireValue(
-                modelConfig.configId,
-                wireValue,
-            );
+            await this.applySessionModelWireValue(modelConfig.configId, wireValue);
             return;
         }
         const advertisedId = this.resolveUnstableModelId(modelId);
@@ -607,10 +503,7 @@ export class AcpSessionBridge {
     }
 
     /** Updates a session config option via `session/set_config_option`. */
-    async setSessionConfigOption(
-        configId: string,
-        value: string | boolean,
-    ): Promise<void> {
+    async setSessionConfigOption(configId: string, value: string | boolean): Promise<void> {
         if (!this.acpSessionId) {
             return;
         }
@@ -648,10 +541,7 @@ export class AcpSessionBridge {
      * Applies a model id via `set_config_option` when advertised, otherwise
      * `setSessionMode` for composed bracket ids the agent omits.
      */
-    private async applySessionModelWireValue(
-        configId: string,
-        wireValue: string,
-    ): Promise<void> {
+    private async applySessionModelWireValue(configId: string, wireValue: string): Promise<void> {
         if (!this.acpSessionId) {
             return;
         }
@@ -662,18 +552,13 @@ export class AcpSessionBridge {
                 option.configId === configId,
         );
         if (modelConfig?.type === "select") {
-            const advertised = resolveAdvertisedModelOptionValue(
-                modelConfig,
-                wireValue,
-            );
+            const advertised = resolveAdvertisedModelOptionValue(modelConfig, wireValue);
             if (advertised !== null) {
-                const response = await this.agentProcess.setSessionConfigOption(
-                    {
-                        sessionId: this.acpSessionId,
-                        configId,
-                        value: advertised,
-                    },
-                );
+                const response = await this.agentProcess.setSessionConfigOption({
+                    sessionId: this.acpSessionId,
+                    configId,
+                    value: advertised,
+                });
                 this.applyConfigOptions(response.configOptions);
                 return;
             }
@@ -681,9 +566,7 @@ export class AcpSessionBridge {
         await this.setSessionModelUnadvertised(wireValue);
     }
 
-    private async setSessionModelUnadvertised(
-        wireValue: string,
-    ): Promise<void> {
+    private async setSessionModelUnadvertised(wireValue: string): Promise<void> {
         if (!this.acpSessionId) {
             return;
         }
@@ -691,19 +574,14 @@ export class AcpSessionBridge {
         let lastError: unknown;
         for (const candidate of candidates) {
             try {
-                await this.agentProcess.setSessionModel(
-                    this.acpSessionId,
-                    candidate,
-                );
+                await this.agentProcess.setSessionModel(this.acpSessionId, candidate);
                 this.syncModelSelectionAfterWire(candidate);
                 return;
             } catch (error: unknown) {
                 lastError = error;
             }
         }
-        throw lastError instanceof Error
-            ? lastError
-            : new Error(String(lastError));
+        throw lastError instanceof Error ? lastError : new Error(String(lastError));
     }
 
     private unadvertisedModelWireCandidates(wireValue: string): string[] {
@@ -711,13 +589,9 @@ export class AcpSessionBridge {
         const parsed = parseModelIdBracketParams(wireValue);
         if (
             parsed.params.fast === undefined &&
-            !candidates.includes(
-                buildModelId(parsed.base, { ...parsed.params, fast: "false" }),
-            )
+            !candidates.includes(buildModelId(parsed.base, { ...parsed.params, fast: "false" }))
         ) {
-            candidates.push(
-                buildModelId(parsed.base, { ...parsed.params, fast: "false" }),
-            );
+            candidates.push(buildModelId(parsed.base, { ...parsed.params, fast: "false" }));
         }
         return candidates;
     }
@@ -760,10 +634,7 @@ export class AcpSessionBridge {
             const parsed = parseModelIdBracketParams(model.modelId);
             return (
                 parsed.base === candidate.base &&
-                JSON.stringify(
-                    parsed.params,
-                    Object.keys(parsed.params).sort(),
-                ) === signature
+                JSON.stringify(parsed.params, Object.keys(parsed.params).sort()) === signature
             );
         });
         return match?.modelId ?? null;
@@ -817,9 +688,7 @@ export class AcpSessionBridge {
         this.postToWebview({ type: "sessionConfigOptionsLoading" });
     }
 
-    private syncConfigOptionsFromAgent(
-        raw: ReadonlyArray<acp.SessionConfigOption>,
-    ): void {
+    private syncConfigOptionsFromAgent(raw: ReadonlyArray<acp.SessionConfigOption>): void {
         const normalized = sessionConfigOptionsFromAgent(raw);
         if (normalized === null || normalized.options.length === 0) {
             return;
@@ -843,9 +712,7 @@ export class AcpSessionBridge {
         }
     }
 
-    private applyConfigOptions(
-        raw: ReadonlyArray<acp.SessionConfigOption>,
-    ): void {
+    private applyConfigOptions(raw: ReadonlyArray<acp.SessionConfigOption>): void {
         const normalized = sessionConfigOptionsFromAgent(raw);
         if (normalized !== null) {
             this.publishConfigOptions(normalized.options);
@@ -865,10 +732,7 @@ export class AcpSessionBridge {
         this.readToolCallQueue = [];
         this.prompting = true;
         try {
-            const result = await this.agentProcess.prompt(
-                this.acpSessionId,
-                text,
-            );
+            const result = await this.agentProcess.prompt(this.acpSessionId, text);
             this.postToWebview({
                 type: "turnComplete",
                 stopReason: result.stopReason,
@@ -910,13 +774,8 @@ export class AcpSessionBridge {
         this.acpSessionId = null;
     }
 
-    private async ensureAuthenticated(
-        init: acp.InitializeResponse,
-    ): Promise<void> {
-        const methodId = resolveAuthMethodId(
-            init.authMethods,
-            this.config.authMethodId,
-        );
+    private async ensureAuthenticated(init: acp.InitializeResponse): Promise<void> {
+        const methodId = resolveAuthMethodId(init.authMethods, this.config.authMethodId);
         if (methodId === undefined) {
             return;
         }
@@ -967,9 +826,7 @@ export class AcpSessionBridge {
             await this.agentProcess.logout();
         } catch (err: unknown) {
             const detail = err instanceof Error ? err.message : String(err);
-            console.warn(
-                `[ACP Agent ${this.config.name}] logout failed: ${detail}`,
-            );
+            console.warn(`[ACP Agent ${this.config.name}] logout failed: ${detail}`);
         }
     }
 
@@ -990,18 +847,13 @@ export class AcpSessionBridge {
             this.syncConfigOptionsFromAgent(params.update.configOptions);
         }
         this.trackReadToolCallForFilesystemCorrelation(params.update);
-        const messages = sessionUpdateToWebviewMessages(
-            params.update,
-            this.toolCallKindTracking,
-        );
+        const messages = sessionUpdateToWebviewMessages(params.update, this.toolCallKindTracking);
         for (const msg of messages) {
             this.postToWebview(msg);
         }
     }
 
-    private trackReadToolCallForFilesystemCorrelation(
-        update: acp.SessionUpdate,
-    ): void {
+    private trackReadToolCallForFilesystemCorrelation(update: acp.SessionUpdate): void {
         if (update.sessionUpdate === "tool_call") {
             if (update.kind === "read") {
                 this.readToolCallQueue.push(update.toolCallId);
@@ -1015,15 +867,11 @@ export class AcpSessionBridge {
         if (status !== "completed" && status !== "failed") {
             return;
         }
-        const kind =
-            update.kind ??
-            this.toolCallKindTracking.kindByToolId.get(update.toolCallId);
+        const kind = update.kind ?? this.toolCallKindTracking.kindByToolId.get(update.toolCallId);
         if (kind !== "read") {
             return;
         }
-        this.readToolCallQueue = this.readToolCallQueue.filter(
-            (id) => id !== update.toolCallId,
-        );
+        this.readToolCallQueue = this.readToolCallQueue.filter((id) => id !== update.toolCallId);
     }
 
     private handleHostFilesystemRead(path: string): void {
