@@ -1,136 +1,130 @@
 .tool-call-compact {
-    margin: 0 0 var(--acp-ui-space-8);
-    font-family: var(--acp-ui-font-mono);
-    font-size: var(--acp-ui-font-size-x-small);
-    line-height: 1.4;
-    min-width: 0;
+  margin: 0 0 var(--acp-ui-space-8);
+  font-family: var(--acp-ui-font-mono);
+  font-size: var(--acp-ui-font-size-x-small);
+  line-height: 1.4;
+  min-width: 0;
 }
 
 .tool-call-compact-summary {
-    word-break: break-word;
+  word-break: break-word;
 }
 
 .tool-call-compact-summary-verbs {
-    color: var(--vscode-foreground);
-    font-weight: 500;
+  color: var(--vscode-foreground);
+  font-weight: 500;
 }
 
 .tool-call-compact-summary-counts {
-    color: var(--vscode-descriptionForeground);
-    font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 400;
 }
 
 .tool-call-compact-hidden-row {
-    margin: 0;
-    color: var(--vscode-descriptionForeground);
-    word-break: break-word;
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+  word-break: break-word;
 }
 
 .tool-call-compact--truncated-details .tool-call-compact-detail-row .tool-call-compact-verb {
-    color: var(--vscode-descriptionForeground);
-    font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 400;
+}
+
+.tool-call-compact--truncated-details .tool-call-compact-detail-row .tool-call-compact-detail-text {
+  color: var(--vscode-foreground);
+  font-weight: 400;
 }
 
 .tool-call-compact--truncated-details
-    .tool-call-compact-detail-row
-    .tool-call-compact-detail-text {
-    color: var(--vscode-foreground);
-    font-weight: 400;
+  .tool-call-compact-detail-row
+  .tool-call-compact-detail-text
+  .tool-call-compact-path-link,
+.tool-call-compact--truncated-details
+  .tool-call-compact-detail-row
+  .tool-call-compact-detail-text
+  .tool-call-compact-path-link:link,
+.tool-call-compact--truncated-details
+  .tool-call-compact-detail-row
+  .tool-call-compact-detail-text
+  .tool-call-compact-path-link:visited {
+  color: var(--vscode-foreground);
 }
 
 .tool-call-compact--truncated-details
-    .tool-call-compact-detail-row
-    .tool-call-compact-detail-text
-    .tool-call-compact-path-link,
+  .tool-call-compact-detail-row
+  .tool-call-compact-detail-text
+  .tool-call-compact-path-link:hover,
 .tool-call-compact--truncated-details
-    .tool-call-compact-detail-row
-    .tool-call-compact-detail-text
-    .tool-call-compact-path-link:link,
-.tool-call-compact--truncated-details
-    .tool-call-compact-detail-row
-    .tool-call-compact-detail-text
-    .tool-call-compact-path-link:visited {
-    color: var(--vscode-foreground);
-}
-
-.tool-call-compact--truncated-details
-    .tool-call-compact-detail-row
-    .tool-call-compact-detail-text
-    .tool-call-compact-path-link:hover,
-.tool-call-compact--truncated-details
-    .tool-call-compact-detail-row
-    .tool-call-compact-detail-text
-    .tool-call-compact-path-link:focus-visible {
-    color: var(--vscode-textLink-foreground);
+  .tool-call-compact-detail-row
+  .tool-call-compact-detail-text
+  .tool-call-compact-path-link:focus-visible {
+  color: var(--vscode-textLink-foreground);
 }
 
 .tool-call-compact[data-status="in_progress"] .tool-call-compact-summary-verbs,
 .tool-call-compact[data-status="in_progress"] .tool-call-compact-verb {
-    color: color-mix(
-        in srgb,
-        var(--vscode-foreground) 88%,
-        var(--vscode-descriptionForeground)
-    );
+  color: color-mix(in srgb, var(--vscode-foreground) 88%, var(--vscode-descriptionForeground));
 }
 
 .tool-call-compact-details {
-    margin: 2px 0 0;
-    padding: 0;
-    list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .tool-call-compact-detail-row {
-    margin: 0;
-    word-break: break-word;
+  margin: 0;
+  word-break: break-word;
 }
 
 .tool-call-compact-verb {
-    color: var(--vscode-foreground);
-    font-weight: 400;
+  color: var(--vscode-foreground);
+  font-weight: 400;
 }
 
 .tool-call-compact-detail-text {
-    color: var(--vscode-descriptionForeground);
-    font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 400;
 }
 
 .tool-call-compact-detail-text .tool-call-compact-path-link,
 .tool-call-compact-detail-text .tool-call-compact-path-link:link,
 .tool-call-compact-detail-text .tool-call-compact-path-link:visited {
-    color: var(--vscode-descriptionForeground);
-    text-decoration: none;
-    cursor: pointer;
+  color: var(--vscode-descriptionForeground);
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .tool-call-compact-detail-text .tool-call-compact-path-link:hover,
 .tool-call-compact-detail-text .tool-call-compact-path-link:focus-visible {
-    color: var(--vscode-textLink-foreground);
-    text-decoration: underline;
-    text-decoration-style: solid;
-    text-underline-offset: 2px;
+  color: var(--vscode-textLink-foreground);
+  text-decoration: underline;
+  text-decoration-style: solid;
+  text-underline-offset: 2px;
 }
 
 .tool-call-compact-path-link .tool-call-compact-path-short,
 .tool-call-compact-path-link .tool-call-compact-path-full {
-    color: inherit;
+  color: inherit;
 }
 
 .tool-call-compact-path-full {
-    display: none;
+  display: none;
 }
 
 .tool-call-compact-path-link:hover .tool-call-compact-path-short {
-    display: none;
+  display: none;
 }
 
 .tool-call-compact-path-link:hover .tool-call-compact-path-full {
-    display: inline;
+  display: inline;
 }
 
 .tool-call-compact-stat--added {
-    color: var(--vscode-terminal-ansiGreen, #4ec9b0);
+  color: var(--vscode-terminal-ansiGreen, #4ec9b0);
 }
 
 .tool-call-compact-stat--removed {
-    color: var(--vscode-terminal-ansiRed, #f14c4c);
+  color: var(--vscode-terminal-ansiRed, #f14c4c);
 }

@@ -9,11 +9,11 @@ feature: docs/features/acp/filesystem.md
 
 Align `readTextFile` / `writeTextFile` client callbacks with v1 filesystem expectations where practical.
 
-| Gap | Docs | Today |
-| --- | --- | --- |
-| Unsaved buffers | Read should reflect editor state | `workspace.fs.readFile` (on-disk only) |
-| Partial read | `line` / `limit` optional params | Ignored, port is `readTextFile(path)` only |
-| Missing file | Error response | Returns `{ content: "" }` for `ENOENT` (Gemini CLI workaround) |
+| Gap             | Docs                             | Today                                                          |
+| --------------- | -------------------------------- | -------------------------------------------------------------- |
+| Unsaved buffers | Read should reflect editor state | `workspace.fs.readFile` (on-disk only)                         |
+| Partial read    | `line` / `limit` optional params | Ignored, port is `readTextFile(path)` only                     |
+| Missing file    | Error response                   | Returns `{ content: "" }` for `ENOENT` (Gemini CLI workaround) |
 
 ## Why
 
@@ -22,8 +22,8 @@ ENOENT empty-string is intentional for some agents but diverges from spec.
 
 ## Key files
 
-| Path | Role |
-| --- | --- |
+| Path                                        | Role                                        |
+| ------------------------------------------- | ------------------------------------------- |
 | `src/acp/infrastructure/acpAgentProcess.ts` | `handleReadTextFile`, `handleWriteTextFile` |
 
 ## Implementation checklist

@@ -28,19 +28,19 @@ ACP UI only supports agent-type `authenticate` today (see [authentication](../fe
 
 ## Current behavior
 
-| Area | Today |
-| --- | --- |
-| `_meta.terminal-auth` | Not advertised |
-| `auth.terminal` | Not advertised |
-| Login flow | `authenticate({ methodId })` for agent-type methods only |
+| Area                  | Today                                                    |
+| --------------------- | -------------------------------------------------------- |
+| `_meta.terminal-auth` | Not advertised                                           |
+| `auth.terminal`       | Not advertised                                           |
+| Login flow            | `authenticate({ methodId })` for agent-type methods only |
 
 ## Key files
 
-| Path | Role |
-| --- | --- |
+| Path                                        | Role                                                 |
+| ------------------------------------------- | ---------------------------------------------------- |
 | `src/acp/infrastructure/acpAgentProcess.ts` | `buildAcpClientCapabilities`, spawn login subprocess |
-| `src/acp/session/acpSessionBridge.ts` | Post-init auth retry |
-| Zed `meta_terminal_auth_task` | Reference for parsing auth method meta |
+| `src/acp/session/acpSessionBridge.ts`       | Post-init auth retry                                 |
+| Zed `meta_terminal_auth_task`               | Reference for parsing auth method meta               |
 
 ## Implementation checklist
 

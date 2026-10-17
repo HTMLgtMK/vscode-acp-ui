@@ -1,51 +1,50 @@
 .acp-ui-shell {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
 }
 
 .acp-ui-content-column {
-    width: calc(var(--acp-ui-content-width-ratio, 1) * 100%);
-    margin-inline: auto;
+  width: calc(var(--acp-ui-content-width-ratio, 1) * 100%);
+  margin-inline: auto;
 }
 
 .acp-ui-shell.acp-ui-shell--file-drag {
-    outline: 2px dashed
-        var(--acp-ui-focus-border, var(--vscode-textLink-foreground));
-    outline-offset: 2px;
-    border-radius: var(--acp-ui-radius-md);
+  outline: 2px dashed var(--acp-ui-focus-border, var(--vscode-textLink-foreground));
+  outline-offset: 2px;
+  border-radius: var(--acp-ui-radius-md);
 }
 
 .acp-ui-error {
-    flex-shrink: 0;
-    margin-bottom: var(--acp-ui-space-8);
-    padding: var(--acp-ui-space-8) var(--acp-ui-space-12);
-    color: var(--vscode-errorForeground);
-    background-color: color-mix(
-        in srgb,
-        var(--vscode-inputValidation-errorBackground) 90%,
-        transparent
-    );
-    border: var(--acp-ui-stroke-width) solid
-        var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
-    border-radius: var(--acp-ui-radius-sm);
-    font-size: var(--acp-ui-font-size-small);
-    line-height: var(--acp-ui-line-height-body);
+  flex-shrink: 0;
+  margin-bottom: var(--acp-ui-space-8);
+  padding: var(--acp-ui-space-8) var(--acp-ui-space-12);
+  color: var(--vscode-errorForeground);
+  background-color: color-mix(
+    in srgb,
+    var(--vscode-inputValidation-errorBackground) 90%,
+    transparent
+  );
+  border: var(--acp-ui-stroke-width) solid
+    var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+  border-radius: var(--acp-ui-radius-sm);
+  font-size: var(--acp-ui-font-size-small);
+  line-height: var(--acp-ui-line-height-body);
 }
 
 .agent-trace {
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
-    width: 100%;
-    color: var(--acp-ui-text-primary);
-    scrollbar-gutter: stable;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  width: 100%;
+  color: var(--acp-ui-text-primary);
+  scrollbar-gutter: stable;
 }
 
 .acp-ui-composer-stack {
-    position: relative;
-    flex-shrink: 0;
-    width: 100%;
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
 }

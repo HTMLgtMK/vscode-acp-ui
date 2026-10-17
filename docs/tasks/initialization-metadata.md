@@ -20,17 +20,17 @@ Version mismatch today relies on SDK default behavior with no user-facing explan
 
 ## Current behavior
 
-| Field | Today |
-| --- | --- |
-| `clientInfo` | Sent on `initialize` from `package.json` (`name`, `version`, `title`) |
-| Version mismatch | `AcpProtocolVersionMismatchError` with actionable guidance |
+| Field            | Today                                                                 |
+| ---------------- | --------------------------------------------------------------------- |
+| `clientInfo`     | Sent on `initialize` from `package.json` (`name`, `version`, `title`) |
+| Version mismatch | `AcpProtocolVersionMismatchError` with actionable guidance            |
 
 ## Key files
 
-| Path | Role |
-| --- | --- |
-| `src/acp/infrastructure/acpAgentProcess.ts` | `initialize` params |
-| `package.json` | Extension name and version for `clientInfo` |
+| Path                                        | Role                                        |
+| ------------------------------------------- | ------------------------------------------- |
+| `src/acp/infrastructure/acpAgentProcess.ts` | `initialize` params                         |
+| `package.json`                              | Extension name and version for `clientInfo` |
 
 ## Implementation checklist
 

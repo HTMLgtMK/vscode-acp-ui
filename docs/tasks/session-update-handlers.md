@@ -9,13 +9,13 @@ feature: docs/features/acp/sessions.md
 
 Handle v1 `session/update` variants that currently no-op in `sessionUpdateToWebviewMessages`:
 
-| `sessionUpdate` | UX goal |
-| --- | --- |
-| `user_message_chunk` | Stream user message echo during `session/load` replay | Done in `sessionUpdateMapping.ts` |
-| `current_mode_update` | Agent / plan / ask mode changes |
-| `config_option_update` | Session config options (successor to modes) |
-| `session_info_update` | Title and metadata sync |
-| `usage_update` | Token / cost / context window usage |
+| `sessionUpdate`        | UX goal                                               |
+| ---------------------- | ----------------------------------------------------- |
+| `user_message_chunk`   | Stream user message echo during `session/load` replay | Done in `sessionUpdateMapping.ts` |
+| `current_mode_update`  | Agent / plan / ask mode changes                       |
+| `config_option_update` | Session config options (successor to modes)           |
+| `session_info_update`  | Title and metadata sync                               |
+| `usage_update`         | Token / cost / context window usage                   |
 
 ## Why
 
@@ -28,11 +28,11 @@ The other listed types still fall through to the default branch (no-op).
 
 ## Key files
 
-| Path | Role |
-| --- | --- |
-| `src/acp/mapping/sessionUpdateMapping.ts` | `session/update` -> webview messages |
-| `src/acp/protocol/extensionHostMessages.ts` | Add message types if needed |
-| `webview/acp-ui/` | Composer mode, usage display, title sync |
+| Path                                        | Role                                     |
+| ------------------------------------------- | ---------------------------------------- |
+| `src/acp/mapping/sessionUpdateMapping.ts`   | `session/update` -> webview messages     |
+| `src/acp/protocol/extensionHostMessages.ts` | Add message types if needed              |
+| `webview/acp-ui/`                           | Composer mode, usage display, title sync |
 
 ## Implementation checklist
 

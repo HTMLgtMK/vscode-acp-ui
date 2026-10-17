@@ -9,13 +9,13 @@ feature: docs/features/ui/cursor-extensions.md
 
 Improve webview handling of Cursor `cursor/*` extension methods and notifications beyond minimal trace lines.
 
-| Item | Today | Target |
-| --- | --- | --- |
-| `cursor/create_plan` `phases` | Type allows `phases` in messages, but bridge does not forward | Forward `phases` to webview dialog |
-| `cursor/update_todos` | Plan-style trace lines | Dedicated todo panel |
-| `cursor/task` | Single trace line (`Subagent task: ...`) | Richer subagent task display |
-| `cursor/generate_image` | Text line with path | Inline image render |
-| `toolCallId` on payloads | Internal `cursor-ask-question-N` ids | Surface agent `toolCallId` in bridge request IDs |
+| Item                          | Today                                                         | Target                                           |
+| ----------------------------- | ------------------------------------------------------------- | ------------------------------------------------ |
+| `cursor/create_plan` `phases` | Type allows `phases` in messages, but bridge does not forward | Forward `phases` to webview dialog               |
+| `cursor/update_todos`         | Plan-style trace lines                                        | Dedicated todo panel                             |
+| `cursor/task`                 | Single trace line (`Subagent task: ...`)                      | Richer subagent task display                     |
+| `cursor/generate_image`       | Text line with path                                           | Inline image render                              |
+| `toolCallId` on payloads      | Internal `cursor-ask-question-N` ids                          | Surface agent `toolCallId` in bridge request IDs |
 
 Already solid:
 
@@ -24,12 +24,12 @@ Already solid:
 
 ## Key files
 
-| Path | Role |
-| --- | --- |
-| `src/acp/session/acpSessionBridge.ts` | `handleExtensionMethod`, notifications |
-| `src/acp/protocol/extensionHostMessages.ts` | Webview message types |
-| `webview/acp-ui/src/components/` | Dialogs, trace, new todo/image/task UI |
-| `docs/cursor-extensions/extensions.md` | Upstream field definitions |
+| Path                                        | Role                                   |
+| ------------------------------------------- | -------------------------------------- |
+| `src/acp/session/acpSessionBridge.ts`       | `handleExtensionMethod`, notifications |
+| `src/acp/protocol/extensionHostMessages.ts` | Webview message types                  |
+| `webview/acp-ui/src/components/`            | Dialogs, trace, new todo/image/task UI |
+| `docs/cursor-extensions/extensions.md`      | Upstream field definitions             |
 
 ## Implementation checklist
 

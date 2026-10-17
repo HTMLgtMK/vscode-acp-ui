@@ -6,7 +6,7 @@ Open **ACP UI** from the activity bar to get a dedicated chat surface next to yo
 
 ![ACP UI conversation panel](docs/Fullscreen.png)
 
-*Streaming markdown, tool calls, thoughts, and plans in the ACP UI trace.*
+_Streaming markdown, tool calls, thoughts, and plans in the ACP UI trace._
 
 ## Features
 
@@ -74,6 +74,7 @@ Set `ib-acp-ui.agents` in settings. Each entry defines one launchable ACP agent 
 ```
 
 Fields:
+
 - `name`: label shown in ACP UI.
 - `command`: executable to spawn.
 - `args`: optional argument list.
@@ -130,17 +131,17 @@ Publishing is automated when `package.json` **version** changes on `main` (see `
 
 ## Explore
 
-| Area | Role |
-| --- | --- |
-| [`src/extension.ts`](src/extension.ts) | Extension entry: activates ACP services, ACP UI panel, Chats tree view. |
-| [`src/extension/`](src/extension/) | Chat webview registration, sessions sidebar, agent picker, prompt history. |
-| [`src/acp/`](src/acp/) | ACP session bridge, agent config from VS Code settings, RPC helpers. |
-| [`src/protocol/`](src/protocol/) | Messages between extension host and webview. |
-| [`webview/acp-ui/`](webview/acp-ui/) | React + Vite webview UI (chat UI, markdown, state). |
-| [`playground/`](playground/) | Local dev server and mocks for the webview without the extension host. |
-| [`playground/fixtures/chats/`](playground/fixtures/chats/) | Committed mock chat replays for demo and screenshots. |
-| [`specs/`](specs/) | Design notes for features and commands. |
-| [`media/`](media/) | Activity bar and view icons. |
+| Area                                                       | Role                                                                       |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [`src/extension.ts`](src/extension.ts)                     | Extension entry: activates ACP services, ACP UI panel, Chats tree view.    |
+| [`src/extension/`](src/extension/)                         | Chat webview registration, sessions sidebar, agent picker, prompt history. |
+| [`src/acp/`](src/acp/)                                     | ACP session bridge, agent config from VS Code settings, RPC helpers.       |
+| [`src/protocol/`](src/protocol/)                           | Messages between extension host and webview.                               |
+| [`webview/acp-ui/`](webview/acp-ui/)                       | React + Vite webview UI (chat UI, markdown, state).                        |
+| [`playground/`](playground/)                               | Local dev server and mocks for the webview without the extension host.     |
+| [`playground/fixtures/chats/`](playground/fixtures/chats/) | Committed mock chat replays for demo and screenshots.                      |
+| [`specs/`](specs/)                                         | Design notes for features and commands.                                    |
+| [`media/`](media/)                                         | Activity bar and view icons.                                               |
 
 Mock chat fixtures are built by `scripts/build-showcase-fixtures.ts` and replayed through the playground WebSocket bridge.
 

@@ -17,18 +17,18 @@ Agents with multimodal capabilities cannot receive images, audio, or structured 
 
 ## Current behavior
 
-| Area | Today |
-| --- | --- |
-| `session/prompt` | Single text block |
+| Area                  | Today                            |
+| --------------------- | -------------------------------- |
+| `session/prompt`      | Single text block                |
 | Composer `@` mentions | Paths inserted into draft string |
 
 ## Key files
 
-| Path | Role |
-| --- | --- |
-| `src/acp/infrastructure/acpAgentProcess.ts` | `prompt()` content assembly |
-| `src/acp/session/acpSessionBridge.ts` | Send path from composer |
-| `webview/acp-ui/src/components/ChatComposer.tsx` | Mentions UI |
+| Path                                             | Role                        |
+| ------------------------------------------------ | --------------------------- |
+| `src/acp/infrastructure/acpAgentProcess.ts`      | `prompt()` content assembly |
+| `src/acp/session/acpSessionBridge.ts`            | Send path from composer     |
+| `webview/acp-ui/src/components/ChatComposer.tsx` | Mentions UI                 |
 
 ## Implementation checklist
 

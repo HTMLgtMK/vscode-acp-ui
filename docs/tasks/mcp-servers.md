@@ -16,17 +16,17 @@ This client does not forward MCP definitions in RPC and relies entirely on agent
 
 ## Current behavior
 
-| Area | Today |
-| --- | --- |
-| `session/new` | Always `mcpServers: []` |
+| Area           | Today                                       |
+| -------------- | ------------------------------------------- |
+| `session/new`  | Always `mcpServers: []`                     |
 | `session/load` | Called with cwd, `mcpServers` is still `[]` |
 
 ## Key files
 
-| Path | Role |
-| --- | --- |
-| `src/acp/infrastructure/acpAgentProcess.ts` | `newSession` / `loadSession` params |
-| New or existing config reader | Parse `.cursor/mcp.json` and settings |
+| Path                                        | Role                                  |
+| ------------------------------------------- | ------------------------------------- |
+| `src/acp/infrastructure/acpAgentProcess.ts` | `newSession` / `loadSession` params   |
+| New or existing config reader               | Parse `.cursor/mcp.json` and settings |
 
 ## Implementation checklist
 

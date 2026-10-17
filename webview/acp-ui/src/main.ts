@@ -1,28 +1,26 @@
 import type {
-    AcpUiHistoryReplayEvent,
-    ExtensionToWebviewMessage,
+  AcpUiHistoryReplayEvent,
+  ExtensionToWebviewMessage,
 } from "../../../src/protocol/extensionHostMessages";
 import "./global.css";
 import "./boot.css";
 import {
-    replayChatState,
-    createChatStateFromInit,
-    type ChatState,
-    type ExtensionMessageAfterInit,
+  replayChatState,
+  createChatStateFromInit,
+  type ChatState,
+  type ExtensionMessageAfterInit,
 } from "./chatReducer";
 import { createVsCodeAcpUiHost } from "./host";
 import { setCompactToolPathHome } from "./toolCallCompactText";
 import { type ChatView, type InitPayload, mountChatView } from "./ui";
 
-function isInitPayload(
-    message: ExtensionToWebviewMessage,
-): message is InitPayload {
-    return message.type === "init";
+function isInitPayload(message: ExtensionToWebviewMessage): message is InitPayload {
+  return message.type === "init";
 }
 
 const mount = document.getElementById("root");
 if (!mount) {
-    throw new Error("Missing #root");
+  throw new Error("Missing #root");
 }
 
 mount.className = "root agent-root";
@@ -46,125 +44,121 @@ let pendingSessionHistoryLoading = false;
 const pendingExtensionMessages: ExtensionMessageAfterInit[] = [];
 
 function flushPendingExtensionMessages(): void {
-    if (view === null) {
-        return;
-    }
-    for (const message of pendingExtensionMessages) {
-        view.handleMessage(message);
-    }
-    pendingExtensionMessages.length = 0;
+  if (view === null) {
+    return;
+  }
+  for (const message of pendingExtensionMessages) {
+    view.handleMessage(message);
+  }
+  pendingExtensionMessages.length = 0;
 }
 
 function applyPendingSessionHistoryLoading(state: ChatState): ChatState {
-    if (!pendingSessionHistoryLoading) {
-        return state;
-    }
-    return { ...state, sessionHistoryLoading: true };
+  if (!pendingSessionHistoryLoading) {
+    return state;
+  }
+  return { ...state, sessionHistoryLoading: true };
 }
 
 function tryMountView(): void {
-    if (view !== null || pendingInit === null) {
-        return;
-    }
-    initReceived = true;
-    clearTimeout(initRetryTimer);
-    if (pendingInit.homeDir !== undefined && pendingInit.homeDir.length > 0) {
-        setCompactToolPathHome(pendingInit.homeDir);
-    }
-    const initialChatState =
-        pendingHistory !== undefined && pendingHistory.length > 0
-            ? applyPendingSessionHistoryLoading(
-                  replayChatState(pendingInit, pendingHistory),
-              )
-            : applyPendingSessionHistoryLoading(
-                  createChatStateFromInit(pendingInit),
-              );
-    view = mountChatView(
-        mount as HTMLElement,
-        pendingInit,
-        (body) => {
-            host.post({ type: "send", body });
-        },
-        () => {
-            host.post({ type: "cancel" });
-        },
-        (title) => {
-            host.post({ type: "renameSession", title });
-        },
-        () => {
-            host.post({ type: "resetSession" });
-        },
-        (modelId) => {
-            host.post({ type: "setSessionModel", modelId });
-        },
-        (configId, value) => {
-            host.post({ type: "setSessionConfigOption", configId, value });
-        },
-        (entries) => {
-            host.post({ type: "saveHistory", entries });
-        },
-        (payload) => {
-            host.post({ type: "permissionResponse", ...payload });
-        },
-        (payload) => {
-            host.post({ type: "cursorAskQuestionResponse", ...payload });
-        },
-        (payload) => {
-            host.post({ type: "cursorCreatePlanResponse", ...payload });
-        },
-        initialChatState,
-        () => {
-            host.post({ type: "openNewChat" });
-        },
-        (path, options) => {
-            host.post({
-                type: "openWorkspacePath",
-                path,
-                ...(options?.target === "auto" ? { target: "auto" } : {}),
-            });
-        },
-    );
-    flushPendingExtensionMessages();
+  if (view !== null || pendingInit === null) {
+    return;
+  }
+  initReceived = true;
+  clearTimeout(initRetryTimer);
+  if (pendingInit.homeDir !== undefined && pendingInit.homeDir.length > 0) {
+    setCompactToolPathHome(pendingInit.homeDir);
+  }
+  const initialChatState =
+    pendingHistory !== undefined && pendingHistory.length > 0
+      ? applyPendingSessionHistoryLoading(replayChatState(pendingInit, pendingHistory))
+      : applyPendingSessionHistoryLoading(createChatStateFromInit(pendingInit));
+  view = mountChatView(
+    mount as HTMLElement,
+    pendingInit,
+    (body) => {
+      host.post({ type: "send", body });
+    },
+    () => {
+      host.post({ type: "cancel" });
+    },
+    (title) => {
+      host.post({ type: "renameSession", title });
+    },
+    () => {
+      host.post({ type: "resetSession" });
+    },
+    (modelId) => {
+      host.post({ type: "setSessionModel", modelId });
+    },
+    (configId, value) => {
+      host.post({ type: "setSessionConfigOption", configId, value });
+    },
+    (entries) => {
+      host.post({ type: "saveHistory", entries });
+    },
+    (payload) => {
+      host.post({ type: "permissionResponse", ...payload });
+    },
+    (payload) => {
+      host.post({ type: "cursorAskQuestionResponse", ...payload });
+    },
+    (payload) => {
+      host.post({ type: "cursorCreatePlanResponse", ...payload });
+    },
+    initialChatState,
+    () => {
+      host.post({ type: "openNewChat" });
+    },
+    (path, options) => {
+      host.post({
+        type: "openWorkspacePath",
+        path,
+        ...(options?.target === "auto" ? { target: "auto" } : {}),
+      });
+    },
+  );
+  flushPendingExtensionMessages();
 }
 
 host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
-    if (message.type === "sessionHistoryLoading") {
-        if (view !== null) {
-            view.handleMessage(message);
-            return;
-        }
-        pendingSessionHistoryLoading = message.loading;
-        if (message.loading) {
-            bootText.textContent = "Loading conversation...";
-        }
-        return;
-    }
-    if (isInitPayload(message)) {
-        if (view !== null) {
-            return;
-        }
-        pendingInit = message;
-        tryMountView();
-        return;
-    }
-    if (message.type === "historyReplay") {
-        if (view !== null) {
-            return;
-        }
-        pendingHistory = message.events;
-        tryMountView();
-        return;
-    }
+  if (message.type === "sessionHistoryLoading") {
     if (view !== null) {
-        view.handleMessage(message);
-        return;
+      view.handleMessage(message);
+      return;
     }
-    pendingExtensionMessages.push(message);
+    pendingSessionHistoryLoading = message.loading;
+    if (message.loading) {
+      bootText.textContent = "Loading conversation...";
+    }
+    return;
+  }
+  if (isInitPayload(message)) {
+    if (view !== null) {
+      return;
+    }
+    pendingInit = message;
+    tryMountView();
+    return;
+  }
+  if (message.type === "historyReplay") {
+    if (view !== null) {
+      return;
+    }
+    pendingHistory = message.events;
+    tryMountView();
+    return;
+  }
+  if (view !== null) {
+    view.handleMessage(message);
+    return;
+  }
+  pendingExtensionMessages.push(message);
 });
 
 host.post({ type: "ready" });
 const initRetryTimer = window.setTimeout(() => {
-    if (!initReceived) {
-        host.post({ type: "ready" });
-    }
+  if (!initReceived) {
+    host.post({ type: "ready" });
+  }
 }, 750);

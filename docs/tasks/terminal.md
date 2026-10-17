@@ -19,17 +19,17 @@ Tool **display** for terminal/execute kinds still works from `session/update` pa
 
 ## Current behavior
 
-| Area | Today |
-| --- | --- |
-| `initialize` | Does not advertise `terminal: true` or `_meta.terminal_output` |
-| `AcpAgentProcess` | `createTerminal` not implemented on `Client` |
+| Area              | Today                                                          |
+| ----------------- | -------------------------------------------------------------- |
+| `initialize`      | Does not advertise `terminal: true` or `_meta.terminal_output` |
+| `AcpAgentProcess` | `createTerminal` not implemented on `Client`                   |
 
 ## Key files
 
-| Path | Role |
-| --- | --- |
+| Path                                        | Role                              |
+| ------------------------------------------- | --------------------------------- |
 | `src/acp/infrastructure/acpAgentProcess.ts` | Client capabilities and callbacks |
-| VS Code `vscode.window.createTerminal` | Terminal creation |
+| VS Code `vscode.window.createTerminal`      | Terminal creation                 |
 
 ## Implementation checklist
 

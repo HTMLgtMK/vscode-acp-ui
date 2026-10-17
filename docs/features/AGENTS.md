@@ -84,7 +84,7 @@ to detect `/` and `@` tokens at the caret.
 ```
 
 Do not wrap link text in backticks.
-Use `[symbol](path#L10-L20)`, not `` [`symbol`](path#L10-L20) ``.
+Use `[symbol](path#L10-L20)`, not ``[`symbol`](path#L10-L20)``.
 
 ## When to add or update a feature doc
 
@@ -98,11 +98,11 @@ Do not split user and implementation into separate files.
 
 ## Relation to other docs
 
-| Location | Purpose |
-| --- | --- |
-| `docs/features/` | Combined product features: user story plus implementation |
-| `docs/tasks/` | Tracked work items and backlog (many tasks, fewer features) |
-| `docs/acp/` | Upstream ACP protocol reference (synced) |
+| Location         | Purpose                                                     |
+| ---------------- | ----------------------------------------------------------- |
+| `docs/features/` | Combined product features: user story plus implementation   |
+| `docs/tasks/`    | Tracked work items and backlog (many tasks, fewer features) |
+| `docs/acp/`      | Upstream ACP protocol reference (synced)                    |
 
 Feature docs describe what ACP UI does at a high level.
 Task docs describe specific deliverables and checklists.

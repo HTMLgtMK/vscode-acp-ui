@@ -1,15 +1,15 @@
 .composer-mode-indicator {
-    flex-shrink: 0;
-    font-size: var(--acp-ui-font-size-small);
-    font-weight: var(--acp-ui-font-weight-semibold);
-    letter-spacing: 0.02em;
-    user-select: none;
+  flex-shrink: 0;
+  font-size: var(--acp-ui-font-size-small);
+  font-weight: var(--acp-ui-font-weight-semibold);
+  letter-spacing: 0.02em;
+  user-select: none;
 }
 
 .composer-mode-indicator--ask {
-    color: var(--vscode-charts-green, var(--vscode-terminal-ansiGreen));
+  color: var(--vscode-charts-green, var(--vscode-terminal-ansiGreen));
 }
 
 .composer-mode-indicator--plan {
-    color: var(--acp-composer-plan-foreground, #d18616);
+  color: var(--acp-composer-plan-foreground, #d18616);
 }

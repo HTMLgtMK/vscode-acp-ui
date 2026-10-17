@@ -2,11 +2,13 @@
 name: release
 description: Prepare a release by updating changelog.md and bumping package.json version with npm version. Use when the user asks for /release, release prep, version bump, or changelog update. Decide only patch or minor based on change impact; never major.
 ---
+
 # Release
 
 ## Goal
 
 Produce a safe release update by:
+
 - updating `changelog.md`
 - bumping `package.json` version
 - choosing **only** `patch` or `minor` (never `major`)
@@ -14,11 +16,13 @@ Produce a safe release update by:
 ## Decision Rules (Patch vs Minor)
 
 Pick `minor` when any of these are true:
+
 - New user-facing feature or command was added.
 - New API/capability was added in extension behavior.
 - Noticeable UX feature was added (not just a fix).
 
 Otherwise pick `patch` for:
+
 - Bug fixes.
 - Refactors/internal changes with same behavior.
 - Docs/tests/chore-only changes.
@@ -48,6 +52,7 @@ Otherwise pick `patch` for:
 ## Output Format
 
 When done, provide:
+
 - `Version:` `<old> -> <new>`
 - `Bump type:` `patch|minor` + one-line rationale
 - `Changelog:` short bullets of added entries

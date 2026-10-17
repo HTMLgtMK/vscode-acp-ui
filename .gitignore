@@ -10,3 +10,4 @@ playground/mock/
 docs/acp/
 docs/cursor-extensions/
 tmp/
+.vitest/

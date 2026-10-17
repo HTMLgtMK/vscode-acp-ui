@@ -32,13 +32,10 @@ import {
 import { ChatComposer } from "./components/ChatComposer";
 import { installSessionModeIndicatorThemeColors } from "./sessionModeIndicatorTheme";
 import {
-    installAgentMarkdownThemeColors,
-    updateAgentMarkdownThemeColors,
+  installAgentMarkdownThemeColors,
+  updateAgentMarkdownThemeColors,
 } from "./agentMarkdownTheme";
-import {
-  buildComposerAutocompleteState,
-  wrapIndex,
-} from "./components/composerAutocomplete";
+import { buildComposerAutocompleteState, wrapIndex } from "./components/composerAutocomplete";
 import {
   shouldCancelRunOnCtrlC,
   shouldCycleSessionModeOnShiftTab,
@@ -63,16 +60,10 @@ export type AcpUiAppProps = {
   postRenameSession: (title: string) => void;
   postResetSession: () => void;
   postSetSessionModel: (modelId: string) => void;
-  postSetSessionConfigOption: (
-    configId: string,
-    value: string | boolean,
-  ) => void;
+  postSetSessionConfigOption: (configId: string, value: string | boolean) => void;
   postSaveHistory: (entries: string[]) => void;
   postOpenNewChat?: () => void;
-  postOpenWorkspacePath?: (
-    path: string,
-    options?: { target?: WorkspacePathOpenTarget },
-  ) => void;
+  postOpenWorkspacePath?: (path: string, options?: { target?: WorkspacePathOpenTarget }) => void;
   postPermissionResponse: (
     payload:
       | { requestId: string; selectedOptionId: string }
@@ -95,9 +86,7 @@ export type AcpUiAppProps = {
       | { outcome: "rejected"; reason?: string }
       | { outcome: "cancelled" };
   }) => void;
-  extensionDispatchRef: RefObject<
-    ((message: ExtensionMessageAfterInit) => void) | null
-  >;
+  extensionDispatchRef: RefObject<((message: ExtensionMessageAfterInit) => void) | null>;
   onExtensionDispatchReady?: () => void;
 };
 
@@ -139,17 +128,14 @@ export function AcpUiApp({
   const [toolCallVerbosity, setToolCallVerbosity] = useState<ToolCallVerbosity>(
     init.toolCallVerbosity ?? "verbose",
   );
-  const [contentWidthRatio, setContentWidthRatio] = useState(
-    init.contentWidthRatio ?? 1,
-  );
+  const [contentWidthRatio, setContentWidthRatio] = useState(init.contentWidthRatio ?? 1);
   const traceRef = useRef<HTMLElement | null>(null);
   const traceContentRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef(true);
   const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [fileDragActive, setFileDragActive] = useState(false);
   const [composerSuggestionIndex, setComposerSuggestionIndex] = useState(0);
-  const [composerAutocompleteDismissed, setComposerAutocompleteDismissed] =
-    useState(false);
+  const [composerAutocompleteDismissed, setComposerAutocompleteDismissed] = useState(false);
 
   const scrollTraceToBottomIfPinned = useCallback((): void => {
     const el = traceRef.current;
@@ -221,10 +207,7 @@ export function AcpUiApp({
         }
         return;
       }
-      if (
-        event.key.toLowerCase() !== "o" ||
-        (!event.ctrlKey && !event.metaKey)
-      ) {
+      if (event.key.toLowerCase() !== "o" || (!event.ctrlKey && !event.metaKey)) {
         return;
       }
       const target = event.target;
@@ -269,12 +252,7 @@ export function AcpUiApp({
       : "No workspace folder open";
 
   const activityLabel = useMemo(
-    () =>
-      composerActivityLabel(
-        state.promptInFlight,
-        state.trace,
-        state.openStreamIndex,
-      ),
+    () => composerActivityLabel(state.promptInFlight, state.trace, state.openStreamIndex),
     [state.promptInFlight, state.trace, state.openStreamIndex],
   );
 
@@ -343,9 +321,7 @@ export function AcpUiApp({
       setShowThinkingBlocks((value) => !value);
       dispatch({
         type: "commandFeedback",
-        message: showThinkingBlocks
-          ? "Thought blocks hidden."
-          : "Thought blocks shown.",
+        message: showThinkingBlocks ? "Thought blocks hidden." : "Thought blocks shown.",
       });
       return;
     }
@@ -368,9 +344,7 @@ export function AcpUiApp({
     setHistoryBrowse(null);
     setHistory((prev) => {
       const next =
-        prev.length > 0 && prev[prev.length - 1] === body
-          ? prev
-          : [...prev.slice(-49), body];
+        prev.length > 0 && prev[prev.length - 1] === body ? prev : [...prev.slice(-49), body];
       postSaveHistory(next);
       return next;
     });
@@ -379,22 +353,18 @@ export function AcpUiApp({
     postSend(body);
   };
 
-  const onComposerKeyDown = (
-    event: KeyboardEvent<HTMLTextAreaElement>,
-  ): void => {
+  const onComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
     const target = event.currentTarget;
     const start = target.selectionStart ?? 0;
     const end = target.selectionEnd ?? 0;
-    const mod =
-      event.shiftKey || event.ctrlKey || event.metaKey || event.altKey;
+    const mod = event.shiftKey || event.ctrlKey || event.metaKey || event.altKey;
     const autocomplete = buildComposerAutocompleteState({
       draft,
       caret: start,
       slashCommands: mergedSlashCommands,
       workspaceFiles: init.workspaceFiles ?? [],
     });
-    const autocompleteActive =
-      autocomplete !== null && !composerAutocompleteDismissed;
+    const autocompleteActive = autocomplete !== null && !composerAutocompleteDismissed;
     const hasSelection = start !== end;
 
     if (
@@ -408,9 +378,7 @@ export function AcpUiApp({
       !state.composerPicksLocked
     ) {
       const pick = cycleSessionModePick(
-        state.sessionConfigOptions !== null
-          ? { options: state.sessionConfigOptions }
-          : null,
+        state.sessionConfigOptions !== null ? { options: state.sessionConfigOptions } : null,
       );
       if (pick !== null) {
         event.preventDefault();
@@ -447,10 +415,7 @@ export function AcpUiApp({
       return;
     }
 
-    if (
-      autocompleteActive &&
-      (event.key === "ArrowUp" || event.key === "ArrowDown")
-    ) {
+    if (autocompleteActive && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
       event.preventDefault();
       const delta = event.key === "ArrowDown" ? 1 : -1;
       setComposerSuggestionIndex((current) =>
@@ -461,10 +426,7 @@ export function AcpUiApp({
 
     if (autocompleteActive && event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      const nextIndex = wrapIndex(
-        composerSuggestionIndex,
-        autocomplete.items.length,
-      );
+      const nextIndex = wrapIndex(composerSuggestionIndex, autocomplete.items.length);
       const selected = autocomplete.items[nextIndex];
       if (selected !== undefined) {
         const left = draft.slice(0, start);
@@ -497,10 +459,7 @@ export function AcpUiApp({
         }
         return;
       }
-      if (
-        history.length > 0 &&
-        textareaAtFirstLineFirstColumn(start, end)
-      ) {
+      if (history.length > 0 && textareaAtFirstLineFirstColumn(start, end)) {
         event.preventDefault();
         const lastIdx = history.length - 1;
         setHistoryBrowse({ pointer: lastIdx, restore: draft });
@@ -589,19 +548,11 @@ export function AcpUiApp({
 
   return (
     <Fragment>
-      <div
-        className="acp-ui-error"
-        role="alert"
-        hidden={state.errorText === null}
-      >
+      <div className="acp-ui-error" role="alert" hidden={state.errorText === null}>
         {state.errorText}
       </div>
       <div
-        className={
-          fileDragActive
-            ? "acp-ui-shell acp-ui-shell--file-drag"
-            : "acp-ui-shell"
-        }
+        className={fileDragActive ? "acp-ui-shell acp-ui-shell--file-drag" : "acp-ui-shell"}
         style={
           {
             "--acp-ui-content-width-ratio": contentWidthRatio,
@@ -640,104 +591,104 @@ export function AcpUiApp({
         </main>
         <div className="acp-ui-composer-stack">
           <div className="acp-ui-content-column">
-          {permission !== null ? (
-            <PermissionDialog
-              toolTitle={permission.toolTitle}
-              options={permission.options}
-              onSelect={(optionId) => {
-                postPermissionResponse({
-                  requestId: permission.requestId,
-                  selectedOptionId: optionId,
-                });
-                dispatch({ type: "clearPermissionPrompt" });
+            {permission !== null ? (
+              <PermissionDialog
+                toolTitle={permission.toolTitle}
+                options={permission.options}
+                onSelect={(optionId) => {
+                  postPermissionResponse({
+                    requestId: permission.requestId,
+                    selectedOptionId: optionId,
+                  });
+                  dispatch({ type: "clearPermissionPrompt" });
+                }}
+                onDismiss={() => {
+                  postPermissionResponse({
+                    requestId: permission.requestId,
+                    cancelled: true,
+                  });
+                  dispatch({ type: "clearPermissionPrompt" });
+                }}
+              />
+            ) : null}
+            {askQuestion !== null ? (
+              <CursorAskQuestionDialog
+                request={askQuestion}
+                onSubmit={(answers) => {
+                  postCursorAskQuestionResponse({
+                    requestId: askQuestion.requestId,
+                    outcome: { outcome: "answered", answers },
+                  });
+                  dispatch({ type: "clearAskQuestionPrompt" });
+                }}
+                onCancel={() => {
+                  postCursorAskQuestionResponse({
+                    requestId: askQuestion.requestId,
+                    outcome: { outcome: "cancelled" },
+                  });
+                  dispatch({ type: "clearAskQuestionPrompt" });
+                }}
+              />
+            ) : null}
+            {createPlan !== null ? (
+              <CursorCreatePlanDialog
+                request={createPlan}
+                onAccept={() => {
+                  postCursorCreatePlanResponse({
+                    requestId: createPlan.requestId,
+                    outcome: { outcome: "accepted" },
+                  });
+                  dispatch({ type: "clearCreatePlanPrompt" });
+                }}
+                onReject={() => {
+                  postCursorCreatePlanResponse({
+                    requestId: createPlan.requestId,
+                    outcome: { outcome: "rejected" },
+                  });
+                  dispatch({ type: "clearCreatePlanPrompt" });
+                }}
+                onCancel={() => {
+                  postCursorCreatePlanResponse({
+                    requestId: createPlan.requestId,
+                    outcome: { outcome: "cancelled" },
+                  });
+                  dispatch({ type: "clearCreatePlanPrompt" });
+                }}
+              />
+            ) : null}
+            <ChatComposer
+              activityLabel={activityLabel}
+              workspacePathHint={workspaceText}
+              modelSelection={state.modelSelection}
+              sessionConfigOptions={state.sessionConfigOptions}
+              sessionConfigLoading={state.sessionConfigLoading}
+              modelPickerLocked={state.composerPicksLocked}
+              hideComposerModelControls={state.hideComposerModelControls}
+              promptInFlight={state.promptInFlight}
+              inputBlocked={
+                state.permissionPrompt !== null ||
+                state.askQuestionPrompt !== null ||
+                state.createPlanPrompt !== null
+              }
+              slashCommands={mergedSlashCommands}
+              workspaceFiles={init.workspaceFiles ?? []}
+              suggestionIndex={composerSuggestionIndex}
+              autocompleteDismissed={composerAutocompleteDismissed}
+              draft={draft}
+              onDraftChange={onDraftChange}
+              onPickSessionModel={(modelId) => {
+                dispatch({ type: "pickSessionModel", modelId });
+                postSetSessionModel(modelId);
               }}
-              onDismiss={() => {
-                postPermissionResponse({
-                  requestId: permission.requestId,
-                  cancelled: true,
-                });
-                dispatch({ type: "clearPermissionPrompt" });
+              onPickSessionConfigOption={(configId, value) => {
+                dispatch({ type: "pickSessionConfigOption", configId, value });
+                postSetSessionConfigOption(configId, value);
               }}
+              onSubmit={submit}
+              onCancel={postCancel}
+              onKeyDown={onComposerKeyDown}
+              composerInputRef={composerTextareaRef}
             />
-          ) : null}
-          {askQuestion !== null ? (
-            <CursorAskQuestionDialog
-              request={askQuestion}
-              onSubmit={(answers) => {
-                postCursorAskQuestionResponse({
-                  requestId: askQuestion.requestId,
-                  outcome: { outcome: "answered", answers },
-                });
-                dispatch({ type: "clearAskQuestionPrompt" });
-              }}
-              onCancel={() => {
-                postCursorAskQuestionResponse({
-                  requestId: askQuestion.requestId,
-                  outcome: { outcome: "cancelled" },
-                });
-                dispatch({ type: "clearAskQuestionPrompt" });
-              }}
-            />
-          ) : null}
-          {createPlan !== null ? (
-            <CursorCreatePlanDialog
-              request={createPlan}
-              onAccept={() => {
-                postCursorCreatePlanResponse({
-                  requestId: createPlan.requestId,
-                  outcome: { outcome: "accepted" },
-                });
-                dispatch({ type: "clearCreatePlanPrompt" });
-              }}
-              onReject={() => {
-                postCursorCreatePlanResponse({
-                  requestId: createPlan.requestId,
-                  outcome: { outcome: "rejected" },
-                });
-                dispatch({ type: "clearCreatePlanPrompt" });
-              }}
-              onCancel={() => {
-                postCursorCreatePlanResponse({
-                  requestId: createPlan.requestId,
-                  outcome: { outcome: "cancelled" },
-                });
-                dispatch({ type: "clearCreatePlanPrompt" });
-              }}
-            />
-          ) : null}
-          <ChatComposer
-            activityLabel={activityLabel}
-            workspacePathHint={workspaceText}
-            modelSelection={state.modelSelection}
-            sessionConfigOptions={state.sessionConfigOptions}
-            sessionConfigLoading={state.sessionConfigLoading}
-            modelPickerLocked={state.composerPicksLocked}
-            hideComposerModelControls={state.hideComposerModelControls}
-            promptInFlight={state.promptInFlight}
-            inputBlocked={
-              state.permissionPrompt !== null ||
-              state.askQuestionPrompt !== null ||
-              state.createPlanPrompt !== null
-            }
-            slashCommands={mergedSlashCommands}
-            workspaceFiles={init.workspaceFiles ?? []}
-            suggestionIndex={composerSuggestionIndex}
-            autocompleteDismissed={composerAutocompleteDismissed}
-            draft={draft}
-            onDraftChange={onDraftChange}
-            onPickSessionModel={(modelId) => {
-              dispatch({ type: "pickSessionModel", modelId });
-              postSetSessionModel(modelId);
-            }}
-            onPickSessionConfigOption={(configId, value) => {
-              dispatch({ type: "pickSessionConfigOption", configId, value });
-              postSetSessionConfigOption(configId, value);
-            }}
-            onSubmit={submit}
-            onCancel={postCancel}
-            onKeyDown={onComposerKeyDown}
-            composerInputRef={composerTextareaRef}
-          />
           </div>
         </div>
       </div>
@@ -748,10 +699,7 @@ export function AcpUiApp({
 /**
  * Whether the caret is at the start of the first line (for recalling prompt history with ArrowUp).
  */
-function textareaAtFirstLineFirstColumn(
-  selectionStart: number,
-  selectionEnd: number,
-): boolean {
+function textareaAtFirstLineFirstColumn(selectionStart: number, selectionEnd: number): boolean {
   if (selectionStart !== selectionEnd) {
     return false;
   }
@@ -771,10 +719,7 @@ function composerActivityLabel(
   }
   for (let i = trace.length - 1; i >= 0; i--) {
     const item = trace[i];
-    if (
-      item?.type === "tool" &&
-      (item.status === "pending" || item.status === "in_progress")
-    ) {
+    if (item?.type === "tool" && (item.status === "pending" || item.status === "in_progress")) {
       const k = item.kind?.toLowerCase();
       if (k === "read") {
         return "Reading…";

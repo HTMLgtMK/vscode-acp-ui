@@ -1,302 +1,270 @@
 .tool-call-terminal {
-    margin: 0 0 var(--acp-ui-space-10);
-    padding: var(--acp-ui-space-6) var(--acp-ui-space-10);
-    font-family: var(--acp-ui-font-mono);
-    font-size: var(--acp-ui-font-size-x-small);
-    line-height: 1.35;
-    color: var(
-        --vscode-terminal-foreground,
-        var(--vscode-editor-foreground, var(--vscode-foreground))
-    );
-    background-color: var(
-        --vscode-terminal-background,
-        color-mix(
-            in srgb,
-            var(--vscode-editor-background) 90%,
-            var(--vscode-widget-border) 10%
-        )
-    );
-    border: var(--acp-ui-stroke-width) solid
-        var(
-            --vscode-terminal-ansiBlack,
-            var(--vscode-panel-border, var(--vscode-widget-border))
-        );
-    border-radius: var(--acp-ui-radius-md);
-    min-width: 0;
+  margin: 0 0 var(--acp-ui-space-10);
+  padding: var(--acp-ui-space-6) var(--acp-ui-space-10);
+  font-family: var(--acp-ui-font-mono);
+  font-size: var(--acp-ui-font-size-x-small);
+  line-height: 1.35;
+  color: var(
+    --vscode-terminal-foreground,
+    var(--vscode-editor-foreground, var(--vscode-foreground))
+  );
+  background-color: var(
+    --vscode-terminal-background,
+    color-mix(in srgb, var(--vscode-editor-background) 90%, var(--vscode-widget-border) 10%)
+  );
+  border: var(--acp-ui-stroke-width) solid
+    var(--vscode-terminal-ansiBlack, var(--vscode-panel-border, var(--vscode-widget-border)));
+  border-radius: var(--acp-ui-radius-md);
+  min-width: 0;
 }
 
 .tool-call-terminal-line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 6px;
-    min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  min-width: 0;
 }
 
 /** Groups status + command so `[execute]` stays a trailing sibling and aligns right like other kind badges. */
 .tool-call-terminal-line-main {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 6px;
-    flex: 1 1 auto;
-    min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .tool-call-terminal-line--expandable {
-    cursor: pointer;
-    border-radius: var(--acp-ui-radius-sm);
-    outline-offset: 1px;
+  cursor: pointer;
+  border-radius: var(--acp-ui-radius-sm);
+  outline-offset: 1px;
 }
 
 .tool-call-terminal-line--expandable:focus-visible {
-    outline: var(--acp-ui-stroke-width) solid var(--acp-ui-focus-border);
+  outline: var(--acp-ui-stroke-width) solid var(--acp-ui-focus-border);
 }
 
 .tool-call-terminal-prompt {
-    flex-shrink: 0;
-    user-select: none;
-    color: var(--vscode-terminal-ansiGreen, var(--vscode-textLink-foreground));
-    font-weight: 600;
-    margin-right: 2px;
+  flex-shrink: 0;
+  user-select: none;
+  color: var(--vscode-terminal-ansiGreen, var(--vscode-textLink-foreground));
+  font-weight: 600;
+  margin-right: 2px;
 }
 
 .tool-call-terminal-title--execute {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 4px;
 }
 
 .tool-call-terminal-prompt--inline {
-    flex-shrink: 0;
-    user-select: none;
-    color: var(
-        --vscode-descriptionForeground,
-        var(--vscode-list-deemphasizedForeground)
-    );
-    font-weight: 600;
+  flex-shrink: 0;
+  user-select: none;
+  color: var(--vscode-descriptionForeground, var(--vscode-list-deemphasizedForeground));
+  font-weight: 600;
 }
 
 .tool-call-terminal-command-text {
-    flex: 1 1 auto;
-    min-width: 0;
-    word-break: break-word;
-    color: inherit;
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-word;
+  color: inherit;
 }
 
 .tool-call-terminal-status {
-    flex-shrink: 0;
-    user-select: none;
-    display: inline-block;
-    width: 9px;
-    height: 9px;
-    box-sizing: border-box;
-    vertical-align: -0.1em;
+  flex-shrink: 0;
+  user-select: none;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  box-sizing: border-box;
+  vertical-align: -0.1em;
 }
 
 .tool-call-terminal-status--in-progress {
-    border: 1.5px solid var(--vscode-terminal-ansiYellow, #cca700);
-    border-radius: 50%;
-    background: transparent;
+  border: 1.5px solid var(--vscode-terminal-ansiYellow, #cca700);
+  border-radius: 50%;
+  background: transparent;
 }
 
 .tool-call-terminal-status--completed {
-    border-radius: 50%;
-    background: currentColor;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .tool-call-terminal-status--failed {
-    width: auto;
-    height: auto;
-    font-size: var(--acp-ui-font-size-label);
-    line-height: 1;
-    color: var(--vscode-terminal-ansiRed, var(--vscode-errorForeground));
+  width: auto;
+  height: auto;
+  font-size: var(--acp-ui-font-size-label);
+  line-height: 1;
+  color: var(--vscode-terminal-ansiRed, var(--vscode-errorForeground));
 }
 
 .tool-call-terminal-title {
-    flex: 1 1 auto;
-    min-width: 0;
-    word-break: break-word;
-    color: var(
-        --vscode-terminal-foreground,
-        var(--vscode-editor-foreground, var(--vscode-foreground))
-    );
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-word;
+  color: var(
+    --vscode-terminal-foreground,
+    var(--vscode-editor-foreground, var(--vscode-foreground))
+  );
 }
 
 .tool-call-terminal[data-status="completed"] .tool-call-terminal-title {
-    color: color-mix(
-        in srgb,
-        var(--vscode-terminal-foreground, var(--vscode-foreground)) 82%,
-        var(--vscode-descriptionForeground)
-    );
+  color: color-mix(
+    in srgb,
+    var(--vscode-terminal-foreground, var(--vscode-foreground)) 82%,
+    var(--vscode-descriptionForeground)
+  );
 }
 
-.tool-call-terminal[data-status="completed"]
-    .tool-call-terminal-prompt--inline {
-    color: var(
-        --vscode-descriptionForeground,
-        var(--vscode-list-deemphasizedForeground)
-    );
+.tool-call-terminal[data-status="completed"] .tool-call-terminal-prompt--inline {
+  color: var(--vscode-descriptionForeground, var(--vscode-list-deemphasizedForeground));
 }
 
 .tool-call-terminal-kind {
-    flex-shrink: 0;
-    font-size: var(--acp-ui-font-size-label);
-    color: var(
-        --vscode-list-deemphasizedForeground,
-        var(--vscode-descriptionForeground)
-    );
+  flex-shrink: 0;
+  font-size: var(--acp-ui-font-size-label);
+  color: var(--vscode-list-deemphasizedForeground, var(--vscode-descriptionForeground));
 }
 
 .tool-call-terminal-subtitle {
-    margin-top: 1px;
-    padding-left: 1.05rem;
-    font-size: var(--acp-ui-font-size-label);
-    line-height: 1.35;
-    white-space: pre-wrap;
-    word-break: break-word;
-    color: var(--vscode-descriptionForeground);
+  margin-top: 1px;
+  padding-left: 1.05rem;
+  font-size: var(--acp-ui-font-size-label);
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--vscode-descriptionForeground);
 }
 
 .tool-call-collapsible-output {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-    margin: 2px 0 0;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin: 2px 0 0;
+  min-width: 0;
 }
 
 .tool-call-collapsible-hint {
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 6px 8px;
-    margin: 0;
-    padding: 0 0 1px 0;
-    font-family: inherit;
-    font-size: var(--acp-ui-font-size-label);
-    font-style: italic;
-    line-height: 1.35;
-    color: var(--vscode-descriptionForeground);
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin: 0;
+  padding: 0 0 1px 0;
+  font-family: inherit;
+  font-size: var(--acp-ui-font-size-label);
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--vscode-descriptionForeground);
 }
 
 .tool-call-collapsible-expand {
-    flex-shrink: 0;
-    margin: 0;
-    padding: var(--acp-ui-space-2) var(--acp-ui-space-8);
-    border: var(--acp-ui-stroke-width) solid
-        var(--vscode-button-border, var(--acp-ui-border-chrome));
-    border-radius: var(--acp-ui-radius-sm);
-    background: var(
-        --vscode-button-secondaryBackground,
-        color-mix(
-            in srgb,
-            var(--vscode-editor-background) 92%,
-            var(--vscode-foreground)
-        )
-    );
-    color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
-    font: inherit;
-    font-size: var(--acp-ui-font-size-label);
-    font-style: normal;
-    line-height: 1.35;
-    cursor: pointer;
+  flex-shrink: 0;
+  margin: 0;
+  padding: var(--acp-ui-space-2) var(--acp-ui-space-8);
+  border: var(--acp-ui-stroke-width) solid var(--vscode-button-border, var(--acp-ui-border-chrome));
+  border-radius: var(--acp-ui-radius-sm);
+  background: var(
+    --vscode-button-secondaryBackground,
+    color-mix(in srgb, var(--vscode-editor-background) 92%, var(--vscode-foreground))
+  );
+  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+  font: inherit;
+  font-size: var(--acp-ui-font-size-label);
+  font-style: normal;
+  line-height: 1.35;
+  cursor: pointer;
 }
 
 .tool-call-collapsible-expand:hover {
-    background: var(
-        --vscode-button-secondaryHoverBackground,
-        var(--vscode-toolbar-hoverBackground)
-    );
+  background: var(--vscode-button-secondaryHoverBackground, var(--vscode-toolbar-hoverBackground));
 }
 
 .tool-call-collapsible-hint-text {
-    flex: 1 1 auto;
-    min-width: 0;
-    font-style: italic;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-style: italic;
 }
 
 .tool-call-terminal-pre {
-    margin: 2px 0 0;
-    padding: 2px 0 1px 0;
-    font-family: inherit;
-    font-size: var(--acp-ui-font-size-x-small);
-    line-height: 1.35;
-    white-space: pre-wrap;
-    word-break: break-word;
-    color: var(--vscode-editor-foreground, var(--vscode-foreground));
+  margin: 2px 0 0;
+  padding: 2px 0 1px 0;
+  font-family: inherit;
+  font-size: var(--acp-ui-font-size-x-small);
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--vscode-editor-foreground, var(--vscode-foreground));
 }
 
 .tool-call-terminal-pre--collapsible {
-    margin-top: 0;
-    min-width: 0;
+  margin-top: 0;
+  min-width: 0;
 }
 
 .tool-call-diff {
-    margin: 4px 0 0;
-    padding: 4px 0 2px;
-    border-left: 1px solid
-        color-mix(in srgb, var(--vscode-descriptionForeground) 22%, transparent);
-    font-family: inherit;
-    font-size: var(--acp-ui-font-size-x-small);
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-word;
+  margin: 4px 0 0;
+  padding: 4px 0 2px;
+  border-left: 1px solid color-mix(in srgb, var(--vscode-descriptionForeground) 22%, transparent);
+  font-family: inherit;
+  font-size: var(--acp-ui-font-size-x-small);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .tool-call-diff-line {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    padding: 0 6px 0 4px;
-    margin: 0;
-    min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0 6px 0 4px;
+  margin: 0;
+  min-width: 0;
 }
 
 .tool-call-diff-prefix {
-    flex-shrink: 0;
-    width: 0.65rem;
-    font-weight: 700;
-    user-select: none;
-    text-align: right;
+  flex-shrink: 0;
+  width: 0.65rem;
+  font-weight: 700;
+  user-select: none;
+  text-align: right;
 }
 
 .tool-call-diff-text {
-    flex: 1 1 auto;
-    min-width: 0;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .tool-call-diff-line--removed {
-    background: color-mix(
-        in srgb,
-        var(--vscode-diffEditor-removedTextBackground, #5a1d1d) 88%,
-        transparent
-    );
-    color: var(
-        --vscode-diffEditor-removedTextForeground,
-        var(--vscode-editor-foreground)
-    );
+  background: color-mix(
+    in srgb,
+    var(--vscode-diffEditor-removedTextBackground, #5a1d1d) 88%,
+    transparent
+  );
+  color: var(--vscode-diffEditor-removedTextForeground, var(--vscode-editor-foreground));
 }
 
 .tool-call-diff-line--added {
-    background: color-mix(
-        in srgb,
-        var(--vscode-diffEditor-insertedTextBackground, #1d3d2a) 88%,
-        transparent
-    );
-    color: var(
-        --vscode-diffEditor-insertedTextForeground,
-        var(--vscode-editor-foreground)
-    );
+  background: color-mix(
+    in srgb,
+    var(--vscode-diffEditor-insertedTextBackground, #1d3d2a) 88%,
+    transparent
+  );
+  color: var(--vscode-diffEditor-insertedTextForeground, var(--vscode-editor-foreground));
 }
 
 .tool-call-diff-line--context {
-    color: color-mix(
-        in srgb,
-        var(--vscode-editor-foreground, var(--vscode-foreground)) 58%,
-        var(--vscode-descriptionForeground)
-    );
+  color: color-mix(
+    in srgb,
+    var(--vscode-editor-foreground, var(--vscode-foreground)) 58%,
+    var(--vscode-descriptionForeground)
+  );
 }

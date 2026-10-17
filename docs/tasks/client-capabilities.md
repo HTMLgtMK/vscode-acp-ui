@@ -12,17 +12,17 @@ Document gaps that need other tasks (terminal handlers, elicitation UI) before a
 
 ## Zed vs ACP UI today
 
-| Capability | Zed | ACP UI | Affects model picker? |
-| --- | --- | --- | --- |
-| `_meta.parameterizedModelPicker` | Cursor only | Cursor only (done) | Yes |
-| `_meta.terminal_output` | all agents | not sent | No |
-| `_meta.terminal-auth` | all agents | not sent | No |
-| `terminal` | `true` | not sent | No |
-| `auth.terminal` | `true` | not sent | No |
-| `session.configOptions.boolean` | beta flag | not sent | Maybe |
-| `elicitation` (form + url) | beta flag | not sent | No |
-| `clientInfo` | name, version, title | sent on `initialize` | No |
-| `fs.readTextFile` / `writeTextFile` | `true` | `true` | No |
+| Capability                          | Zed                  | ACP UI               | Affects model picker? |
+| ----------------------------------- | -------------------- | -------------------- | --------------------- |
+| `_meta.parameterizedModelPicker`    | Cursor only          | Cursor only (done)   | Yes                   |
+| `_meta.terminal_output`             | all agents           | not sent             | No                    |
+| `_meta.terminal-auth`               | all agents           | not sent             | No                    |
+| `terminal`                          | `true`               | not sent             | No                    |
+| `auth.terminal`                     | `true`               | not sent             | No                    |
+| `session.configOptions.boolean`     | beta flag            | not sent             | Maybe                 |
+| `elicitation` (form + url)          | beta flag            | not sent             | No                    |
+| `clientInfo`                        | name, version, title | sent on `initialize` | No                    |
+| `fs.readTextFile` / `writeTextFile` | `true`               | `true`               | No                    |
 
 Reference implementation: [Zed `acp.rs`](https://github.com/zed-industries/zed/blob/main/crates/agent_servers/src/acp.rs) (`client_capabilities_for_agent`).
 
@@ -106,9 +106,9 @@ Requires client UI to host agent-driven forms or URLs.
 ## Implementation notes
 
 - Do not advertise `terminal: true` or `_meta.terminal_output` until [terminal.md](./terminal.md) is done.
-Misleading capability ads break agents that rely on client-hosted terminals.
+  Misleading capability ads break agents that rely on client-hosted terminals.
 - `parameterizedModelPicker` is Cursor-specific.
-Other agents should not receive it (match Zed: only when agent id is Cursor).
+  Other agents should not receive it (match Zed: only when agent id is Cursor).
 - Prefer standard ACP `configOptions` categories (`model_config`, `thought_level`) long term over more `_meta` keys.
 
 ## Definition of done

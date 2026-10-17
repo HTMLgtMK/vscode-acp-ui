@@ -46,18 +46,18 @@ Protocol docs in this repo:
 
 ## Current extension behavior
 
-| Touchpoint | File | Today |
-| --- | --- | --- |
-| Agent shape | `src/acp/domain/agentSpawnConfig.ts` | `name`, `command`, `args`, `env?`, `authMethodId?` |
-| Config load | `src/acp/config/vscodeSettingsAgents.ts` | Reads `ib-acp-ui.agents` only |
-| New chat | `src/extension/acpUiPanel.ts` | `pickAcpAgentConfig()` then `openNewAcpUi()` |
-| Agent picker | `src/extension/acpUiAgentPicker.ts` | `showQuickPick` over settings names |
-| Session init | `src/extension/acpUiSessionController.ts` | `availableAcpAgents` from settings |
-| Agent switch | `src/extension/acpUiSessionController.ts` | `setSessionAgent` looks up by name in settings |
-| Webview state | `webview/acp-ui/src/chatReducer.ts` | `acpAgentSelection` exists |
-| Webview UI | `webview/acp-ui/src/components/ChatComposer.tsx` | Model picker only, no agent picker wired |
-| Commands | `package.json` | No registry commands |
-| Playground | `playground/server.ts` | `playground/acp-agent.json` only |
+| Touchpoint    | File                                             | Today                                              |
+| ------------- | ------------------------------------------------ | -------------------------------------------------- |
+| Agent shape   | `src/acp/domain/agentSpawnConfig.ts`             | `name`, `command`, `args`, `env?`, `authMethodId?` |
+| Config load   | `src/acp/config/vscodeSettingsAgents.ts`         | Reads `ib-acp-ui.agents` only                      |
+| New chat      | `src/extension/acpUiPanel.ts`                    | `pickAcpAgentConfig()` then `openNewAcpUi()`       |
+| Agent picker  | `src/extension/acpUiAgentPicker.ts`              | `showQuickPick` over settings names                |
+| Session init  | `src/extension/acpUiSessionController.ts`        | `availableAcpAgents` from settings                 |
+| Agent switch  | `src/extension/acpUiSessionController.ts`        | `setSessionAgent` looks up by name in settings     |
+| Webview state | `webview/acp-ui/src/chatReducer.ts`              | `acpAgentSelection` exists                         |
+| Webview UI    | `webview/acp-ui/src/components/ChatComposer.tsx` | Model picker only, no agent picker wired           |
+| Commands      | `package.json`                                   | No registry commands                               |
+| Playground    | `playground/server.ts`                           | `playground/acp-agent.json` only                   |
 
 No registry code exists under `src/` or `webview/` yet.
 
@@ -99,31 +99,31 @@ Every place that reads or lists agents must go through a single merged source af
 
 ### Files to add
 
-| Path | Role |
-| --- | --- |
-| `src/acp/registry/types.ts` | Registry catalog and agent manifest types |
-| `src/acp/registry/fetchRegistry.ts` | HTTP fetch with timeout |
-| `src/acp/registry/cacheRegistry.ts` | `globalStorage/registry/catalog.json` + TTL |
-| `src/acp/registry/resolveDistribution.ts` | Manifest -> `AcpAgentSpawnConfig` |
-| `src/acp/registry/binaryInstall.ts` | Download/extract binary agents (phase 2) |
-| `src/acp/registry/mergeAgents.ts` | Manual + installed merge and dedup |
-| `src/acp/registry/fixtures/registry.sample.json` | CI fixture, no live CDN in tests |
-| `src/extension/acpUiInstalledAgents.ts` | Persist install map in global storage |
-| `src/extension/acpUiRegistry.ts` | Browse/install/uninstall/refresh commands |
-| `webview/acp-ui/src/components/AgentPicker.tsx` | Composer agent dropdown (playground parity) |
+| Path                                             | Role                                        |
+| ------------------------------------------------ | ------------------------------------------- |
+| `src/acp/registry/types.ts`                      | Registry catalog and agent manifest types   |
+| `src/acp/registry/fetchRegistry.ts`              | HTTP fetch with timeout                     |
+| `src/acp/registry/cacheRegistry.ts`              | `globalStorage/registry/catalog.json` + TTL |
+| `src/acp/registry/resolveDistribution.ts`        | Manifest -> `AcpAgentSpawnConfig`           |
+| `src/acp/registry/binaryInstall.ts`              | Download/extract binary agents (phase 2)    |
+| `src/acp/registry/mergeAgents.ts`                | Manual + installed merge and dedup          |
+| `src/acp/registry/fixtures/registry.sample.json` | CI fixture, no live CDN in tests            |
+| `src/extension/acpUiInstalledAgents.ts`          | Persist install map in global storage       |
+| `src/extension/acpUiRegistry.ts`                 | Browse/install/uninstall/refresh commands   |
+| `webview/acp-ui/src/components/AgentPicker.tsx`  | Composer agent dropdown (playground parity) |
 
 ### Files to change
 
-| Path | Change |
-| --- | --- |
-| `src/acp/config/vscodeSettingsAgents.ts` | Export manual-only helper, or delegate to merge module |
-| `src/extension/acpUiAgentPicker.ts` | Use merged list, add "Browse Agent Registry..." entry |
-| `src/extension/acpUiPanel.ts` | Register registry commands, empty-agents onboarding |
-| `src/extension/acpUiSessionController.ts` | Merged list for init and `setSessionAgent` |
-| `webview/acp-ui/src/components/ChatComposer.tsx` | Render `AgentPicker` when selection is unlocked |
-| `webview/acp-ui/src/AcpUiApp.tsx` | Wire `postSetSessionAgent` (if not already) |
-| `package.json` | Settings, commands, menus |
-| `README.md` | Registry install section |
+| Path                                             | Change                                                 |
+| ------------------------------------------------ | ------------------------------------------------------ |
+| `src/acp/config/vscodeSettingsAgents.ts`         | Export manual-only helper, or delegate to merge module |
+| `src/extension/acpUiAgentPicker.ts`              | Use merged list, add "Browse Agent Registry..." entry  |
+| `src/extension/acpUiPanel.ts`                    | Register registry commands, empty-agents onboarding    |
+| `src/extension/acpUiSessionController.ts`        | Merged list for init and `setSessionAgent`             |
+| `webview/acp-ui/src/components/ChatComposer.tsx` | Render `AgentPicker` when selection is unlocked        |
+| `webview/acp-ui/src/AcpUiApp.tsx`                | Wire `postSetSessionAgent` (if not already)            |
+| `package.json`                                   | Settings, commands, menus                              |
+| `README.md`                                      | Registry install section                               |
 
 `playground/server.ts` is optional for dev parity.
 Prefer it if the change is small (read install map or env override).
@@ -138,22 +138,22 @@ https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json
 
 **Distribution -> spawn config:**
 
-| Registry | Spawn |
-| --- | --- |
-| `npx.package` | `command: "npx"`, `args: ["-y", package, ...manifest.args]` |
-| `uvx.package` | `command: "uvx"`, `args: [package, ...manifest.args]` |
+| Registry          | Spawn                                                                            |
+| ----------------- | -------------------------------------------------------------------------------- |
+| `npx.package`     | `command: "npx"`, `args: ["-y", package, ...manifest.args]`                      |
+| `uvx.package`     | `command: "uvx"`, `args: [package, ...manifest.args]`                            |
 | `binary.<target>` | Download archive to global storage, `command` = absolute path to extracted `cmd` |
 
 Platform target from `process.platform` + `process.arch`:
 
-| Platform | Arch | Target key |
-| --- | --- | --- |
-| `darwin` | `arm64` | `darwin-aarch64` |
-| `darwin` | `x64` | `darwin-x86_64` |
-| `linux` | `arm64` | `linux-aarch64` |
-| `linux` | `x64` | `linux-x86_64` |
-| `win32` | `arm64` | `windows-aarch64` |
-| `win32` | `x64` | `windows-x86_64` |
+| Platform | Arch    | Target key        |
+| -------- | ------- | ----------------- |
+| `darwin` | `arm64` | `darwin-aarch64`  |
+| `darwin` | `x64`   | `darwin-x86_64`   |
+| `linux`  | `arm64` | `linux-aarch64`   |
+| `linux`  | `x64`   | `linux-x86_64`    |
+| `win32`  | `arm64` | `windows-aarch64` |
+| `win32`  | `x64`   | `windows-x86_64`  |
 
 Prefer `npx` over `uvx` over `binary` when multiple are present.
 
@@ -191,11 +191,11 @@ Do not require `registryId` in user-edited settings JSON.
 
 ### New commands (`package.json`)
 
-| Command ID | Title | Behavior |
-| --- | --- | --- |
-| `ib-acp-ui.browseAgentRegistry` | Browse Agent Registry | Quick pick catalog, install selected agent |
-| `ib-acp-ui.refreshAgentRegistry` | Refresh Agent Registry | Bypass cache TTL, refetch CDN |
-| `ib-acp-ui.uninstallRegistryAgent` | Uninstall Registry Agent | Remove one install by registry id |
+| Command ID                         | Title                    | Behavior                                   |
+| ---------------------------------- | ------------------------ | ------------------------------------------ |
+| `ib-acp-ui.browseAgentRegistry`    | Browse Agent Registry    | Quick pick catalog, install selected agent |
+| `ib-acp-ui.refreshAgentRegistry`   | Refresh Agent Registry   | Bypass cache TTL, refetch CDN              |
+| `ib-acp-ui.uninstallRegistryAgent` | Uninstall Registry Agent | Remove one install by registry id          |
 
 Register under category `IrishBruse ACP`.
 Add **Browse Agent Registry** to the Chats view title menu next to existing new-chat actions.
@@ -233,11 +233,11 @@ When no agents exist at all, `acpUiPanel.ts` should offer **Browse Agent Registr
 
 ### Settings (`package.json`)
 
-| Key | Default | Purpose |
-| --- | --- | --- |
-| `ib-acp-ui.registry.enabled` | `true` | Turn registry fetch/install off |
-| `ib-acp-ui.registry.url` | CDN latest URL | Override for testing |
-| `ib-acp-ui.registry.cacheTtlHours` | `24` | Catalog cache lifetime |
+| Key                                | Default        | Purpose                         |
+| ---------------------------------- | -------------- | ------------------------------- |
+| `ib-acp-ui.registry.enabled`       | `true`         | Turn registry fetch/install off |
+| `ib-acp-ui.registry.url`           | CDN latest URL | Override for testing            |
+| `ib-acp-ui.registry.cacheTtlHours` | `24`           | Catalog cache lifetime          |
 
 ### Onboarding (recommended)
 
@@ -292,13 +292,13 @@ Onboarding mainly helps users who cleared defaults.
 
 ## Edge cases
 
-| Case | Behavior |
-| --- | --- |
-| CDN unreachable | Use cache, show one warning toast |
-| Agent removed from catalog | Keep local install, allow uninstall |
-| Manual + registry same `name` | Manual wins, registry row hidden |
-| `npx` missing on PATH | Block install with clear message |
-| Auth unsupported | Allow install, warn that agent auth may fail at spawn |
+| Case                          | Behavior                                              |
+| ----------------------------- | ----------------------------------------------------- |
+| CDN unreachable               | Use cache, show one warning toast                     |
+| Agent removed from catalog    | Keep local install, allow uninstall                   |
+| Manual + registry same `name` | Manual wins, registry row hidden                      |
+| `npx` missing on PATH         | Block install with clear message                      |
+| Auth unsupported              | Allow install, warn that agent auth may fail at spawn |
 
 ## Definition of done
 

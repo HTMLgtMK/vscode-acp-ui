@@ -18,7 +18,7 @@ Every `docs/tasks/<task-slug>.md` file starts with YAML frontmatter:
 
 ```yaml
 ---
-status: not-started   # done | in-progress | not-started
+status: not-started # done | in-progress | not-started
 feature: docs/features/<group>/<feature-slug>.md
 ---
 ```
@@ -54,8 +54,8 @@ That field lives only in frontmatter.
 
 ## Relation to other docs
 
-| Location | Purpose |
-| --- | --- |
+| Location         | Purpose                                                          |
+| ---------------- | ---------------------------------------------------------------- |
 | `docs/features/` | What ACP UI does (or will do) for users, grouped by product area |
-| `docs/tasks/` | Backlog and checklists |
-| `docs/acp/` | Upstream ACP protocol reference |
+| `docs/tasks/`    | Backlog and checklists                                           |
+| `docs/acp/`      | Upstream ACP protocol reference                                  |

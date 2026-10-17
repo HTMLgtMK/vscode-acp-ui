@@ -1,39 +1,39 @@
 .agent-trace,
 .composer-input {
-    scrollbar-width: thin;
-    scrollbar-color: var(--vscode-scrollbarSlider-background, #4e566680)
-        var(--vscode-editor-background);
+  scrollbar-width: thin;
+  scrollbar-color: var(--vscode-scrollbarSlider-background, #4e566680)
+    var(--vscode-editor-background);
 }
 
 .agent-trace::-webkit-scrollbar,
 .composer-input::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+  width: 10px;
+  height: 10px;
 }
 
 .agent-trace::-webkit-scrollbar-track,
 .composer-input::-webkit-scrollbar-track {
-    background: var(--vscode-editor-background);
+  background: var(--vscode-editor-background);
 }
 
 .agent-trace::-webkit-scrollbar-thumb,
 .composer-input::-webkit-scrollbar-thumb {
-    background-color: var(--vscode-scrollbarSlider-background, #4e566680);
-    border-radius: var(--acp-ui-radius-full);
-    border: 2px solid var(--vscode-editor-background);
+  background-color: var(--vscode-scrollbarSlider-background, #4e566680);
+  border-radius: var(--acp-ui-radius-full);
+  border: 2px solid var(--vscode-editor-background);
 }
 
 .agent-trace::-webkit-scrollbar-thumb:hover,
 .composer-input::-webkit-scrollbar-thumb:hover {
-    background-color: var(--vscode-scrollbarSlider-hoverBackground, #5a637580);
+  background-color: var(--vscode-scrollbarSlider-hoverBackground, #5a637580);
 }
 
 .agent-trace::-webkit-scrollbar-thumb:active,
 .composer-input::-webkit-scrollbar-thumb:active {
-    background-color: var(--vscode-scrollbarSlider-activeBackground, #747d9180);
+  background-color: var(--vscode-scrollbarSlider-activeBackground, #747d9180);
 }
 
 .agent-trace::-webkit-scrollbar-corner,
 .composer-input::-webkit-scrollbar-corner {
-    background: var(--vscode-editor-background);
+  background: var(--vscode-editor-background);
 }

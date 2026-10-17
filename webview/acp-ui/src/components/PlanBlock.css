@@ -1,39 +1,39 @@
 .agent-plan {
-    margin-bottom: var(--acp-ui-space-12);
-    padding: var(--acp-ui-space-10) var(--acp-ui-space-12);
-    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
-    border-radius: var(--acp-ui-radius-lg);
-    background-color: color-mix(
-        in srgb,
-        var(--vscode-editor-background) 92%,
-        var(--vscode-foreground) 8%
-    );
+  margin-bottom: var(--acp-ui-space-12);
+  padding: var(--acp-ui-space-10) var(--acp-ui-space-12);
+  border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
+  border-radius: var(--acp-ui-radius-lg);
+  background-color: color-mix(
+    in srgb,
+    var(--vscode-editor-background) 92%,
+    var(--vscode-foreground) 8%
+  );
 }
 
 .agent-plan-title {
-    font-size: var(--acp-ui-font-size-x-small);
-    font-weight: var(--acp-ui-font-weight-semibold);
-    color: var(--acp-ui-text-secondary);
-    margin-bottom: var(--acp-ui-space-6);
+  font-size: var(--acp-ui-font-size-x-small);
+  font-weight: var(--acp-ui-font-weight-semibold);
+  color: var(--acp-ui-text-secondary);
+  margin-bottom: var(--acp-ui-space-6);
 }
 
 .agent-plan-row {
-    display: flex;
-    gap: var(--acp-ui-space-8);
-    align-items: baseline;
-    font-size: var(--acp-ui-font-size-x-small);
-    line-height: var(--acp-ui-line-height-heading);
-    margin-bottom: var(--acp-ui-space-4);
+  display: flex;
+  gap: var(--acp-ui-space-8);
+  align-items: baseline;
+  font-size: var(--acp-ui-font-size-x-small);
+  line-height: var(--acp-ui-line-height-heading);
+  margin-bottom: var(--acp-ui-space-4);
 }
 
 .agent-plan-status {
-    flex-shrink: 0;
-    color: var(--acp-ui-text-secondary);
-    text-transform: uppercase;
-    font-size: var(--acp-ui-font-size-label);
+  flex-shrink: 0;
+  color: var(--acp-ui-text-secondary);
+  text-transform: uppercase;
+  font-size: var(--acp-ui-font-size-label);
 }
 
 .agent-plan-content {
-    color: var(--acp-ui-text-primary);
-    word-break: break-word;
+  color: var(--acp-ui-text-primary);
+  word-break: break-word;
 }

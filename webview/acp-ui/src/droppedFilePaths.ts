@@ -104,10 +104,7 @@ function fileUrlToLocalPath(url: URL): string {
 }
 
 /** Lines from `text/plain` when Explorer sends relative paths or plain paths. */
-function pathsFromPlainTextDrop(
-  raw: string,
-  workspaceRoot: string | undefined,
-): string[] {
+function pathsFromPlainTextDrop(raw: string, workspaceRoot: string | undefined): string[] {
   const out: string[] = [];
   for (let line of raw.split(/\r?\n/)) {
     line = line.trim();
@@ -146,10 +143,7 @@ function normalizeSlashes(p: string): string {
 /**
  * If `absolutePath` is under `workspaceRoot`, returns a relative path; otherwise the original.
  */
-export function pathForPrompt(
-  absolutePath: string,
-  workspaceRoot: string | undefined,
-): string {
+export function pathForPrompt(absolutePath: string, workspaceRoot: string | undefined): string {
   if (workspaceRoot === undefined || workspaceRoot.trim().length === 0) {
     return absolutePath;
   }
@@ -185,14 +179,11 @@ export function appendFileMentionsToDraft(
   if (paths.length === 0) {
     return draft;
   }
-  const tokens = paths.map((p) =>
-    formatFileMention(pathForPrompt(p, workspaceRoot)),
-  );
+  const tokens = paths.map((p) => formatFileMention(pathForPrompt(p, workspaceRoot)));
   const addition = tokens.join(" ");
   if (draft.length === 0) {
     return addition;
   }
-  const sep =
-    draft.endsWith(" ") || draft.endsWith("\n") ? "" : " ";
+  const sep = draft.endsWith(" ") || draft.endsWith("\n") ? "" : " ";
   return draft + sep + addition;
 }

@@ -1,25 +1,25 @@
 .agent-header {
-    flex-shrink: 0;
-    margin-bottom: var(--acp-ui-space-12);
+  flex-shrink: 0;
+  margin-bottom: var(--acp-ui-space-12);
 }
 
 .agent-title-line {
-    color: var(--acp-ui-text-primary);
-    font-size: var(--acp-ui-font-size-body);
-    font-weight: var(--acp-ui-font-weight-semibold);
-    line-height: var(--acp-ui-line-height-heading);
+  color: var(--acp-ui-text-primary);
+  font-size: var(--acp-ui-font-size-body);
+  font-weight: var(--acp-ui-font-weight-semibold);
+  line-height: var(--acp-ui-line-height-heading);
 }
 
 .agent-version {
-    color: var(--acp-ui-text-secondary);
-    font-weight: var(--acp-ui-font-weight-regular);
+  color: var(--acp-ui-text-secondary);
+  font-weight: var(--acp-ui-font-weight-regular);
 }
 
 .agent-meta-line {
-    margin-top: var(--acp-ui-space-4);
-    color: var(--acp-ui-text-secondary);
-    font-size: var(--acp-ui-font-size-x-small);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  margin-top: var(--acp-ui-space-4);
+  color: var(--acp-ui-text-secondary);
+  font-size: var(--acp-ui-font-size-x-small);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -1,106 +1,103 @@
 .model-config-popover-root {
-    position: relative;
-    flex-shrink: 0;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .model-config-popover-trigger {
-    padding: var(--acp-ui-space-4) var(--acp-ui-space-10);
-    color: var(--acp-ui-text-primary);
-    background-color: var(
-        --vscode-button-secondaryBackground,
-        var(--vscode-button-background)
-    );
-    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
-    border-radius: var(--acp-ui-radius-md);
-    font-family: inherit;
-    font-size: var(--acp-ui-font-size-small);
-    cursor: default;
+  padding: var(--acp-ui-space-4) var(--acp-ui-space-10);
+  color: var(--acp-ui-text-primary);
+  background-color: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
+  border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
+  border-radius: var(--acp-ui-radius-md);
+  font-family: inherit;
+  font-size: var(--acp-ui-font-size-small);
+  cursor: default;
 }
 
 .model-config-popover-trigger:hover:not(:disabled) {
-    background-color: var(
-        --vscode-button-secondaryHoverBackground,
-        var(--vscode-button-hoverBackground)
-    );
+  background-color: var(
+    --vscode-button-secondaryHoverBackground,
+    var(--vscode-button-hoverBackground)
+  );
 }
 
 .model-config-popover-trigger:disabled {
-    opacity: 0.45;
+  opacity: 0.45;
 }
 
 .model-config-popover-panel {
-    position: absolute;
-    right: 0;
-    bottom: calc(100% + var(--acp-ui-space-6));
-    z-index: 60;
-    min-width: 12rem;
-    max-width: min(18rem, 70vw);
-    max-height: min(360px, 50vh);
-    overflow-y: auto;
-    padding: var(--acp-ui-space-8) 0;
-    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
-    border-radius: var(--acp-ui-radius-lg);
-    background: var(--acp-ui-surface-panel);
-    box-shadow: var(--acp-ui-shadow-lg);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--acp-ui-space-6));
+  z-index: 60;
+  min-width: 12rem;
+  max-width: min(18rem, 70vw);
+  max-height: min(360px, 50vh);
+  overflow-y: auto;
+  padding: var(--acp-ui-space-8) 0;
+  border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
+  border-radius: var(--acp-ui-radius-lg);
+  background: var(--acp-ui-surface-panel);
+  box-shadow: var(--acp-ui-shadow-lg);
 }
 
 .model-config-popover-section + .model-config-popover-section {
-    margin-top: var(--acp-ui-space-8);
-    padding-top: var(--acp-ui-space-8);
-    border-top: var(--acp-ui-stroke-width) solid var(--acp-ui-border-subtle);
+  margin-top: var(--acp-ui-space-8);
+  padding-top: var(--acp-ui-space-8);
+  border-top: var(--acp-ui-stroke-width) solid var(--acp-ui-border-subtle);
 }
 
 .model-config-popover-section-title {
-    padding: 0 var(--acp-ui-space-12) var(--acp-ui-space-4);
-    font-size: var(--acp-ui-font-size-label);
-    font-weight: var(--acp-ui-font-weight-semibold);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--acp-ui-text-secondary);
+  padding: 0 var(--acp-ui-space-12) var(--acp-ui-space-4);
+  font-size: var(--acp-ui-font-size-label);
+  font-weight: var(--acp-ui-font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--acp-ui-text-secondary);
 }
 
 .model-config-popover-choices {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .model-config-popover-choice {
-    display: flex;
-    align-items: center;
-    gap: var(--acp-ui-space-8);
-    width: 100%;
-    margin: 0;
-    padding: var(--acp-ui-space-6) var(--acp-ui-space-12);
-    border: none;
-    background: transparent;
-    color: var(--acp-ui-text-primary);
-    font: inherit;
-    font-size: var(--acp-ui-font-size-small);
-    text-align: left;
-    cursor: default;
+  display: flex;
+  align-items: center;
+  gap: var(--acp-ui-space-8);
+  width: 100%;
+  margin: 0;
+  padding: var(--acp-ui-space-6) var(--acp-ui-space-12);
+  border: none;
+  background: transparent;
+  color: var(--acp-ui-text-primary);
+  font: inherit;
+  font-size: var(--acp-ui-font-size-small);
+  text-align: left;
+  cursor: default;
 }
 
 .model-config-popover-choice:hover:not(:disabled),
 .model-config-popover-choice--active {
-    background: var(--vscode-list-hoverBackground);
+  background: var(--vscode-list-hoverBackground);
 }
 
 .model-config-popover-choice-marker {
-    width: 0.85rem;
-    flex-shrink: 0;
-    text-align: center;
-    color: var(--acp-ui-text-secondary);
+  width: 0.85rem;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--acp-ui-text-secondary);
 }
 
 .model-config-popover-choice--active .model-config-popover-choice-marker {
-    color: var(--acp-ui-focus-border);
+  color: var(--acp-ui-focus-border);
 }
 
 .model-config-popover-boolean {
-    display: flex;
-    align-items: center;
-    gap: var(--acp-ui-space-8);
-    padding: var(--acp-ui-space-4) var(--acp-ui-space-12) var(--acp-ui-space-6);
-    font-size: var(--acp-ui-font-size-small);
-    color: var(--acp-ui-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--acp-ui-space-8);
+  padding: var(--acp-ui-space-4) var(--acp-ui-space-12) var(--acp-ui-space-6);
+  font-size: var(--acp-ui-font-size-small);
+  color: var(--acp-ui-text-primary);
 }

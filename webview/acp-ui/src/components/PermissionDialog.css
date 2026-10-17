@@ -1,76 +1,71 @@
 .ib-permission-backdrop {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: calc(100% + var(--acp-ui-space-6));
-    z-index: 50;
-    display: flex;
-    justify-content: center;
-    padding: 0 var(--acp-ui-space-10);
-    pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + var(--acp-ui-space-6));
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--acp-ui-space-10);
+  pointer-events: none;
 }
 
 .ib-permission-dialog {
-    pointer-events: auto;
-    max-width: 520px;
-    width: 100%;
-    padding: var(--acp-ui-space-12) var(--acp-ui-space-16)
-        var(--acp-ui-space-16);
-    border-radius: var(--acp-ui-radius-lg);
-    border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
-    background: var(--acp-ui-surface-panel);
-    color: var(--acp-ui-text-primary);
-    box-shadow: var(--acp-ui-shadow-lg);
+  pointer-events: auto;
+  max-width: 520px;
+  width: 100%;
+  padding: var(--acp-ui-space-12) var(--acp-ui-space-16) var(--acp-ui-space-16);
+  border-radius: var(--acp-ui-radius-lg);
+  border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-chrome);
+  background: var(--acp-ui-surface-panel);
+  color: var(--acp-ui-text-primary);
+  box-shadow: var(--acp-ui-shadow-lg);
 }
 
 .ib-permission-title {
-    font-size: var(--acp-ui-font-size-x-small);
-    font-weight: var(--acp-ui-font-weight-semibold);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    color: var(--acp-ui-text-secondary);
-    margin-bottom: var(--acp-ui-space-4);
+  font-size: var(--acp-ui-font-size-x-small);
+  font-weight: var(--acp-ui-font-weight-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--acp-ui-text-secondary);
+  margin-bottom: var(--acp-ui-space-4);
 }
 
 .ib-permission-tool {
-    font-size: var(--acp-ui-font-size-body);
-    line-height: var(--acp-ui-line-height-heading);
-    margin-bottom: var(--acp-ui-space-12);
-    word-break: break-word;
+  font-size: var(--acp-ui-font-size-body);
+  line-height: var(--acp-ui-line-height-heading);
+  margin-bottom: var(--acp-ui-space-12);
+  word-break: break-word;
 }
 
 .ib-permission-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--acp-ui-space-8);
-    justify-content: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--acp-ui-space-8);
+  justify-content: flex-end;
 }
 
 .ib-permission-button {
-    font: inherit;
-    font-size: var(--acp-ui-font-size-small);
-    padding: var(--acp-ui-space-6) var(--acp-ui-space-12);
-    border-radius: var(--acp-ui-radius-md);
-    border: var(--acp-ui-stroke-width) solid
-        var(--vscode-button-border, transparent);
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-    cursor: pointer;
+  font: inherit;
+  font-size: var(--acp-ui-font-size-small);
+  padding: var(--acp-ui-space-6) var(--acp-ui-space-12);
+  border-radius: var(--acp-ui-radius-md);
+  border: var(--acp-ui-stroke-width) solid var(--vscode-button-border, transparent);
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  cursor: pointer;
 }
 
 .ib-permission-button:hover {
-    background: var(--vscode-button-hoverBackground);
+  background: var(--vscode-button-hoverBackground);
 }
 
 .ib-permission-button--secondary {
-    background: transparent;
-    color: var(--acp-ui-text-primary);
-    border-color: var(
-        --vscode-button-secondaryHoverBackground,
-        var(--acp-ui-border-chrome)
-    );
+  background: transparent;
+  color: var(--acp-ui-text-primary);
+  border-color: var(--vscode-button-secondaryHoverBackground, var(--acp-ui-border-chrome));
 }
 
 .ib-permission-button--secondary:hover {
-    background: var(--vscode-toolbar-hoverBackground);
+  background: var(--vscode-toolbar-hoverBackground);
 }

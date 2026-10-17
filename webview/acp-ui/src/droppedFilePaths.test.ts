@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import {
   appendFileMentionsToDraft,
   collectPathsFromDataTransfer,
@@ -30,9 +30,7 @@ describe("collectPathsFromDataTransfer", () => {
       getData: (mime: string): string =>
         mime === "text/uri-list" ? "file:///project/src/a.ts\n" : "",
     } as unknown as DataTransfer;
-    expect(collectPathsFromDataTransfer(dt, "/project")).toEqual([
-      "/project/src/a.ts",
-    ]);
+    expect(collectPathsFromDataTransfer(dt, "/project")).toEqual(["/project/src/a.ts"]);
   });
 });
 
@@ -48,14 +46,10 @@ describe("pathForPrompt", () => {
 
 describe("appendFileMentionsToDraft", () => {
   it("joins with space and uses @ prefix", () => {
-    expect(
-      appendFileMentionsToDraft("", ["/proj/a.ts"], "/proj"),
-    ).toBe("@a.ts");
+    expect(appendFileMentionsToDraft("", ["/proj/a.ts"], "/proj")).toBe("@a.ts");
   });
 
   it("quotes paths with spaces", () => {
-    expect(appendFileMentionsToDraft("", ["/p/a b.ts"], undefined)).toBe(
-      '@"/p/a b.ts"',
-    );
+    expect(appendFileMentionsToDraft("", ["/p/a b.ts"], undefined)).toBe('@"/p/a b.ts"');
   });
 });
