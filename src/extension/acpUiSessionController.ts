@@ -18,9 +18,9 @@ import {
 } from "../acp/config/toolCallVerbositySetting";
 import {
     type AcpAgentConfig,
-    getAcpAgentConfigByName,
-    getAcpAgentConfigsFromSettings,
-} from "../acp/config/vscodeSettingsAgents";
+    getAcpAgentConfigByNameMerged,
+    getAcpAgentConfigsMerged,
+} from "../acp/config/mergedAgents";
 import { AcpSessionBridge } from "../acp/session/acpSessionBridge";
 import { readCachedComposerSeed } from "../acp/session/sessionConfigOptionsCache";
 import { openWorkspacePathTarget } from "../platform/openWorkspacePathTarget";
@@ -83,10 +83,10 @@ export class AcpUiSessionController {
             throw new Error("Session file is missing a valid header.");
         }
         this.sessionId = parsed.header.id;
-        const configs = getAcpAgentConfigsFromSettings();
+        const configs = getAcpAgentConfigsMerged();
         const named = parsed.header.agentName;
         this.agentConfig =
-            named !== undefined ? (getAcpAgentConfigByName(named) ?? configs[0]) : configs[0];
+            named !== undefined ? (getAcpAgentConfigByNameMerged(named) ?? configs[0]) : configs[0];
     }
 
     private get documentUri(): Uri {
@@ -185,7 +185,7 @@ export class AcpUiSessionController {
             folder !== undefined
                 ? formatPathWithTilde(folder.uri.fsPath, resolveUserHomeDir())
                 : undefined;
-        const configs = getAcpAgentConfigsFromSettings();
+        const configs = getAcpAgentConfigsMerged();
         const availableNames = configs.map((c) => c.name);
         const defaultAgent = this.agentConfig ?? configs[0];
         const workspaceFiles = await workspaceFilesForAutocomplete();
@@ -203,7 +203,7 @@ export class AcpUiSessionController {
             homeDir: resolveUserHomeDir(),
             agentVersionLabel,
             acpAgentName: defaultAgent?.name,
-            lockSessionAgent: true,
+            lockSessionAgent: false,
             ...(workspaceFiles !== undefined ? { workspaceFiles } : {}),
             ...(availableNames.length > 0 ? { availableAcpAgents: availableNames } : {}),
             ...(header.history.length > 0 ? { history: header.history } : {}),
@@ -308,12 +308,12 @@ export class AcpUiSessionController {
     }
 
     private async connectBridge(generation: number): Promise<AcpSessionBridge | undefined> {
-        const config = this.agentConfig ?? getAcpAgentConfigsFromSettings()[0];
+        const config = this.agentConfig ?? getAcpAgentConfigsMerged()[0];
         if (config === undefined) {
             this.post({
                 type: "error",
                 message:
-                    "No ACP agents configured. Add entries to the ib-acp-ui.agents setting (name, command, optional args).",
+                    "No ACP agents configured. Browse the Agent Registry or add a manual ib-acp-ui.agents override.",
             });
             return undefined;
         }
@@ -533,7 +533,7 @@ export class AcpUiSessionController {
         }
 
         if (parsed.type === "setSessionAgent") {
-            const config = getAcpAgentConfigByName(parsed.agentName);
+            const config = getAcpAgentConfigByNameMerged(parsed.agentName);
             if (config === undefined) {
                 this.post({
                     type: "error",
@@ -547,7 +547,7 @@ export class AcpUiSessionController {
             this.pendingModelId = undefined;
             this.pendingConfigOption = undefined;
             await clearAcpUiSessionRuntimeSessionId(this.sessionId);
-            const names = getAcpAgentConfigsFromSettings().map((c) => c.name);
+            const names = getAcpAgentConfigsMerged().map((c) => c.name);
             this.post({ type: "sessionReset" });
             this.post({
                 type: "acpAgentSelection",

@@ -61,6 +61,21 @@ describe("parseAcpAgentSpawnConfig", () => {
         });
     });
 
+    it("parses registryId when set", () => {
+        expect(
+            parseAcpAgentSpawnConfig({
+                name: "Gemini CLI",
+                command: "npx",
+                registryId: "gemini",
+            }),
+        ).toEqual({
+            name: "Gemini CLI",
+            command: "npx",
+            args: [],
+            registryId: "gemini",
+        });
+    });
+
     it("rejects invalid entries", () => {
         expect(parseAcpAgentSpawnConfig(null)).toBeUndefined();
         expect(parseAcpAgentSpawnConfig({ name: "x" })).toBeUndefined();
@@ -149,6 +164,17 @@ describe("isCursorAcpAgent", () => {
                 args: ["--stdio"],
             }),
         ).toBe(false);
+    });
+
+    it("detects registry cursor id", () => {
+        expect(
+            isCursorAcpAgent({
+                name: "Cursor",
+                command: "/path/to/cursor-agent",
+                args: [],
+                registryId: "cursor",
+            }),
+        ).toBe(true);
     });
 });
 

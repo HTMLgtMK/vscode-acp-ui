@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   chatReducer,
   createChatStateFromInit,
@@ -12,6 +12,64 @@ import {
 } from "../../../src/acp/session/sessionConfigOptionsCache";
 
 describe("chatReducer", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("measures thought duration client-side when the agent omits durationMs", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    let state = createInitialChatState();
+    state = chatReducer(state, { type: "appendAgentThought", text: "Thinking…" });
+    expect(state.thoughtStartedAtMs).toBe(Date.now());
+    vi.advanceTimersByTime(450);
+    state = chatReducer(state, { type: "appendAgentText", text: "Answer" });
+    const thought = state.trace[0];
+    expect(thought?.type).toBe("thought");
+    if (thought?.type !== "thought") {
+      return;
+    }
+    expect(thought.durationMs).toBe(450);
+    expect(state.thoughtStartedAtMs).toBeNull();
+  });
+
+  it("keeps agent-provided thought duration over client timing", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    let state = createInitialChatState();
+    state = chatReducer(state, { type: "appendAgentThought", text: "A", durationMs: 1200 });
+    vi.advanceTimersByTime(5000);
+    state = chatReducer(state, { type: "turnComplete", stopReason: "end" });
+    const thought = state.trace[0];
+    expect(thought?.type).toBe("thought");
+    if (thought?.type !== "thought") {
+      return;
+    }
+    expect(thought.durationMs).toBe(1200);
+  });
+
+  it("finalizes client thought duration when a new tool call opens", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    let state = createInitialChatState();
+    state = chatReducer(state, { type: "appendAgentThought", text: "Plan tool" });
+    vi.advanceTimersByTime(200);
+    state = chatReducer(state, {
+      type: "appendToolCall",
+      toolCallId: "t1",
+      title: "Run",
+      kind: "execute",
+      status: "pending",
+      subtitle: undefined,
+    });
+    const thought = state.trace[0];
+    expect(thought?.type).toBe("thought");
+    if (thought?.type !== "thought") {
+      return;
+    }
+    expect(thought.durationMs).toBe(200);
+  });
+
   it("merges appendAgentThought chunks into one thought row", () => {
     let state = createInitialChatState();
     state = chatReducer(state, {

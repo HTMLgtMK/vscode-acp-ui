@@ -9,6 +9,7 @@ export type AcpAgentSpawnConfig = {
     env?: Record<string, string>;
     /** Overrides auto-selection when the agent advertises multiple auth methods. */
     authMethodId?: string;
+    registryId?: string;
 };
 
 /** Auth method shape used for resolving which `authenticate` methodId to call. */
@@ -25,6 +26,7 @@ export function isCursorAcpAgent(config: AcpAgentSpawnConfig): boolean {
     const command = config.command.toLowerCase();
     const name = config.name.toLowerCase();
     return (
+        config.registryId === "cursor" ||
         command.includes("cursor") ||
         name.includes("cursor") ||
         (command === "agent" && config.args.some((arg) => arg.includes("acp")))
@@ -107,11 +109,16 @@ export function parseAcpAgentSpawnConfig(entry: unknown): AcpAgentSpawnConfig | 
         typeof record.authMethodId === "string" && record.authMethodId.trim().length > 0
             ? record.authMethodId.trim()
             : undefined;
+    const registryId =
+        typeof record.registryId === "string" && record.registryId.length > 0
+            ? record.registryId
+            : undefined;
     return {
         name: record.name,
         command: record.command,
         args,
         ...(env !== undefined ? { env } : {}),
         ...(authMethodId !== undefined ? { authMethodId } : {}),
+        ...(registryId !== undefined ? { registryId } : {}),
     };
 }

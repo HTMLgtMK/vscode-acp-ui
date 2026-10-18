@@ -1,13 +1,8 @@
 .agent-thought-chunk {
   margin: 0 0 var(--acp-ui-space-10);
-  padding: var(--acp-ui-space-8) var(--acp-ui-space-12);
-  border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-subtle);
-  border-radius: var(--acp-ui-radius-md);
-  background: color-mix(
-    in srgb,
-    var(--vscode-editor-background) 90%,
-    var(--vscode-sideBar-background) 10%
-  );
+  padding: 0;
+  border: none;
+  background: transparent;
   font-family: var(--acp-ui-font-mono);
 }
 

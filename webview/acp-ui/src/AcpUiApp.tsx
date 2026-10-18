@@ -60,6 +60,7 @@ export type AcpUiAppProps = {
   postRenameSession: (title: string) => void;
   postResetSession: () => void;
   postSetSessionModel: (modelId: string) => void;
+  postSetSessionAgent: (agentName: string) => void;
   postSetSessionConfigOption: (configId: string, value: string | boolean) => void;
   postSaveHistory: (entries: string[]) => void;
   postOpenNewChat?: () => void;
@@ -101,6 +102,7 @@ export function AcpUiApp({
   postRenameSession,
   postResetSession,
   postSetSessionModel,
+  postSetSessionAgent,
   postSetSessionConfigOption,
   postSaveHistory,
   postOpenNewChat,
@@ -681,6 +683,12 @@ export function AcpUiApp({
               sessionConfigOptions={state.sessionConfigOptions}
               sessionConfigLoading={state.sessionConfigLoading}
               modelPickerLocked={state.composerPicksLocked}
+              acpAgentSelection={state.acpAgentSelection}
+              agentPickerLocked={state.lockSessionAgent || state.composerPicksLocked}
+              onPickSessionAgent={(name) => {
+                dispatch({ type: "pickSessionAgent", agentName: name });
+                postSetSessionAgent(name);
+              }}
               hideComposerModelControls={state.hideComposerModelControls}
               promptInFlight={state.promptInFlight}
               inputBlocked={

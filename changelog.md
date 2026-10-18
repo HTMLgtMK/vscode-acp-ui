@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Install ACP agents from the official registry (**Browse Agent Registry**) instead of relying on hardcoded settings defaults.
+  Supports `npx`, `uvx`, and binary distributions; installs live in extension storage.
+  Manual `ib-acp-ui.agents` remains an advanced override that wins on name collision.
+  Composer agent picker switches agents before the first message.
 - When the chat webview is narrower than 800px, collapse side padding to 4px and force the content column to full width so transcript and composer use the panel width.
 - Restyled the chat UI to the current VS Code design language.
   Added a design-token layer that mirrors the VS Code corner radius, spacing, and font size tokens.

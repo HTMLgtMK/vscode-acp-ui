@@ -5,7 +5,7 @@ export type AcpAgentConfig = AcpAgentSpawnConfig;
 
 const settingKey = "ib-acp-ui.agents";
 
-/** Reads ACP agent configurations from VS Code user/workspace settings. */
+/** Reads manual-only ACP agent overrides from VS Code user/workspace settings. */
 export function getAcpAgentConfigsFromSettings(): AcpAgentConfig[] {
     const raw = workspace.getConfiguration().get<unknown[]>(settingKey, []);
     const result: AcpAgentConfig[] = [];
@@ -18,7 +18,7 @@ export function getAcpAgentConfigsFromSettings(): AcpAgentConfig[] {
     return result;
 }
 
-/** Returns the agent configuration with the given display name, if present. */
+/** Returns a manual settings agent by display name (does not include registry installs). */
 export function getAcpAgentConfigByName(name: string): AcpAgentConfig | undefined {
     return getAcpAgentConfigsFromSettings().find((c) => c.name === name);
 }

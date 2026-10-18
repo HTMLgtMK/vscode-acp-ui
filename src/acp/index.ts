@@ -8,6 +8,7 @@ export {
     getAcpAgentConfigByName,
     getAcpAgentConfigsFromSettings,
 } from "./config/vscodeSettingsAgents";
+export { getAcpAgentConfigByNameMerged, getAcpAgentConfigsMerged } from "./config/mergedAgents";
 export type { AcpAgentSpawnConfig } from "./domain/agentSpawnConfig";
 export {
     parseAcpAgentSpawnConfig,

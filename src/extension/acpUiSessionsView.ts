@@ -13,6 +13,7 @@ import {
     window,
     workspace,
 } from "vscode";
+import { getAcpAgentConfigsMerged } from "../acp/config/mergedAgents";
 import { getAcpAgentConfigsFromSettings } from "../acp/config/vscodeSettingsAgents";
 import { createDefaultAcpSessionHostRuntime } from "../platform/vscode/defaultHostRuntime";
 import { registerCommandIB } from "../utils/vscode";
@@ -22,6 +23,8 @@ import {
     fetchAgentSessionsForWorkspace,
 } from "./acpAgentSessionLister";
 import { sessionInfoLabel, sortSessionInfos } from "./acpAgentSessionListFormat";
+import { agentPickLabel } from "./acpUiAgentPicker";
+import { promptNoAcpAgentsConfigured } from "./acpUiNoAgentsPrompt";
 import {
     getActiveAgentConfig,
     initializeAcpUiActiveAgent,
@@ -377,7 +380,7 @@ export class AcpUiSessionsViewProvider implements TreeDataProvider<AcpUiSessions
         if (agent === undefined) {
             return [
                 new AcpUiPlaceholderTreeItem(
-                    "No ACP agents configured. Add entries to ib-acp-ui.agents in settings.",
+                    "No ACP agents configured. Browse the registry or add manual overrides in settings.",
                 ),
             ];
         }
@@ -437,17 +440,17 @@ export class AcpUiSessionsViewProvider implements TreeDataProvider<AcpUiSessions
     }
 
     private async selectActiveAgent(): Promise<void> {
-        const configs = getAcpAgentConfigsFromSettings();
+        const configs = getAcpAgentConfigsMerged();
         if (configs.length === 0) {
-            void window.showInformationMessage(
-                "No ACP agents configured. Add entries to ib-acp-ui.agents in settings.",
-            );
+            await promptNoAcpAgentsConfigured();
             return;
         }
+        const manualNames = new Set(getAcpAgentConfigsFromSettings().map((c) => c.name));
         const current = getActiveAgentConfig();
         const picked = await window.showQuickPick(
             configs.map((config) => ({
-                label: config.name,
+                label: agentPickLabel(config, manualNames),
+                config,
                 picked: config.name === current?.name,
             })),
             {
@@ -457,7 +460,7 @@ export class AcpUiSessionsViewProvider implements TreeDataProvider<AcpUiSessions
         if (picked === undefined) {
             return;
         }
-        await setActiveAgentName(picked.label);
+        await setActiveAgentName(picked.config.name);
         this.updateAgentMessage();
         await this.refreshFromAgent({ hard: true });
     }

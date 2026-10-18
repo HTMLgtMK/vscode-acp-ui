@@ -70,7 +70,7 @@
             "properties": {
                 "ib-acp-ui.agents": {
                     "type": "array",
-                    "description": "ACP agent configurations. Each entry defines an agent subprocess to launch.",
+                    "description": "Advanced manual override for ACP agent subprocesses. Prefer installing agents from the registry (Browse Agent Registry).",
                     "items": {
                         "type": "object",
                         "required": [
@@ -106,22 +106,23 @@
                             }
                         }
                     },
-                    "default": [
-                        {
-                            "name": "Cursor",
-                            "command": "agent",
-                            "args": [
-                                "acp"
-                            ]
-                        },
-                        {
-                            "name": "Gemini",
-                            "command": "gemini",
-                            "args": [
-                                "--acp"
-                            ]
-                        }
-                    ]
+                    "default": []
+                },
+                "ib-acp-ui.registry.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "When enabled, fetch and cache the ACP agent registry catalog."
+                },
+                "ib-acp-ui.registry.url": {
+                    "type": "string",
+                    "default": "https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json",
+                    "description": "URL of the ACP agent registry catalog JSON."
+                },
+                "ib-acp-ui.registry.cacheTtlHours": {
+                    "type": "number",
+                    "default": 24,
+                    "minimum": 0,
+                    "description": "Hours to reuse the on-disk registry catalog before refetching. Set to 0 to always refetch."
                 },
                 "ib-acp-ui.sessionsDirectory": {
                     "type": "string",
@@ -261,6 +262,25 @@
                 "shortTitle": "Text Editor",
                 "icon": "$(file-text)",
                 "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.browseAgentRegistry",
+                "title": "Browse Agent Registry",
+                "shortTitle": "Registry",
+                "icon": "$(cloud-download)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.refreshAgentRegistry",
+                "title": "Refresh Agent Registry",
+                "shortTitle": "Refresh Registry",
+                "icon": "$(refresh)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.uninstallRegistryAgent",
+                "title": "Uninstall Registry Agent",
+                "category": "IrishBruse ACP"
             }
         ],
         "menus": {
@@ -301,6 +321,11 @@
                 },
                 {
                     "command": "ib-acp-ui.refreshAcpUiSessions",
+                    "when": "view == acpUiSessionsView",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-acp-ui.browseAgentRegistry",
                     "when": "view == acpUiSessionsView",
                     "group": "navigation"
                 }

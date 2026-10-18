@@ -34,41 +34,47 @@ _Streaming markdown, tool calls, thoughts, and plans in the ACP UI trace._
     ![Agent-ordered model picker](docs/Model-picker-opus.png)
 
 - **ACP UI RPC** output channel for debugging protocol traffic.
-- **Agent configuration** via `ib-acp-ui.agents` in settings (command, args, env per agent).
+- **Agent Registry** browse/install from the official ACP catalog; optional manual override via `ib-acp-ui.agents`.
 
 ## Requirements
 
 - VS Code `1.115.0` or newer.
-- At least one ACP-capable agent CLI available on your `PATH` (for example `agent`, `gemini`, or another ACP-compatible command).
+- For `npx` / `uvx` registry agents: Node (npx) or [uv](https://github.com/astral-sh/uv) on your `PATH`.
+- Binary registry agents download into extension storage (no global install required).
 - Any auth/environment variables required by your chosen agent.
 
 ## Quick Start
 
 1. Install the extension.
 2. Open **ACP UI** from the activity bar.
-3. Start a chat with **Open ACP UI** or **New ACP UI in Editor**.
-4. Pick an agent from the chat header (or configure agents in settings first).
+3. Run **Browse Agent Registry** (Chats view title menu or command palette) and install an agent.
+4. Start a chat with **Open ACP UI** or **New ACP UI in Editor**.
 
 ## Usage
 
-### Configure Agents
+### Install Agents from the Registry
 
-Set `ib-acp-ui.agents` in settings. Each entry defines one launchable ACP agent process.
+Use **Browse Agent Registry** to install from the curated [ACP Registry](https://agentclientprotocol.com/get-started/registry).
+Installs are stored in extension global storage (not in `settings.json`).
+Refresh the catalog with **Refresh Agent Registry**, or remove an install with **Uninstall Registry Agent**.
+
+Settings:
+
+- `ib-acp-ui.registry.enabled` (default `true`)
+- `ib-acp-ui.registry.url` (CDN catalog URL)
+- `ib-acp-ui.registry.cacheTtlHours` (default `24`)
+
+### Manual Agent Override (advanced)
+
+Set `ib-acp-ui.agents` when you need a hand-written spawn config.
+Manual entries override registry installs with the same display name.
 
 ```json
 "ib-acp-ui.agents": [
   {
-    "name": "Cursor",
-    "command": "agent",
-    "args": ["acp"]
-  },
-  {
-    "name": "Gemini",
-    "command": "gemini",
-    "args": ["--acp"],
-    "env": {
-      "GEMINI_API_KEY": "${env:GEMINI_API_KEY}"
-    }
+    "name": "My Agent",
+    "command": "my-agent",
+    "args": ["--acp"]
   }
 ]
 ```
@@ -79,9 +85,11 @@ Fields:
 - `command`: executable to spawn.
 - `args`: optional argument list.
 - `env`: optional per-agent environment variables.
+- `authMethodId`: optional when the agent advertises multiple auth methods.
 
 ### Common Actions
 
+- Browse registry: `Browse Agent Registry`
 - Open chat: `Open ACP UI`
 - Create chat in editor: `New ACP UI in Editor`
 - Focus session list: `Focus ACP UI Chats list`
@@ -128,8 +136,8 @@ Publishing is automated when `package.json` **version** changes on `main` (see `
 
 ## Troubleshooting
 
-- No responses in chat: verify your selected agent command runs in a shell and supports ACP mode.
-- Agent missing in picker: confirm `ib-acp-ui.agents` JSON is valid and reload the VS Code window.
+- No agents in picker: run **Browse Agent Registry** and install one, or add a manual `ib-acp-ui.agents` entry.
+- No responses in chat: verify the installed agent command runs and supports ACP mode (`npx`/`uvx` on PATH for package agents).
 - Need diagnostics: open the `ACP UI RPC` output channel and retry the action.
 
 ## Explore

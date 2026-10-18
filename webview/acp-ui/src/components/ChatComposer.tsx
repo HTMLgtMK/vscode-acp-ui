@@ -34,8 +34,14 @@ import {
 } from "../../../../src/acp/session/sessionModeIndicator";
 import type { AcpUiSlashCommand } from "../../../../src/protocol/extensionHostMessages";
 import { buildComposerAutocompleteState, wrapIndex } from "./composerAutocomplete";
+import { AgentPicker } from "./AgentPicker";
 import { ConfigOptionControls, ComposerConfigLoading } from "./ConfigOptionControls";
 import { SessionModeIndicator } from "./SessionModeIndicator";
+
+export type AcpAgentSelectionComposerProps = {
+  currentName: string;
+  availableNames: string[];
+};
 
 export type ChatComposerProps = {
   activityLabel: string | null;
@@ -46,6 +52,9 @@ export type ChatComposerProps = {
   sessionConfigLoading: boolean;
   /** When true, model is shown as a label (playground: after the first message). */
   modelPickerLocked: boolean;
+  acpAgentSelection: AcpAgentSelectionComposerProps | null;
+  agentPickerLocked: boolean;
+  onPickSessionAgent?: (name: string) => void;
   /** Hides model/config dropdowns in the composer footer. */
   hideComposerModelControls: boolean;
   promptInFlight: boolean;
@@ -77,6 +86,9 @@ export function ChatComposer({
   sessionConfigOptions,
   sessionConfigLoading,
   modelPickerLocked,
+  acpAgentSelection,
+  agentPickerLocked,
+  onPickSessionAgent,
   hideComposerModelControls,
   promptInFlight,
   inputBlocked,
@@ -171,6 +183,13 @@ export function ChatComposer({
     : useConfigModelPicker
       ? formatModelDisplayName(configCurrentGroupName, configModelOption?.currentValue ?? "")
       : (modelPickerState?.currentGroupLabel ?? "");
+  const agentLabel = acpAgentSelection?.currentName ?? "";
+  const showAgentPicker =
+    acpAgentSelection !== null &&
+    acpAgentSelection.availableNames.length > 1 &&
+    !agentPickerLocked;
+  const showAgentLockedLabel =
+    acpAgentSelection !== null && agentPickerLocked && agentLabel.length > 0;
 
   const handleModelParamPick = (configId: string, value: string | boolean): void => {
     if (resolvedModelOption !== undefined && isDerivedConfigId(configId)) {
@@ -275,15 +294,33 @@ export function ChatComposer({
         />
       </div>
       <div className="composer-footer">
-        {hideComposerModelControls ? null : (
+        {showAgentPicker || showAgentLockedLabel || !hideComposerModelControls ? (
           <div
             className={
-              agentOrderedLayout
+              agentOrderedLayout || showAgentPicker
                 ? "composer-footer-model composer-footer-config"
                 : "composer-footer-model composer-footer-model--stacked"
             }
           >
-            {modelPickerLocked ? (
+            {showAgentPicker ? (
+              <AgentPicker
+                availableNames={acpAgentSelection.availableNames}
+                currentName={acpAgentSelection.currentName}
+                disabled={textareaDisabled}
+                onPick={(name) => {
+                  onPickSessionAgent?.(name);
+                }}
+              />
+            ) : showAgentLockedLabel ? (
+              <span
+                className="composer-pick-value"
+                title={agentLabel}
+                aria-label={`Agent: ${agentLabel}`}
+              >
+                {agentLabel}
+              </span>
+            ) : null}
+            {hideComposerModelControls ? null : modelPickerLocked ? (
               <span
                 className="composer-pick-value"
                 title={modelLabel}
@@ -382,7 +419,7 @@ export function ChatComposer({
               </>
             )}
           </div>
-        )}
+        ) : null}
         <div className="composer-mode-slot">
           <SessionModeIndicator modeOption={modeOption} />
         </div>

@@ -5,7 +5,10 @@ function durationLabel(durationMs: number | undefined): string {
   if (durationMs === undefined || !Number.isFinite(durationMs) || durationMs < 0) {
     return "Thought";
   }
-  return `Thought for ${Math.round(durationMs)}ms`;
+  if (durationMs < 1000) {
+    return `Thought for ${Math.round(durationMs)}ms`;
+  }
+  return `Thought for ${(durationMs / 1000).toFixed(1)}s`;
 }
 
 /**

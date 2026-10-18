@@ -2,19 +2,36 @@
 
 ## User facing
 
-Planned: browse the official ACP agent catalog from the extension.
-Install agents without hand-editing `settings.json`.
-Start chats with installed registry agents from the same picker as manual entries.
+Browse the official ACP agent catalog from the extension and install agents without hand-editing `settings.json`.
+Installed agents appear in the same pickers as manual entries and spawn through the same path.
 
-Manual `ib-acp-ui.agents` settings continue to work and override on name collision.
+Use **Browse Agent Registry** from the command palette or the Chats view title menu.
+Refresh the catalog with **Refresh Agent Registry**, or remove an install with **Uninstall Registry Agent**.
 
-Not shipped yet.
+Manual `ib-acp-ui.agents` entries remain an advanced override and win on matching display name.
 
 ## Implementation
 
-Not implemented.
-No code under `src/acp/registry/` yet.
-The task defines fetch/cache, npx/uvx resolution, global storage install map, merged agent list API, commands, and webview agent picker.
+### Catalog fetch and cache
 
-Task: [acp-registry](../../tasks/acp-registry.md).
+[fetchRegistryCatalog](../../../src/acp/registry/fetchRegistry.ts#L12-L34) loads
+`https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json` (or `ib-acp-ui.registry.url`).
+[getRegistryCatalog](../../../src/extension/acpUiRegistryCatalog.ts) caches the catalog under extension global storage with TTL from `ib-acp-ui.registry.cacheTtlHours`.
+[isCatalogCacheFresh](../../../src/acp/registry/cacheRegistry.ts#L8-L16) decides when to refetch.
+Failures fall back to the on-disk cache with a warning toast.
+
+### Distribution resolution and install
+
+[resolveDistributionSpawn](../../../src/acp/registry/resolveDistribution.ts#L10-L58) maps a registry agent to an `AcpAgentSpawnConfig` (`npx`, then `uvx`, then `binary`).
+[downloadAndInstallBinary](../../../src/acp/registry/binaryInstall.ts#L45-L77) downloads archives, checks optional `sha256`, and extracts into `globalStorage/registry/bin/<id>/<version>/`.
+
+[acpUiInstalledAgents](../../../src/extension/acpUiInstalledAgents.ts) persists the install map at `globalStorage/registry/installed.json`.
+[browseAgentRegistry](../../../src/extension/acpUiRegistry.ts#L127-L184) drives the QuickPick install flow.
+
+### Merged agent list
+
+[getAcpAgentConfigsMerged](../../../src/acp/config/mergedAgents.ts#L8-L10) merges manual settings with installed registry spawns via
+[mergeAcpAgentConfigs](../../../src/acp/registry/mergeAgents.ts#L7-L25).
+Pickers, session init, and `setSessionAgent` all resolve through the merged list.
+
 Protocol: [ACP agent registry](../../acp/rfds/acp-agent-registry.mdx), [get started registry](../../acp/get-started/registry.mdx).

@@ -1,0 +1,73 @@
+{
+    "version": "1.0.0-sample",
+    "agents": [
+        {
+            "id": "sample-npx-agent",
+            "name": "Sample Npx Agent",
+            "version": "1.0.0",
+            "description": "Fixture agent using npx distribution",
+            "distribution": {
+                "npx": {
+                    "package": "@example/sample-acp@1.0.0",
+                    "args": ["--acp"]
+                }
+            }
+        },
+        {
+            "id": "sample-uvx-agent",
+            "name": "Sample Uvx Agent",
+            "version": "2.0.0",
+            "description": "Fixture agent using uvx distribution",
+            "distribution": {
+                "uvx": {
+                    "package": "sample-acp==2.0.0",
+                    "args": ["-x"],
+                    "env": {
+                        "SAMPLE_ENV": "1"
+                    }
+                }
+            }
+        },
+        {
+            "id": "sample-binary-agent",
+            "name": "Sample Binary Agent",
+            "version": "3.0.0",
+            "description": "Fixture agent using binary distribution",
+            "distribution": {
+                "binary": {
+                    "linux-x86_64": {
+                        "archive": "https://example.com/sample-linux-x86_64.tar.gz",
+                        "cmd": "./sample-acp",
+                        "sha256": "abc123",
+                        "args": ["--stdio"],
+                        "env": {
+                            "BINARY_ENV": "yes"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "id": "dup-name-a",
+            "name": "Duplicate Name",
+            "version": "1.0.0",
+            "description": "First agent with a shared display name",
+            "distribution": {
+                "npx": {
+                    "package": "@example/dup-a@1.0.0"
+                }
+            }
+        },
+        {
+            "id": "dup-name-b",
+            "name": "Duplicate Name",
+            "version": "1.0.0",
+            "description": "Second agent with a shared display name",
+            "distribution": {
+                "npx": {
+                    "package": "@example/dup-b@1.0.0"
+                }
+            }
+        }
+    ]
+}

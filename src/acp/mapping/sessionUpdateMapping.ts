@@ -722,6 +722,7 @@ export function sessionUpdateToWebviewMessages(
                 text?: string;
                 durationMs?: number;
                 duration_ms?: number;
+                _meta?: Record<string, unknown>;
             };
             const textFromBlock =
                 thoughtUpdate.content?.type === "text" ? thoughtUpdate.content.text : undefined;
@@ -729,6 +730,10 @@ export function sessionUpdateToWebviewMessages(
             if (text.length === 0) {
                 return [];
             }
+            const durationFromMeta = (record: Record<string, unknown>): number | undefined => {
+                const ms = record.durationMs ?? record.duration_ms;
+                return typeof ms === "number" && Number.isFinite(ms) ? ms : undefined;
+            };
             const durationMs =
                 typeof thoughtUpdate.durationMs === "number" &&
                 Number.isFinite(thoughtUpdate.durationMs)
@@ -736,7 +741,12 @@ export function sessionUpdateToWebviewMessages(
                     : typeof thoughtUpdate.duration_ms === "number" &&
                         Number.isFinite(thoughtUpdate.duration_ms)
                       ? thoughtUpdate.duration_ms
-                      : undefined;
+                      : thoughtUpdate._meta !== undefined &&
+                          typeof thoughtUpdate._meta === "object" &&
+                          thoughtUpdate._meta !== null &&
+                          !Array.isArray(thoughtUpdate._meta)
+                        ? durationFromMeta(thoughtUpdate._meta)
+                        : undefined;
             return [
                 {
                     type: "appendAgentThought",

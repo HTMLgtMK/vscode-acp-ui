@@ -8,6 +8,7 @@ import {
     window,
 } from "vscode";
 import type { AcpAgentConfig } from "../acp/config/vscodeSettingsAgents";
+import { promptNoAcpAgentsConfigured } from "./acpUiNoAgentsPrompt";
 import { registerCommandIB } from "../utils/vscode";
 import { getActiveAgentConfig } from "./acpUiActiveAgent";
 import { pickAcpAgentConfig } from "./acpUiAgentPicker";
@@ -189,9 +190,7 @@ async function openNewAcpUiWithDefaultAgent(
 ): Promise<void> {
     const agentConfig = getActiveAgentConfig();
     if (agentConfig === undefined) {
-        window.showInformationMessage(
-            "No ACP agents configured. Add entries to ib-acp-ui.agents in settings.",
-        );
+        await promptNoAcpAgentsConfigured();
         return;
     }
     await openNewAcpUi(context, refreshChatsList, agentConfig);

@@ -15,6 +15,15 @@ describe("sessionUpdateToWebviewMessages", () => {
         expect(messages).toEqual([{ type: "appendUserText", text: "hello" }]);
     });
 
+    it("maps agent_thought_chunk duration from _meta when top-level duration is absent", () => {
+        const messages = sessionUpdateToWebviewMessages({
+            sessionUpdate: "agent_thought_chunk",
+            content: { type: "text", text: "hmm" },
+            _meta: { duration_ms: 890 },
+        } as never);
+        expect(messages).toEqual([{ type: "appendAgentThought", text: "hmm", durationMs: 890 }]);
+    });
+
     it("derives grep match counts from Cursor-style rawOutput", () => {
         expect(
             searchStatsSubtitleFromRawOutput({

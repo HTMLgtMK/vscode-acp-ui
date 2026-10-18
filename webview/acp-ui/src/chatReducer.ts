@@ -92,6 +92,7 @@ export type ChatState = {
   composerPicksLocked: boolean;
   /** When true, hide model/config controls in the composer footer. */
   hideComposerModelControls: boolean;
+  thoughtStartedAtMs: number | null;
 };
 
 export type ChatAction =
@@ -103,6 +104,7 @@ export type ChatAction =
       configId: string;
       value: string | boolean;
     }
+  | { type: "pickSessionAgent"; agentName: string }
   | { type: "clearPermissionPrompt" }
   | { type: "clearAskQuestionPrompt" }
   | { type: "clearCreatePlanPrompt" };
@@ -194,7 +196,35 @@ export function createInitialChatState(): ChatState {
     lockSessionAgent: false,
     composerPicksLocked: false,
     hideComposerModelControls: false,
+    thoughtStartedAtMs: null,
   };
+}
+
+function finalizeOpenThoughtDuration(state: ChatState): ChatState {
+  const open = state.openStreamIndex;
+  if (open === null || state.thoughtStartedAtMs === null) {
+    return state;
+  }
+  const existing = state.trace[open];
+  if (existing?.type !== "thought" || existing.durationMs !== undefined) {
+    return state;
+  }
+  const durationMs = Math.max(0, Date.now() - state.thoughtStartedAtMs);
+  const trace = state.trace.slice();
+  trace[open] = { ...existing, durationMs };
+  return { ...state, trace, thoughtStartedAtMs: null };
+}
+
+function stateAfterLeavingOpenThoughtStream(state: ChatState): ChatState {
+  const open = state.openStreamIndex;
+  if (open === null) {
+    return state;
+  }
+  const existing = state.trace[open];
+  if (existing?.type === "thought") {
+    return finalizeOpenThoughtDuration(state);
+  }
+  return state;
 }
 
 /**
@@ -260,6 +290,9 @@ function appendAgentText(state: ChatState, text: string): ChatState {
       trace[open] = { type: "agent", text: existing.text + text };
       return { ...state, trace };
     }
+    if (existing?.type === "thought") {
+      state = finalizeOpenThoughtDuration(state);
+    }
   }
   const trace = [...state.trace, { type: "agent" as const, text }];
   return {
@@ -285,7 +318,9 @@ function appendAgentThought(
         text: joinThoughtChunks(existing.text, text),
         ...(mergedDuration !== undefined ? { durationMs: mergedDuration } : {}),
       };
-      return { ...state, trace };
+      const thoughtStartedAtMs =
+        mergedDuration !== undefined ? null : (state.thoughtStartedAtMs ?? Date.now());
+      return { ...state, trace, thoughtStartedAtMs };
     }
   }
   const trace = [
@@ -300,6 +335,7 @@ function appendAgentThought(
     ...state,
     trace,
     openStreamIndex: trace.length - 1,
+    thoughtStartedAtMs: durationMs !== undefined ? null : Date.now(),
   };
 }
 
@@ -347,6 +383,7 @@ function appendToolCall(
   status: ToolCallStatus | undefined,
   subtitle: string | undefined,
 ): ChatState {
+  state = stateAfterLeavingOpenThoughtStream(state);
   const existingIdx = state.toolIndexById.get(toolCallId);
   if (existingIdx !== undefined) {
     const existing = state.trace[existingIdx];
@@ -430,6 +467,7 @@ function updateToolCall(
     };
     return { ...state, trace };
   }
+  state = stateAfterLeavingOpenThoughtStream(state);
   const mergedContent = content;
   const mergedDiffRows = diffRows !== undefined && diffRows.length > 0 ? diffRows : undefined;
   const detailVisible =
@@ -482,6 +520,7 @@ function applySessionReset(state: ChatState): ChatState {
     sessionConfigLoading: true,
     sessionHistoryLoading: false,
     composerPicksLocked: false,
+    thoughtStartedAtMs: null,
   };
 }
 
@@ -500,14 +539,32 @@ function todoStatusEmoji(status: TodoEntry["status"]): string {
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   if (action.type === "submit") {
+    const afterThought = stateAfterLeavingOpenThoughtStream(state);
     return {
-      ...state,
-      trace: [...state.trace, { type: "user", text: action.body }],
+      ...afterThought,
+      trace: [...afterThought.trace, { type: "user", text: action.body }],
       promptInFlight: true,
       errorText: null,
       openStreamIndex: null,
       toolIndexById: new Map(),
       composerPicksLocked: state.lockSessionAgent === true ? state.composerPicksLocked : true,
+    };
+  }
+  if (action.type === "pickSessionAgent") {
+    if (
+      state.lockSessionAgent ||
+      state.composerPicksLocked ||
+      state.acpAgentSelection === null ||
+      !state.acpAgentSelection.availableNames.includes(action.agentName)
+    ) {
+      return state;
+    }
+    return {
+      ...state,
+      acpAgentSelection: {
+        ...state.acpAgentSelection,
+        currentName: action.agentName,
+      },
     };
   }
   if (action.type === "pickSessionModel") {
@@ -664,8 +721,9 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case "cursorCreatePlanRequest":
       return { ...state, createPlanPrompt: action };
     case "cursorUpdateTodos": {
+      const base = stateAfterLeavingOpenThoughtStream(state);
       const trace = [
-        ...state.trace,
+        ...base.trace,
         {
           type: "plan" as const,
           entries: action.todos.map((todo) => ({
@@ -674,52 +732,60 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           })),
         },
       ];
-      return { ...state, trace, openStreamIndex: null };
+      return { ...base, trace, openStreamIndex: null };
     }
     case "cursorTask": {
+      const base = stateAfterLeavingOpenThoughtStream(state);
       const taskLine = `Subagent task: ${action.description}`;
-      const trace = [...state.trace, { type: "agent" as const, text: taskLine }];
-      return { ...state, trace, openStreamIndex: trace.length - 1 };
+      const trace = [...base.trace, { type: "agent" as const, text: taskLine }];
+      return { ...base, trace, openStreamIndex: trace.length - 1 };
     }
     case "cursorGenerateImage": {
+      const base = stateAfterLeavingOpenThoughtStream(state);
       const text =
         action.filePath !== undefined
           ? `Generated image: ${action.filePath}`
           : `Generate image requested: ${action.description}`;
-      const trace = [...state.trace, { type: "agent" as const, text }];
-      return { ...state, trace, openStreamIndex: trace.length - 1 };
+      const trace = [...base.trace, { type: "agent" as const, text }];
+      return { ...base, trace, openStreamIndex: trace.length - 1 };
     }
     case "appendPlan": {
-      const trace = [...state.trace, { type: "plan" as const, entries: action.entries }];
+      const base = stateAfterLeavingOpenThoughtStream(state);
+      const trace = [...base.trace, { type: "plan" as const, entries: action.entries }];
       return {
-        ...state,
+        ...base,
         trace,
         openStreamIndex: null,
       };
     }
     case "commandFeedback": {
-      const trace = [...state.trace, { type: "agent" as const, text: action.message }];
+      const base = stateAfterLeavingOpenThoughtStream(state);
+      const trace = [...base.trace, { type: "agent" as const, text: action.message }];
       return {
-        ...state,
+        ...base,
         trace,
         openStreamIndex: trace.length - 1,
         promptInFlight: false,
         errorText: null,
       };
     }
-    case "turnComplete":
+    case "turnComplete": {
+      const base = finalizeOpenThoughtDuration(state);
       return {
-        ...state,
+        ...base,
         openStreamIndex: null,
         promptInFlight: false,
       };
-    case "error":
+    }
+    case "error": {
+      const base = finalizeOpenThoughtDuration(state);
       return {
-        ...state,
+        ...base,
         openStreamIndex: null,
         errorText: action.message,
         promptInFlight: false,
       };
+    }
     default:
       return state;
   }
