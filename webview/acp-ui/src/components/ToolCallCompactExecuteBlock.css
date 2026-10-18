@@ -7,10 +7,9 @@
 }
 
 .tool-call-compact-execute-command {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: var(--acp-ui-trace-content-indent) minmax(0, 1fr);
   align-items: baseline;
-  gap: 0 4px;
   color: var(--vscode-foreground);
   word-break: break-word;
 }
@@ -20,20 +19,18 @@
 }
 
 .tool-call-compact-execute-prompt {
-  flex-shrink: 0;
   color: var(--vscode-descriptionForeground, var(--vscode-list-deemphasizedForeground));
   font-weight: 600;
   user-select: none;
 }
 
 .tool-call-compact-execute-command-text {
-  flex: 1 1 auto;
   min-width: 0;
 }
 
 .tool-call-compact-execute-output {
   margin: 2px 0 0;
-  padding: 0;
+  padding: 0 0 0 var(--acp-ui-trace-content-indent);
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
@@ -46,7 +43,7 @@
   display: block;
   width: 100%;
   margin: 2px 0 0;
-  padding: 0;
+  padding: 0 0 0 var(--acp-ui-trace-content-indent);
   border: none;
   background: none;
   font: inherit;
@@ -61,6 +58,7 @@
 
 .tool-call-compact-execute-running {
   margin-top: 2px;
+  padding-left: var(--acp-ui-trace-content-indent);
   color: var(--vscode-descriptionForeground);
   font-style: italic;
 }

@@ -704,7 +704,6 @@ wss.on("connection", (ws: WebSocket) => {
                 homeDir: resolveUserHomeDir(),
                 agentVersionLabel: undefined,
                 acpAgentName: selectedAgentName,
-                availableAcpAgents: agentConfigs.map((c) => c.name),
                 ...(workspaceFiles !== undefined ? { workspaceFiles } : {}),
                 ...(seed.configOptions !== null
                     ? { sessionConfigOptionsSeed: seed.configOptions }
@@ -712,7 +711,7 @@ wss.on("connection", (ws: WebSocket) => {
                 ...(seed.modelSelection !== null ? { sessionModels: seed.modelSelection } : {}),
                 ...(vscodeThemeVariables !== undefined ? { vscodeThemeVariables } : {}),
                 contentWidthRatio,
-                lockSessionAgent: false,
+                lockSessionAgent: true,
             });
             if (DEMO_MODE || sessionDemoFixture !== undefined) {
                 void maybeReplayInitFixture();
@@ -742,40 +741,6 @@ wss.on("connection", (ws: WebSocket) => {
 
         if (parsed.type === "permissionResponse") {
             bridge?.handlePermissionResponse(parsed);
-            return;
-        }
-
-        if (parsed.type === "setSessionAgent") {
-            const next = agentConfigs.find((c) => c.name === parsed.agentName);
-            if (next === undefined) {
-                send({
-                    type: "error",
-                    message: `Unknown agent: ${parsed.agentName}`,
-                });
-                return;
-            }
-            selectedAgentName = next.name;
-            disposeBridge();
-            send({ type: "sessionReset" });
-            send({
-                type: "acpAgentSelection",
-                currentAgentName: next.name,
-                availableAgentNames: agentConfigs.map((c) => c.name),
-            });
-            const resetSeed = composerSeedForInit();
-            if (resetSeed.configOptions !== null) {
-                send({
-                    type: "sessionConfigOptions",
-                    options: resetSeed.configOptions,
-                });
-            } else if (resetSeed.modelSelection !== null) {
-                send({ type: "sessionModels", ...resetSeed.modelSelection });
-            } else {
-                send({ type: "sessionConfigOptionsLoading" });
-            }
-            if (!DEMO_MODE) {
-                void connectAgent();
-            }
             return;
         }
 

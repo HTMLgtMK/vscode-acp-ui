@@ -44,6 +44,7 @@
   --acp-ui-space-16: var(--vscode-spacing-size160, 16px);
   --acp-ui-space-20: var(--vscode-spacing-size200, 20px);
   --acp-ui-space-24: var(--vscode-spacing-size240, 24px);
+  --acp-ui-trace-content-indent: calc(5px + var(--acp-ui-space-6));
 
   /* Borders */
   --acp-ui-stroke-width: var(--vscode-strokeThickness, 1px);

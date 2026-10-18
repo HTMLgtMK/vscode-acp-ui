@@ -1,5 +1,7 @@
 import type { AcpUiSessionConfigOption } from "../acp/session/sessionConfigOptions";
 import type { AcpUiSessionModelSelection } from "../acp/session/sessionModels";
+import type { AcpUiVisibleTraceItem } from "./visibleTrace";
+import { normalizeVisibleTrace } from "./visibleTrace";
 
 /** Replayable session log events (user submit + post-init extension messages). */
 export type AcpUiHistoryReplayEvent =
@@ -67,7 +69,6 @@ export type WebviewToExtensionMessage =
           configId: string;
           value: string | boolean;
       }
-    | { type: "setSessionAgent"; agentName: string }
     | {
           type: "permissionResponse";
           requestId: string;
@@ -98,6 +99,8 @@ export type WebviewToExtensionMessage =
       }
     /** Persists composer Arrow Up / Down user message history for this session. */
     | { type: "saveHistory"; entries: string[] }
+    /** Persists the viewport transcript tail beside the session file. */
+    | { type: "saveVisibleTrace"; items: AcpUiVisibleTraceItem[] }
     /** Open a new chat with the default agent (extension host handles creation). */
     | { type: "openNewChat" }
     /** Open a workspace path from a compact tool link (`auto` reveals folders, opens files). */
@@ -122,14 +125,12 @@ export type ExtensionToWebviewMessage =
           workspaceFiles?: string[];
           agentVersionLabel?: string;
           acpAgentName?: string;
-          /** Display names from `ib-acp-ui.agents` for the agent picker. */
-          availableAcpAgents?: string[];
           /** Optional `--vscode-*` overrides applied on `document.documentElement`. */
           vscodeThemeVariables?: Record<string, string>;
           sessionModels?: AcpUiSessionModelSelection;
           history?: string[];
           /**
-           * When true, the agent picker is read-only (agent was chosen when the chat was created).
+           * When true, the session agent is fixed (chosen when the chat was created).
            * The model picker may still change until the first user message in playground mode.
            */
           lockSessionAgent?: boolean;
@@ -139,6 +140,8 @@ export type ExtensionToWebviewMessage =
           hideComposerModelControls?: boolean;
           /** True while ACP `session/load` replays conversation history. */
           sessionHistoryLoading?: boolean;
+          /** Last on-screen transcript slice, restored before `session/load` finishes. */
+          visibleTrace?: AcpUiVisibleTraceItem[];
           /** Tool call display mode (`minimal`, `compact`, or `verbose`). */
           toolCallVerbosity?: ToolCallVerbosity;
           /** Fraction of panel width for transcript and composer (1 = full width). */
@@ -174,11 +177,6 @@ export type ExtensionToWebviewMessage =
           /** Shown while ACP `session/load` replays conversation history. */
           type: "sessionHistoryLoading";
           loading: boolean;
-      }
-    | {
-          type: "acpAgentSelection";
-          currentAgentName: string;
-          availableAgentNames: string[];
       }
     | { type: "appendAgentThought"; text: string; durationMs?: number }
     | { type: "appendAgentText"; text: string }
@@ -326,13 +324,6 @@ export function tryParseWebviewMessage(raw: unknown): WebviewToExtensionMessage 
         };
     }
     if (
-        messageType === "setSessionAgent" &&
-        typeof record.agentName === "string" &&
-        record.agentName.length > 0
-    ) {
-        return { type: "setSessionAgent", agentName: record.agentName };
-    }
-    if (
         messageType === "permissionResponse" &&
         typeof record.requestId === "string" &&
         record.requestId.length > 0
@@ -398,6 +389,9 @@ export function tryParseWebviewMessage(raw: unknown): WebviewToExtensionMessage 
             }
         }
         return { type: "saveHistory", entries };
+    }
+    if (messageType === "saveVisibleTrace" && Array.isArray(record.items)) {
+        return { type: "saveVisibleTrace", items: normalizeVisibleTrace(record.items) };
     }
     if (messageType === "openNewChat") {
         return { type: "openNewChat" };

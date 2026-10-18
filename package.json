@@ -204,15 +204,22 @@
             },
             {
                 "command": "ib-acp-ui.newAcpUiInEditor",
-                "title": "New ACP UI Chat (Default Agent)",
-                "shortTitle": "New in Editor",
+                "title": "New ACP UI Chat",
+                "shortTitle": "New Chat",
+                "icon": "$(add)",
+                "category": "IrishBruse ACP"
+            },
+            {
+                "command": "ib-acp-ui.newAcpUiInEditorPickAgent",
+                "title": "New ACP UI Chat with Agent…",
+                "shortTitle": "New Chat with Agent…",
                 "icon": "$(add)",
                 "category": "IrishBruse ACP"
             },
             {
                 "command": "ib-acp-ui.selectActiveAgent",
                 "title": "Select Active ACP Agent",
-                "shortTitle": "Agent",
+                "shortTitle": "Select Agent",
                 "icon": "$(list-selection)",
                 "category": "IrishBruse ACP"
             },
@@ -288,12 +295,24 @@
                 {
                     "command": "ib-acp-ui.openAcpUiView",
                     "when": "resourceExtname == '.acp' && activeCustomEditorId != 'ibAcpUi.session'",
-                    "group": "navigation"
+                    "group": "1_acp@1"
                 },
                 {
                     "command": "ib-acp-ui.openAcpUiTextEditor",
                     "when": "activeCustomEditorId == 'ibAcpUi.session'",
-                    "group": "navigation"
+                    "group": "1_acp@1"
+                }
+            ],
+            "editor/title/run": [
+                {
+                    "command": "ib-acp-ui.newAcpUiInEditor",
+                    "when": "activeCustomEditorId == 'ibAcpUi.session' || resourceExtname == '.acp'",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "ib-acp-ui.newAcpUiInEditorPickAgent",
+                    "when": "activeCustomEditorId == 'ibAcpUi.session' || resourceExtname == '.acp'",
+                    "group": "navigation@2"
                 }
             ],
             "view/item/context": [
@@ -312,22 +331,22 @@
                 {
                     "command": "ib-acp-ui.newAcpUiInEditor",
                     "when": "view == acpUiSessionsView",
-                    "group": "navigation"
+                    "group": "navigation@1"
                 },
                 {
                     "command": "ib-acp-ui.selectActiveAgent",
                     "when": "view == acpUiSessionsView",
-                    "group": "navigation"
+                    "group": "navigation@2"
                 },
                 {
                     "command": "ib-acp-ui.refreshAcpUiSessions",
                     "when": "view == acpUiSessionsView",
-                    "group": "navigation"
+                    "group": "navigation@3"
                 },
                 {
                     "command": "ib-acp-ui.browseAgentRegistry",
                     "when": "view == acpUiSessionsView",
-                    "group": "navigation"
+                    "group": "navigation@4"
                 }
             ]
         },
@@ -351,6 +370,6 @@
     ],
     "icon": "icon.png",
     "engines": {
-        "vscode": "^1.125.0"
+        "vscode": "^1.140.0"
     }
 }

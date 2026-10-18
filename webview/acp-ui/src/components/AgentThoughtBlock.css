@@ -1,9 +1,15 @@
 .agent-thought-chunk {
+  --agent-thought-chevron-width: 5px;
   margin: 0 0 var(--acp-ui-space-10);
   padding: 0;
   border: none;
   background: transparent;
   font-family: var(--acp-ui-font-mono);
+  color: color-mix(
+    in srgb,
+    var(--vscode-editor-foreground, var(--vscode-foreground)) 86%,
+    var(--acp-ui-text-secondary)
+  );
 }
 
 .agent-thought-chunk-title {
@@ -11,9 +17,8 @@
   align-items: center;
   gap: var(--acp-ui-space-6);
   margin: 0 0 var(--acp-ui-space-6);
-  font-size: var(--acp-ui-font-size-x-small);
+  font-size: var(--acp-ui-font-size-body);
   line-height: var(--acp-ui-line-height-heading);
-  color: var(--acp-ui-text-secondary);
   font-weight: var(--acp-ui-font-weight-semibold);
   cursor: pointer;
   list-style: none;
@@ -46,7 +51,7 @@
   height: 0;
   border-top: 3.5px solid transparent;
   border-bottom: 3.5px solid transparent;
-  border-left: 5px solid currentColor;
+  border-left: var(--agent-thought-chevron-width) solid currentColor;
   transform: rotate(0deg);
 }
 
@@ -56,13 +61,9 @@
 
 .agent-thought-chunk-body {
   margin: 0;
+  padding-left: var(--acp-ui-trace-content-indent);
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: var(--acp-ui-font-size-x-small);
+  font-size: var(--acp-ui-font-size-body);
   line-height: var(--acp-ui-line-height-heading);
-  color: color-mix(
-    in srgb,
-    var(--vscode-editor-foreground, var(--vscode-foreground)) 86%,
-    var(--acp-ui-text-secondary)
-  );
 }

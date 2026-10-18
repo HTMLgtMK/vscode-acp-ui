@@ -19,6 +19,7 @@ import type {
   ToolCallDiffRow,
   ToolCallStatus,
 } from "../../../src/protocol/extensionHostMessages";
+import type { AcpUiVisibleTraceItem } from "../../../src/protocol/visibleTrace";
 
 export type InitPayload = Extract<ExtensionToWebviewMessage, { type: "init" }>;
 export type ExtensionMessageAfterInit = Exclude<ExtensionToWebviewMessage, { type: "init" }>;
@@ -46,7 +47,6 @@ export type TraceItem =
 
 export type AcpAgentSelectionState = {
   currentName: string;
-  availableNames: string[];
 };
 
 export type PermissionPromptState = {
@@ -77,6 +77,12 @@ export type ChatState = {
   sessionConfigLoading: boolean;
   /** True while ACP `session/load` is replaying conversation history. */
   sessionHistoryLoading: boolean;
+  viewportCacheActive: boolean;
+  replayTrace: TraceItem[];
+  replayToolIndexById: Map<string, number>;
+  replayOpenStreamIndex: number | null;
+  replayThoughtStartedAtMs: number | null;
+  historyCommit: number;
   acpAgentSelection: AcpAgentSelectionState | null;
   slashCommands: AcpUiSlashCommand[];
   permissionPrompt: PermissionPromptState | null;
@@ -104,7 +110,6 @@ export type ChatAction =
       configId: string;
       value: string | boolean;
     }
-  | { type: "pickSessionAgent"; agentName: string }
   | { type: "clearPermissionPrompt" }
   | { type: "clearAskQuestionPrompt" }
   | { type: "clearCreatePlanPrompt" };
@@ -188,6 +193,12 @@ export function createInitialChatState(): ChatState {
     sessionConfigOptions: null,
     sessionConfigLoading: true,
     sessionHistoryLoading: false,
+    viewportCacheActive: false,
+    replayTrace: [],
+    replayToolIndexById: new Map(),
+    replayOpenStreamIndex: null,
+    replayThoughtStartedAtMs: null,
+    historyCommit: 0,
     acpAgentSelection: null,
     slashCommands: [],
     permissionPrompt: null,
@@ -209,10 +220,47 @@ function finalizeOpenThoughtDuration(state: ChatState): ChatState {
   if (existing?.type !== "thought" || existing.durationMs !== undefined) {
     return state;
   }
-  const durationMs = Math.max(0, Date.now() - state.thoughtStartedAtMs);
+  const durationMs = Date.now() - state.thoughtStartedAtMs;
+  if (!(durationMs > 0)) {
+    return { ...state, thoughtStartedAtMs: null };
+  }
   const trace = state.trace.slice();
   trace[open] = { ...existing, durationMs };
   return { ...state, trace, thoughtStartedAtMs: null };
+}
+
+/**
+ * Copies UI-only thought metadata (durationMs) from a cached visible-trace onto
+ * the authoritative agent-replay transcript by thought order.
+ */
+export function mergeThoughtDurationsFromCache(
+  authoritative: readonly TraceItem[],
+  metadataSource: readonly TraceItem[],
+): TraceItem[] {
+  const cachedDurations: number[] = [];
+  for (const item of metadataSource) {
+    if (item.type === "thought" && item.durationMs !== undefined && item.durationMs > 0) {
+      cachedDurations.push(item.durationMs);
+    }
+  }
+  if (cachedDurations.length === 0) {
+    return authoritative.slice();
+  }
+  let thoughtIndex = 0;
+  return authoritative.map((item) => {
+    if (item.type !== "thought") {
+      return item;
+    }
+    const cached = cachedDurations[thoughtIndex];
+    thoughtIndex += 1;
+    if (item.durationMs !== undefined && item.durationMs > 0) {
+      return item;
+    }
+    if (cached === undefined) {
+      return item;
+    }
+    return { ...item, durationMs: cached };
+  });
 }
 
 function stateAfterLeavingOpenThoughtStream(state: ChatState): ChatState {
@@ -230,9 +278,42 @@ function stateAfterLeavingOpenThoughtStream(state: ChatState): ChatState {
 /**
  * Builds initial chat state from the host `init` payload (model list from ACP or playground readme seed).
  */
+function traceFromVisibleCache(items: readonly AcpUiVisibleTraceItem[] | undefined): {
+  trace: TraceItem[];
+  toolIndexById: Map<string, number>;
+} {
+  const trace: TraceItem[] = [];
+  const toolIndexById = new Map<string, number>();
+  for (const item of items ?? []) {
+    if (item.type === "tool") {
+      const tool: TraceToolItem = {
+        type: "tool",
+        toolCallId: item.toolCallId,
+        title: item.title,
+        kind: item.kind,
+        subtitle: item.subtitle,
+        status: item.status,
+        content: item.content,
+        diffRows: item.diffRows,
+        detailVisible: item.detailVisible === true,
+      };
+      toolIndexById.set(tool.toolCallId, trace.length);
+      trace.push(tool);
+      continue;
+    }
+    trace.push(item);
+  }
+  return { trace, toolIndexById };
+}
+
 export function createChatStateFromInit(payload: InitPayload): ChatState {
+  const seeded = traceFromVisibleCache(payload.visibleTrace);
   const base: ChatState = {
     ...createInitialChatState(),
+    trace: seeded.trace,
+    toolIndexById: seeded.toolIndexById,
+    sessionHistoryLoading: payload.sessionHistoryLoading === true,
+    viewportCacheActive: seeded.trace.length > 0 && payload.sessionHistoryLoading === true,
     acpAgentSelection: buildAcpAgentSelectionFromInit(payload),
     lockSessionAgent: payload.lockSessionAgent === true,
     composerPicksLocked: false,
@@ -255,15 +336,9 @@ export function createChatStateFromInit(payload: InitPayload): ChatState {
 }
 
 function buildAcpAgentSelectionFromInit(payload: InitPayload): AcpAgentSelectionState | null {
-  const listed = payload.availableAcpAgents;
   const named = payload.acpAgentName;
-  if (listed !== undefined && listed.length > 0) {
-    const current =
-      named !== undefined && named.length > 0 && listed.includes(named) ? named : listed[0]!;
-    return { currentName: current, availableNames: listed };
-  }
   if (named !== undefined && named.length > 0) {
-    return { currentName: named, availableNames: [named] };
+    return { currentName: named };
   }
   return null;
 }
@@ -307,19 +382,25 @@ function appendAgentThought(
   text: string,
   durationMs: number | undefined,
 ): ChatState {
+  const resolvedDuration =
+    durationMs !== undefined && durationMs > 0 ? durationMs : undefined;
   const open = state.openStreamIndex;
   if (open !== null) {
     const existing = state.trace[open];
     if (existing?.type === "thought") {
-      const mergedDuration = durationMs !== undefined ? durationMs : existing.durationMs;
+      const mergedDuration = resolvedDuration ?? existing.durationMs;
       const trace = state.trace.slice();
       trace[open] = {
         type: "thought",
         text: joinThoughtChunks(existing.text, text),
-        ...(mergedDuration !== undefined ? { durationMs: mergedDuration } : {}),
+        ...(mergedDuration !== undefined && mergedDuration > 0
+          ? { durationMs: mergedDuration }
+          : {}),
       };
       const thoughtStartedAtMs =
-        mergedDuration !== undefined ? null : (state.thoughtStartedAtMs ?? Date.now());
+        mergedDuration !== undefined && mergedDuration > 0
+          ? null
+          : (state.thoughtStartedAtMs ?? Date.now());
       return { ...state, trace, thoughtStartedAtMs };
     }
   }
@@ -328,14 +409,14 @@ function appendAgentThought(
     {
       type: "thought" as const,
       text,
-      ...(durationMs !== undefined ? { durationMs } : {}),
+      ...(resolvedDuration !== undefined ? { durationMs: resolvedDuration } : {}),
     },
   ];
   return {
     ...state,
     trace,
     openStreamIndex: trace.length - 1,
-    thoughtStartedAtMs: durationMs !== undefined ? null : Date.now(),
+    thoughtStartedAtMs: resolvedDuration !== undefined ? null : Date.now(),
   };
 }
 
@@ -519,6 +600,11 @@ function applySessionReset(state: ChatState): ChatState {
     modelSelection: null,
     sessionConfigLoading: true,
     sessionHistoryLoading: false,
+    viewportCacheActive: false,
+    replayTrace: [],
+    replayToolIndexById: new Map(),
+    replayOpenStreamIndex: null,
+    replayThoughtStartedAtMs: null,
     composerPicksLocked: false,
     thoughtStartedAtMs: null,
   };
@@ -537,7 +623,50 @@ function todoStatusEmoji(status: TodoEntry["status"]): string {
   return " ";
 }
 
+function isReplayTranscriptAction(action: ChatAction): boolean {
+  switch (action.type) {
+    case "appendAgentText":
+    case "appendUserText":
+    case "appendAgentThought":
+    case "appendToolCall":
+    case "updateToolCall":
+    case "appendPlan":
+    case "cursorUpdateTodos":
+    case "cursorTask":
+    case "cursorGenerateImage":
+    case "turnComplete":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function replayShadow(state: ChatState): ChatState {
+  return {
+    ...state,
+    trace: state.replayTrace,
+    toolIndexById: state.replayToolIndexById,
+    openStreamIndex: state.replayOpenStreamIndex,
+    thoughtStartedAtMs: state.replayThoughtStartedAtMs,
+    sessionHistoryLoading: false,
+    viewportCacheActive: false,
+  };
+}
+
+function withReplayResult(state: ChatState, next: ChatState): ChatState {
+  return {
+    ...state,
+    replayTrace: next.trace,
+    replayToolIndexById: next.toolIndexById,
+    replayOpenStreamIndex: next.openStreamIndex,
+    replayThoughtStartedAtMs: next.thoughtStartedAtMs,
+  };
+}
+
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
+  if (state.viewportCacheActive && state.sessionHistoryLoading && isReplayTranscriptAction(action)) {
+    return withReplayResult(state, chatReducer(replayShadow(state), action));
+  }
   if (action.type === "submit") {
     const afterThought = stateAfterLeavingOpenThoughtStream(state);
     return {
@@ -548,23 +677,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       openStreamIndex: null,
       toolIndexById: new Map(),
       composerPicksLocked: state.lockSessionAgent === true ? state.composerPicksLocked : true,
-    };
-  }
-  if (action.type === "pickSessionAgent") {
-    if (
-      state.lockSessionAgent ||
-      state.composerPicksLocked ||
-      state.acpAgentSelection === null ||
-      !state.acpAgentSelection.availableNames.includes(action.agentName)
-    ) {
-      return state;
-    }
-    return {
-      ...state,
-      acpAgentSelection: {
-        ...state.acpAgentSelection,
-        currentName: action.agentName,
-      },
     };
   }
   if (action.type === "pickSessionModel") {
@@ -671,14 +783,29 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case "sessionConfigOptionsLoading":
       return applySessionConfigOptionsLoading(state);
     case "sessionHistoryLoading":
-      return { ...state, sessionHistoryLoading: action.loading };
-    case "acpAgentSelection":
+      if (action.loading) {
+        return { ...state, sessionHistoryLoading: true };
+      }
+      if (state.viewportCacheActive && state.replayTrace.length > 0) {
+        return {
+          ...state,
+          sessionHistoryLoading: false,
+          viewportCacheActive: false,
+          trace: mergeThoughtDurationsFromCache(state.replayTrace, state.trace),
+          toolIndexById: state.replayToolIndexById,
+          openStreamIndex: state.replayOpenStreamIndex,
+          thoughtStartedAtMs: state.replayThoughtStartedAtMs,
+          replayTrace: [],
+          replayToolIndexById: new Map(),
+          replayOpenStreamIndex: null,
+          replayThoughtStartedAtMs: null,
+          historyCommit: state.historyCommit + 1,
+        };
+      }
       return {
         ...state,
-        acpAgentSelection: {
-          currentName: action.currentAgentName,
-          availableNames: action.availableAgentNames,
-        },
+        sessionHistoryLoading: false,
+        viewportCacheActive: false,
       };
     case "appendAgentText":
       return appendAgentText(state, action.text);

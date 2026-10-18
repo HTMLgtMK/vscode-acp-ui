@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+    ACP_UI_VISIBLE_TRACE_SCHEMA,
+    parseVisibleTraceDocument,
+    parseVisibleTraceJsonl,
+    serializeVisibleTraceJsonl,
+} from "../protocol/visibleTrace";
+import {
     ACP_UI_SESSION_SCHEMA,
     enqueueSessionFileWrite,
     isFlatSessionFilePath,
@@ -12,6 +18,7 @@ import {
     sessionFileBaseNameFromTitle,
     shouldDeferJsonlHistoryReplay,
     uniqueSessionFileBaseNameFromTitle,
+    visibleTraceFileNameForSessionFile,
 } from "./acpUiSessionJsonlFormat";
 
 describe("enqueueSessionFileWrite", () => {
@@ -151,6 +158,72 @@ describe("isFlatSessionFilePath", () => {
         expect(isFlatSessionFilePath("/data/chats/session-id/My Chat.acp", "/data/chats")).toBe(
             false,
         );
+    });
+});
+
+describe("visibleTraceFileNameForSessionFile", () => {
+    it("uses the session file stem with a jsonl suffix", () => {
+        expect(visibleTraceFileNameForSessionFile("Fix auth flow.acp")).toBe("Fix auth flow.jsonl");
+        expect(visibleTraceFileNameForSessionFile("Chat.acp")).toBe("Chat.jsonl");
+    });
+});
+
+describe("visible trace jsonl", () => {
+    it("round-trips trace items and drops invalid lines", () => {
+        const items = [
+            { type: "user" as const, text: "hi" },
+            {
+                type: "thought" as const,
+                text: "The user sent a simple greeting.",
+                durationMs: 1200,
+            },
+            { type: "agent" as const, text: "Hi – what do you want to work on?" },
+        ];
+        const text = `${serializeVisibleTraceJsonl(items)}not json\n`;
+        expect(parseVisibleTraceJsonl(text)).toEqual(items);
+    });
+
+    it("writes a meta header that references the session document", () => {
+        const items = [
+            { type: "user" as const, text: "hi" },
+            { type: "thought" as const, text: "Planning.", durationMs: 800 },
+        ];
+        const text = serializeVisibleTraceJsonl(items, {
+            sessionId: "57b8da34-3117-4d12-b86d-08c1dc85bc34",
+            sessionFile: "List Folder.acp",
+        });
+        const document = parseVisibleTraceDocument(text);
+        expect(document.meta).toEqual({
+            type: "meta",
+            schema: ACP_UI_VISIBLE_TRACE_SCHEMA,
+            sessionId: "57b8da34-3117-4d12-b86d-08c1dc85bc34",
+            sessionFile: "List Folder.acp",
+        });
+        expect(document.items).toEqual(items);
+    });
+
+    it("drops non-positive thought durations", () => {
+        const text = [
+            JSON.stringify({ type: "thought", text: "A", durationMs: 0 }),
+            JSON.stringify({ type: "thought", text: "B", durationMs: -3 }),
+            JSON.stringify({ type: "thought", text: "C", durationMs: 40 }),
+        ].join("\n");
+        expect(parseVisibleTraceJsonl(text)).toEqual([
+            { type: "thought", text: "A" },
+            { type: "thought", text: "B" },
+            { type: "thought", text: "C", durationMs: 40 },
+        ]);
+    });
+
+    it("keeps the last 40 items", () => {
+        const items = Array.from({ length: 45 }, (_, index) => ({
+            type: "user" as const,
+            text: `m-${index}`,
+        }));
+        const parsed = parseVisibleTraceJsonl(serializeVisibleTraceJsonl(items));
+        expect(parsed).toHaveLength(40);
+        expect(parsed[0]).toEqual({ type: "user", text: "m-5" });
+        expect(parsed[39]).toEqual({ type: "user", text: "m-44" });
     });
 });
 

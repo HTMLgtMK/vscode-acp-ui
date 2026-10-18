@@ -38,15 +38,16 @@ import {
 import {
     type AcpUiSessionDocument,
     parseSessionFile,
+    readVisibleTraceBesideSession,
     shouldDeferJsonlHistoryReplay,
     updateSessionHistory,
+    writeVisibleTraceBesideSession,
 } from "./acpUiSessionJsonl";
 import {
     clearAcpUiSessionRuntimeSessionId,
     getAcpUiSession,
     persistAcpUiSessionTitleHeader,
     renameAcpUiSession,
-    setAcpUiSessionAgentName,
     setAcpUiSessionRuntimeSessionId,
     setAcpUiSessionTitleInMemory,
     updateAcpUiSessionTitle,
@@ -90,7 +91,7 @@ export class AcpUiSessionController {
     }
 
     private get documentUri(): Uri {
-        return this.options.document.uri;
+        return getAcpUiSession(this.sessionId)?.uri ?? this.options.document.uri;
     }
 
     activate(): void {
@@ -186,7 +187,6 @@ export class AcpUiSessionController {
                 ? formatPathWithTilde(folder.uri.fsPath, resolveUserHomeDir())
                 : undefined;
         const configs = getAcpAgentConfigsMerged();
-        const availableNames = configs.map((c) => c.name);
         const defaultAgent = this.agentConfig ?? configs[0];
         const workspaceFiles = await workspaceFilesForAutocomplete();
         const cachedSeed =
@@ -194,18 +194,19 @@ export class AcpUiSessionController {
                 ? readCachedComposerSeed(defaultAgent.name)
                 : { configOptions: null, modelSelection: null };
         const vscodeThemeVariables = await resolveMarkdownThemeVariables();
+        const visibleTrace = await readVisibleTraceBesideSession(this.documentUri);
         return {
             sessionId: header.id,
             title: header.title,
             ...(shouldDeferJsonlHistoryReplay(header) ? { sessionHistoryLoading: true } : {}),
+            ...(visibleTrace.length > 0 ? { visibleTrace } : {}),
             ...(Object.keys(vscodeThemeVariables).length > 0 ? { vscodeThemeVariables } : {}),
             workspaceLabel,
             homeDir: resolveUserHomeDir(),
             agentVersionLabel,
             acpAgentName: defaultAgent?.name,
-            lockSessionAgent: false,
+            lockSessionAgent: true,
             ...(workspaceFiles !== undefined ? { workspaceFiles } : {}),
-            ...(availableNames.length > 0 ? { availableAcpAgents: availableNames } : {}),
             ...(header.history.length > 0 ? { history: header.history } : {}),
             ...(cachedSeed.configOptions !== null
                 ? { sessionConfigOptionsSeed: cachedSeed.configOptions }
@@ -435,6 +436,13 @@ export class AcpUiSessionController {
             return;
         }
 
+        if (parsed.type === "saveVisibleTrace") {
+            void writeVisibleTraceBesideSession(this.documentUri, parsed.items, {
+                sessionId: this.sessionId,
+            });
+            return;
+        }
+
         if (parsed.type === "send") {
             void (async () => {
                 const b = await this.ensureBridgeConnected();
@@ -529,33 +537,6 @@ export class AcpUiSessionController {
                     });
                 }
             })();
-            return;
-        }
-
-        if (parsed.type === "setSessionAgent") {
-            const config = getAcpAgentConfigByNameMerged(parsed.agentName);
-            if (config === undefined) {
-                this.post({
-                    type: "error",
-                    message: `Unknown agent: ${parsed.agentName}`,
-                });
-                return;
-            }
-            this.agentConfig = config;
-            void setAcpUiSessionAgentName(this.sessionId, config.name);
-            this.disposeBridge();
-            this.pendingModelId = undefined;
-            this.pendingConfigOption = undefined;
-            await clearAcpUiSessionRuntimeSessionId(this.sessionId);
-            const names = getAcpAgentConfigsMerged().map((c) => c.name);
-            this.post({ type: "sessionReset" });
-            this.post({
-                type: "acpAgentSelection",
-                currentAgentName: config.name,
-                availableAgentNames: names,
-            });
-            this.postSessionConfigSeedOrLoading();
-            void this.ensureBridgeConnected();
             return;
         }
 

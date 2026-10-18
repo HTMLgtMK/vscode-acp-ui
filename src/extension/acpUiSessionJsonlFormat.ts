@@ -2,6 +2,17 @@ import { dirname } from "node:path";
 
 export const ACP_UI_SESSION_SCHEMA = "acpUi/session/1" as const;
 export const ACP_UI_SESSION_FILE_SUFFIX = ".acp";
+export const ACP_UI_VISIBLE_TRACE_SUFFIX = ".jsonl";
+
+/**
+ * Sibling file name for the viewport trace cache of a session `.acp` file.
+ */
+export function visibleTraceFileNameForSessionFile(sessionFileName: string): string {
+    const stem = sessionFileName.endsWith(ACP_UI_SESSION_FILE_SUFFIX)
+        ? sessionFileName.slice(0, -ACP_UI_SESSION_FILE_SUFFIX.length)
+        : sessionFileName;
+    return `${stem}${ACP_UI_VISIBLE_TRACE_SUFFIX}`;
+}
 
 /** True when the session file sits directly under the chats root (legacy layout). */
 export function isFlatSessionFilePath(sessionFilePath: string, sessionsDirPath: string): boolean {

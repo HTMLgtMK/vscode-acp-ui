@@ -732,14 +732,16 @@ export function sessionUpdateToWebviewMessages(
             }
             const durationFromMeta = (record: Record<string, unknown>): number | undefined => {
                 const ms = record.durationMs ?? record.duration_ms;
-                return typeof ms === "number" && Number.isFinite(ms) ? ms : undefined;
+                return typeof ms === "number" && Number.isFinite(ms) && ms > 0 ? ms : undefined;
             };
             const durationMs =
                 typeof thoughtUpdate.durationMs === "number" &&
-                Number.isFinite(thoughtUpdate.durationMs)
+                Number.isFinite(thoughtUpdate.durationMs) &&
+                thoughtUpdate.durationMs > 0
                     ? thoughtUpdate.durationMs
                     : typeof thoughtUpdate.duration_ms === "number" &&
-                        Number.isFinite(thoughtUpdate.duration_ms)
+                        Number.isFinite(thoughtUpdate.duration_ms) &&
+                        thoughtUpdate.duration_ms > 0
                       ? thoughtUpdate.duration_ms
                       : thoughtUpdate._meta !== undefined &&
                           typeof thoughtUpdate._meta === "object" &&

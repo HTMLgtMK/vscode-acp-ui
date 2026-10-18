@@ -57,7 +57,11 @@ function applyPendingSessionHistoryLoading(state: ChatState): ChatState {
   if (!pendingSessionHistoryLoading) {
     return state;
   }
-  return { ...state, sessionHistoryLoading: true };
+  return {
+    ...state,
+    sessionHistoryLoading: true,
+    viewportCacheActive: state.trace.length > 0 || state.viewportCacheActive,
+  };
 }
 
 function tryMountView(): void {
@@ -91,9 +95,6 @@ function tryMountView(): void {
     (modelId) => {
       host.post({ type: "setSessionModel", modelId });
     },
-    (agentName) => {
-      host.post({ type: "setSessionAgent", agentName });
-    },
     (configId, value) => {
       host.post({ type: "setSessionConfigOption", configId, value });
     },
@@ -120,6 +121,9 @@ function tryMountView(): void {
         ...(options?.target === "auto" ? { target: "auto" } : {}),
       });
     },
+    (items) => {
+      host.post({ type: "saveVisibleTrace", items });
+    },
   );
   flushPendingExtensionMessages();
 }
@@ -131,9 +135,6 @@ host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
       return;
     }
     pendingSessionHistoryLoading = message.loading;
-    if (message.loading) {
-      bootText.textContent = "Loading conversation...";
-    }
     return;
   }
   if (isInitPayload(message)) {

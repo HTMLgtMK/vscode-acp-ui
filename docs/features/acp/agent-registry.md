@@ -32,6 +32,6 @@ Failures fall back to the on-disk cache with a warning toast.
 
 [getAcpAgentConfigsMerged](../../../src/acp/config/mergedAgents.ts#L8-L10) merges manual settings with installed registry spawns via
 [mergeAcpAgentConfigs](../../../src/acp/registry/mergeAgents.ts#L7-L25).
-Pickers, session init, and `setSessionAgent` all resolve through the merged list.
+Sidebar pickers and session init resolve through the merged list.
 
 Protocol: [ACP agent registry](../../acp/rfds/acp-agent-registry.mdx), [get started registry](../../acp/get-started/registry.mdx).

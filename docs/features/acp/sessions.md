@@ -11,7 +11,11 @@ Composer prompt history (Arrow-Up recall) is restored from the local `.acp` file
 
 Each chat is backed by a local session file that stores metadata and composer history.
 Closing and reopening the chat restores composer history from disk.
-The live transcript comes from the agent via `session/load` replay when resume succeeds.
+A sibling `.jsonl` file stores the last screen of the transcript.
+Reopening shows that screen immediately, instead of a conversation loader.
+You can scroll inside that screen while the agent loads older messages.
+When the older messages arrive, the screen you are looking at stays where it is.
+The live transcript still comes from the agent via `session/load` replay when resume succeeds.
 
 The Chats sidebar lists agent sessions when the active agent supports `session/list`, and falls back to local `.acp` files when it does not.
 Deleting a chat removes the local transcript and notifies the agent when it supports `session/delete` and the chat has a stored runtime session id.
@@ -49,8 +53,18 @@ See [editor-shell](../ui/editor-shell.md).
 [deleteSessionFile](../../../src/extension/acpUiSessionJsonl.ts) removes the per-session folder (or a legacy flat file only).
 
 ACP transcript events are not persisted in `.acp` files.
-When `session/load` succeeds, agent replay is authoritative for the trace.
-On load failure, the bridge falls back to `session/new` and the webview starts with an empty trace (composer history still comes from `init.history`).
+[visibleTraceFileNameForSessionFile](../../../src/extension/acpUiSessionJsonlFormat.ts#L10-L15) names a `.jsonl` file beside the session file, with the same stem.
+That sibling file is the store for the last on-screen transcript and for UI-only metadata (for example thought `durationMs`).
+[serializeVisibleTraceJsonl](../../../src/protocol/visibleTrace.ts#L208-L229) writes an optional `meta` header that references the session id and `.acp` file name (`acpUi/visibleTrace/1`), then one trace item per line.
+[writeVisibleTraceBesideSession](../../../src/extension/acpUiSessionJsonl.ts#L124-L150) stores that document, capped at the last screen.
+[readVisibleTraceBesideSession](../../../src/extension/acpUiSessionJsonl.ts#L112-L122) sends the items on `init`.
+Renaming or moving the `.acp` file moves the `.jsonl` with it.
+Deleting a flat session file deletes the sibling cache.
+Deleting a session folder removes both.
+When `session/load` succeeds, agent replay is authoritative for the transcript text.
+The webview keeps the cached screen until replay finishes, then swaps the full transcript in without moving the scroll position.
+[mergeThoughtDurationsFromCache](../../../webview/acp-ui/src/chatReducer.ts#L236-L264) copies thought durations from the cached `.jsonl` onto the replayed thoughts.
+On load failure, the bridge falls back to `session/new` and the cached screen stays if replay produced no items (composer history still comes from `init.history`).
 
 ### List and delete
 

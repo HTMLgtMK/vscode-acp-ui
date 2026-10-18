@@ -238,7 +238,6 @@ describe("chatReducer", () => {
       sessionConfigLoading: false,
       acpAgentSelection: {
         currentName: "cursor",
-        availableNames: ["cursor"],
       },
       sessionConfigOptions: [
         {
@@ -324,6 +323,98 @@ describe("chatReducer", () => {
     expect(state.trace).toEqual([]);
   });
 
+  it("seeds the visible trace cache and buffers replay until load finishes", () => {
+    const cached = [
+      { type: "user" as const, text: "hi" },
+      { type: "agent" as const, text: "Hi – what do you want to work on?" },
+    ];
+    let state = createChatStateFromInit({
+      type: "init",
+      sessionId: "s1",
+      title: "Chat",
+      sessionHistoryLoading: true,
+      visibleTrace: cached,
+    });
+    expect(state.trace).toEqual(cached);
+    expect(state.viewportCacheActive).toBe(true);
+
+    state = chatReducer(state, { type: "appendUserText", text: "older" });
+    expect(state.trace).toEqual(cached);
+    expect(state.replayTrace).toEqual([{ type: "user", text: "older" }]);
+
+    state = chatReducer(state, {
+      type: "permissionRequest",
+      requestId: "p1",
+      toolTitle: "Read",
+      options: [{ optionId: "allow", name: "Allow" }],
+    });
+    expect(state.permissionPrompt?.requestId).toBe("p1");
+    expect(state.trace).toEqual(cached);
+
+    state = chatReducer(state, { type: "sessionHistoryLoading", loading: false });
+    expect(state.sessionHistoryLoading).toBe(false);
+    expect(state.viewportCacheActive).toBe(false);
+    expect(state.trace).toEqual([{ type: "user", text: "older" }]);
+    expect(state.historyCommit).toBe(1);
+  });
+
+  it("merges cached thought durations onto agent replay when load finishes", () => {
+    const cached = [
+      { type: "user" as const, text: "hi" },
+      { type: "thought" as const, text: "Thinking about hi.", durationMs: 1500 },
+      { type: "agent" as const, text: "Hello" },
+    ];
+    let state = createChatStateFromInit({
+      type: "init",
+      sessionId: "s1",
+      title: "Chat",
+      sessionHistoryLoading: true,
+      visibleTrace: cached,
+    });
+    state = chatReducer(state, { type: "appendUserText", text: "hi" });
+    state = chatReducer(state, { type: "appendAgentThought", text: "Thinking about hi." });
+    state = chatReducer(state, { type: "appendAgentText", text: "Hello" });
+    state = chatReducer(state, { type: "sessionHistoryLoading", loading: false });
+    expect(state.trace).toEqual([
+      { type: "user", text: "hi" },
+      { type: "thought", text: "Thinking about hi.", durationMs: 1500 },
+      { type: "agent", text: "Hello" },
+    ]);
+  });
+
+  it("ignores non-positive agent thought durations so client timing can run", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    let state = createInitialChatState();
+    state = chatReducer(state, {
+      type: "appendAgentThought",
+      text: "Thinking…",
+      durationMs: 0,
+    });
+    expect(state.thoughtStartedAtMs).toBe(Date.now());
+    vi.advanceTimersByTime(400);
+    state = chatReducer(state, { type: "appendAgentText", text: "Answer" });
+    const thought = state.trace[0];
+    expect(thought?.type).toBe("thought");
+    if (thought?.type !== "thought") {
+      return;
+    }
+    expect(thought.durationMs).toBe(400);
+  });
+
+  it("keeps the visible cache when load finishes with no replay", () => {
+    let state = createChatStateFromInit({
+      type: "init",
+      sessionId: "s1",
+      title: "Chat",
+      sessionHistoryLoading: true,
+      visibleTrace: [{ type: "user", text: "hi" }],
+    });
+    state = chatReducer(state, { type: "sessionHistoryLoading", loading: false });
+    expect(state.trace).toEqual([{ type: "user", text: "hi" }]);
+    expect(state.historyCommit).toBe(0);
+  });
+
   it("seeds composer state from init cache without loading", () => {
     writeCachedSessionConfigOptions("cursor", [
       {
@@ -340,7 +431,6 @@ describe("chatReducer", () => {
       sessionId: "s1",
       title: "Chat",
       acpAgentName: "cursor",
-      availableAcpAgents: ["cursor"],
       sessionConfigOptionsSeed: [
         {
           configId: "model",

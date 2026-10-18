@@ -8,10 +8,12 @@ Install agents from the official registry (**Browse Agent Registry**), or add ad
 Manual settings override registry installs when the display name matches.
 There are no built-in default agents; install from the registry on first use.
 
-The **Chats** sidebar shows an agent picker.
+The **Chats** sidebar owns agent selection and lists chats.
+Use **Select Agent** there, or create a chat with the sidebar **+**.
+On an open `.acp` editor tab, the title bar shows a **New Chat** split control (`+ ▾`): the plus creates with the active agent, and the chevron offers **New Chat with Agent…**.
 The selected agent is used for new chats and for the agent-backed session list when the agent supports `session/list`.
 Each open chat remembers which agent it was created with via the session file header.
-Before the first message, the composer can switch agents among the merged list.
+The composer does not switch agents.
 
 ## Implementation
 
@@ -31,13 +33,12 @@ Before the first message, the composer can switch agents among the merged list.
 
 [pickAcpAgentConfig](../../../src/extension/acpUiAgentPicker.ts) shows a quick pick over the merged list, with a **Browse Agent Registry** entry.
 [selectActiveAgent](../../../src/extension/acpUiSessionsView.ts) updates the active agent for the Chats view.
+`.acp` tabs contribute new-chat commands to `editor/title/run` so VS Code renders the `+ ▾` split button.
 
 ### Per-session agent binding
 
 Session file headers store `agentName`.
-[acpUiSessionController](../../../src/extension/acpUiSessionController.ts) resolves the agent config when a chat opens.
-[setAcpUiSessionAgentName](../../../src/extension/acpUiSessionsStore.ts) updates the header when the user switches agents on a new chat.
-[AgentPicker](../../../webview/acp-ui/src/components/AgentPicker.tsx) in the composer posts `setSessionAgent` while the session agent is unlocked.
+[acpUiSessionController](../../../src/extension/acpUiSessionController.ts) resolves the agent config when a chat opens and sends `lockSessionAgent: true` on init.
 
 ### Process spawn
 

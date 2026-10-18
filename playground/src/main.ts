@@ -181,9 +181,6 @@ async function bootstrap(): Promise<void> {
                 (modelId) => {
                     host.post({ type: "setSessionModel", modelId });
                 },
-                (agentName) => {
-                    host.post({ type: "setSessionAgent", agentName });
-                },
                 (configId, value) => {
                     host.post({
                         type: "setSessionConfigOption",

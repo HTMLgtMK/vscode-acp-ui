@@ -2,6 +2,12 @@ import { randomUUID } from "node:crypto";
 import { basename, dirname, isAbsolute } from "node:path";
 import { type ExtensionContext, FileType, Range, Uri, WorkspaceEdit, workspace } from "vscode";
 import {
+    type AcpUiVisibleTraceItem,
+    normalizeVisibleTrace,
+    parseVisibleTraceJsonl,
+    serializeVisibleTraceJsonl,
+} from "../protocol/visibleTrace";
+import {
     ACP_UI_SESSION_FILE_SUFFIX,
     ACP_UI_SESSION_SCHEMA,
     type AcpUiSessionDocument,
@@ -12,6 +18,7 @@ import {
     serializeSessionDocument,
     sessionFileBaseNameFromTitle,
     uniqueSessionFileBaseNameFromTitle,
+    visibleTraceFileNameForSessionFile,
 } from "./acpUiSessionJsonlFormat";
 
 export {
@@ -31,6 +38,7 @@ export {
     sessionFileBaseNameFromTitle,
     shouldDeferJsonlHistoryReplay,
     uniqueSessionFileBaseNameFromTitle,
+    visibleTraceFileNameForSessionFile,
 } from "./acpUiSessionJsonlFormat";
 
 /**
@@ -92,6 +100,75 @@ export function sessionFileUriForId(
     );
 }
 
+/** Viewport-cache JSONL that sits beside a session `.acp` file. */
+export function visibleTraceFileUriForSession(sessionFileUri: Uri): Uri {
+    return Uri.joinPath(
+        sessionFileUri,
+        "..",
+        visibleTraceFileNameForSessionFile(basename(sessionFileUri.fsPath)),
+    );
+}
+
+export async function readVisibleTraceBesideSession(
+    sessionFileUri: Uri,
+): Promise<AcpUiVisibleTraceItem[]> {
+    const uri = visibleTraceFileUriForSession(sessionFileUri);
+    try {
+        const bytes = await workspace.fs.readFile(uri);
+        return parseVisibleTraceJsonl(Buffer.from(bytes).toString("utf8"));
+    } catch {
+        return [];
+    }
+}
+
+export async function writeVisibleTraceBesideSession(
+    sessionFileUri: Uri,
+    items: unknown,
+    meta?: { sessionId: string },
+): Promise<void> {
+    const uri = visibleTraceFileUriForSession(sessionFileUri);
+    await enqueueSessionFileWrite(uri.toString(), async () => {
+        const normalized = normalizeVisibleTrace(items);
+        if (normalized.length === 0) {
+            try {
+                await workspace.fs.delete(uri);
+            } catch {
+                return;
+            }
+            return;
+        }
+        const sessionId = meta?.sessionId;
+        const payload =
+            sessionId !== undefined && sessionId.length > 0
+                ? serializeVisibleTraceJsonl(normalized, {
+                      sessionId,
+                      sessionFile: basename(sessionFileUri.fsPath),
+                  })
+                : serializeVisibleTraceJsonl(normalized);
+        await workspace.fs.writeFile(uri, Buffer.from(payload, "utf8"));
+    });
+}
+
+async function moveVisibleTraceBesideSession(
+    fromSessionUri: Uri,
+    toSessionUri: Uri,
+): Promise<void> {
+    if (fromSessionUri.toString() === toSessionUri.toString()) {
+        return;
+    }
+    const from = visibleTraceFileUriForSession(fromSessionUri);
+    const to = visibleTraceFileUriForSession(toSessionUri);
+    if (from.toString() === to.toString()) {
+        return;
+    }
+    try {
+        await workspace.fs.stat(from);
+    } catch {
+        return;
+    }
+    await workspace.fs.rename(from, to, { overwrite: true });
+}
+
 /** True when the session file sits directly under the chats root (legacy layout). */
 export function isFlatSessionFileUri(uri: Uri, sessionsDir: Uri): boolean {
     return isFlatSessionFilePath(uri.fsPath, sessionsDir.fsPath);
@@ -143,6 +220,7 @@ async function ensureSessionFileInFolder(
     const dest = Uri.joinPath(sessionDir, basename(uri.fsPath));
     if (uri.toString() !== dest.toString()) {
         await workspace.fs.rename(uri, dest, { overwrite: false });
+        await moveVisibleTraceBesideSession(uri, dest);
     }
     return dest;
 }
@@ -167,6 +245,7 @@ export async function ensureSessionFileNameMatchesTitle(
         return inFolder;
     }
     await workspace.fs.rename(inFolder, targetUri, { overwrite: false });
+    await moveVisibleTraceBesideSession(inFolder, targetUri);
     return targetUri;
 }
 
@@ -346,6 +425,11 @@ export async function deleteSessionFile(context: ExtensionContext, uri: Uri): Pr
             await workspace.fs.delete(uri, { useTrash: true });
         } catch {
             // File may already be gone.
+        }
+        try {
+            await workspace.fs.delete(visibleTraceFileUriForSession(uri), { useTrash: true });
+        } catch {
+            return;
         }
         return;
     }

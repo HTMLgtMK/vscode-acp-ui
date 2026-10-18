@@ -121,11 +121,6 @@ export function registerAcpUiPanel(context: ExtensionContext, refreshChatsList: 
         () => void openNewAcpUiWithAgentPicker(context, refreshChatsList),
         context,
     );
-    registerCommandIB(
-        "ib-acp-ui.newAcpUiFromTitleMenu",
-        () => void openNewAcpUiWithAgentPicker(context, refreshChatsList),
-        context,
-    );
     registerCommandIB("ib-acp-ui.openAcpUiView", () => void openActiveAcpFileInView(), context);
     registerCommandIB(
         "ib-acp-ui.openAcpUiTextEditor",

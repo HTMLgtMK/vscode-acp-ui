@@ -20,6 +20,7 @@ import type {
   ToolCallVerbosity,
   WorkspacePathOpenTarget,
 } from "../../../src/protocol/extensionHostMessages";
+import { anchoredScrollTop } from "./anchoredScroll";
 import {
   type ChatAction,
   chatReducer,
@@ -29,6 +30,7 @@ import {
   type InitPayload,
   type TraceItem,
 } from "./chatReducer";
+import { visibleTraceTail, type VisibleTraceRow } from "./visibleTraceTail";
 import { ChatComposer } from "./components/ChatComposer";
 import { installSessionModeIndicatorThemeColors } from "./sessionModeIndicatorTheme";
 import {
@@ -60,9 +62,9 @@ export type AcpUiAppProps = {
   postRenameSession: (title: string) => void;
   postResetSession: () => void;
   postSetSessionModel: (modelId: string) => void;
-  postSetSessionAgent: (agentName: string) => void;
   postSetSessionConfigOption: (configId: string, value: string | boolean) => void;
   postSaveHistory: (entries: string[]) => void;
+  postSaveVisibleTrace?: (items: TraceItem[]) => void;
   postOpenNewChat?: () => void;
   postOpenWorkspacePath?: (path: string, options?: { target?: WorkspacePathOpenTarget }) => void;
   postPermissionResponse: (
@@ -102,9 +104,9 @@ export function AcpUiApp({
   postRenameSession,
   postResetSession,
   postSetSessionModel,
-  postSetSessionAgent,
   postSetSessionConfigOption,
   postSaveHistory,
+  postSaveVisibleTrace,
   postOpenNewChat,
   postOpenWorkspacePath,
   postPermissionResponse,
@@ -134,12 +136,22 @@ export function AcpUiApp({
   const traceRef = useRef<HTMLElement | null>(null);
   const traceContentRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef(true);
+  const scrollSnapshotRef = useRef({ scrollHeight: 0, scrollTop: 0 });
+  const historyCommitSeenRef = useRef(state.historyCommit);
+  const suppressStickToBottomRef = useRef(false);
+  const lastSavedVisibleTraceRef = useRef("");
+  const earlierOverlayRef = useRef(false);
+  const [earlierOverlay, setEarlierOverlay] = useState(false);
   const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [fileDragActive, setFileDragActive] = useState(false);
   const [composerSuggestionIndex, setComposerSuggestionIndex] = useState(0);
   const [composerAutocompleteDismissed, setComposerAutocompleteDismissed] = useState(false);
 
   const scrollTraceToBottomIfPinned = useCallback((): void => {
+    if (suppressStickToBottomRef.current) {
+      suppressStickToBottomRef.current = false;
+      return;
+    }
     const el = traceRef.current;
     if (el !== null && stickToBottomRef.current) {
       el.scrollTop = el.scrollHeight;
@@ -152,7 +164,14 @@ export function AcpUiApp({
       return;
     }
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    stickToBottomRef.current = distanceFromBottom <= 48;
+    const pinned = distanceFromBottom <= 48;
+    stickToBottomRef.current = pinned;
+    scrollSnapshotRef.current = { scrollHeight: el.scrollHeight, scrollTop: el.scrollTop };
+    const showEarlier = el.scrollTop <= 48 && !pinned;
+    if (showEarlier !== earlierOverlayRef.current) {
+      earlierOverlayRef.current = showEarlier;
+      setEarlierOverlay(showEarlier);
+    }
   }, []);
 
   extensionDispatchRef.current = (message: ExtensionMessageAfterInit) => {
@@ -183,8 +202,30 @@ export function AcpUiApp({
   useLayoutEffect(() => installSessionModeIndicatorThemeColors(), []);
 
   useLayoutEffect(() => {
-    scrollTraceToBottomIfPinned();
-  }, [state.trace, scrollTraceToBottomIfPinned]);
+    const el = traceRef.current;
+    if (el === null) {
+      return;
+    }
+    const swapped = state.historyCommit !== historyCommitSeenRef.current;
+    historyCommitSeenRef.current = state.historyCommit;
+    if (swapped) {
+      const previous = scrollSnapshotRef.current;
+      if (stickToBottomRef.current) {
+        el.scrollTop = el.scrollHeight;
+      } else {
+        suppressStickToBottomRef.current = true;
+        el.scrollTop = anchoredScrollTop({
+          stickToBottom: false,
+          previousScrollHeight: previous.scrollHeight,
+          previousScrollTop: previous.scrollTop,
+          nextScrollHeight: el.scrollHeight,
+        });
+      }
+    } else {
+      scrollTraceToBottomIfPinned();
+    }
+    scrollSnapshotRef.current = { scrollHeight: el.scrollHeight, scrollTop: el.scrollTop };
+  }, [state.trace, state.historyCommit, scrollTraceToBottomIfPinned]);
 
   useLayoutEffect(() => {
     const root = document.getElementById("root");
@@ -203,6 +244,36 @@ export function AcpUiApp({
       root.classList.remove("agent-root--narrow");
     };
   }, []);
+
+  useEffect(() => {
+    if (postSaveVisibleTrace === undefined || state.sessionHistoryLoading) {
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      const el = traceRef.current;
+      const rows: VisibleTraceRow[] = [];
+      if (el !== null) {
+        for (const node of el.querySelectorAll<HTMLElement>("[data-trace-index]")) {
+          const start = Number(node.dataset.traceIndex);
+          const end = Number(node.dataset.traceEnd ?? node.dataset.traceIndex);
+          if (!Number.isInteger(start) || !Number.isInteger(end)) {
+            continue;
+          }
+          rows.push({ start, end, height: node.offsetHeight });
+        }
+      }
+      const items = visibleTraceTail(state.trace, rows, el?.clientHeight ?? 0);
+      const serialized = JSON.stringify(items);
+      if (serialized === lastSavedVisibleTraceRef.current) {
+        return;
+      }
+      lastSavedVisibleTraceRef.current = serialized;
+      postSaveVisibleTrace(items);
+    }, 400);
+    return () => {
+      window.clearTimeout(handle);
+    };
+  }, [postSaveVisibleTrace, state.sessionHistoryLoading, state.trace]);
 
   useEffect(() => {
     const content = traceContentRef.current;
@@ -594,6 +665,11 @@ export function AcpUiApp({
           aria-label="Conversation"
           onScroll={onTraceScroll}
         >
+          {state.sessionHistoryLoading && state.trace.length > 0 && earlierOverlay ? (
+            <div className="session-history-loader-anchor">
+              <SessionHistoryLoader overlay />
+            </div>
+          ) : null}
           <div ref={traceContentRef} className="acp-ui-content-column">
             {state.sessionHistoryLoading && state.trace.length === 0 ? (
               <SessionHistoryLoader />
@@ -608,9 +684,6 @@ export function AcpUiApp({
                 setExpandAllToolOutputs(false);
               }}
             />
-            {state.sessionHistoryLoading && state.trace.length > 0 ? (
-              <SessionHistoryLoader inline />
-            ) : null}
           </div>
           <div className="agent-trace-follow-gap" aria-hidden="true" />
         </main>
@@ -688,12 +761,6 @@ export function AcpUiApp({
               sessionConfigOptions={state.sessionConfigOptions}
               sessionConfigLoading={state.sessionConfigLoading}
               modelPickerLocked={state.composerPicksLocked}
-              acpAgentSelection={state.acpAgentSelection}
-              agentPickerLocked={state.lockSessionAgent || state.composerPicksLocked}
-              onPickSessionAgent={(name) => {
-                dispatch({ type: "pickSessionAgent", agentName: name });
-                postSetSessionAgent(name);
-              }}
               hideComposerModelControls={state.hideComposerModelControls}
               promptInFlight={state.promptInFlight}
               inputBlocked={

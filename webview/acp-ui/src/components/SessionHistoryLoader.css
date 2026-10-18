@@ -25,6 +25,25 @@
   flex-shrink: 0;
 }
 
+.session-history-loader-anchor {
+  position: sticky;
+  top: 0;
+  height: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.session-history-loader--overlay {
+  position: absolute;
+  top: var(--acp-ui-space-8);
+  left: 0;
+  right: 0;
+  flex-direction: row;
+  justify-content: center;
+  padding: var(--acp-ui-space-4) 0;
+  pointer-events: none;
+}
+
 .session-history-loader--inline .session-history-loader__spinner {
   width: 14px;
   height: 14px;

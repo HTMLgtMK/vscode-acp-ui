@@ -17,7 +17,10 @@ Choose how much detail you want with the **Tool call verbosity** setting (`minim
 - **Compact** shows one summary line per tool call.
 - **Minimal** groups consecutive tool calls with a short summary and shows details for the last three only.
 
-While a session loads from the agent, a loading indicator appears until replay finishes.
+While a session loads from the agent, a saved last screen is shown when one exists.
+A loading indicator fills the panel only when that cache is empty.
+Scrolling up to the top of the saved screen can show a loading overlay that does not change the transcript height.
+Older history is applied in one step and the current scroll position is kept.
 
 Adjust **Chat content width (%)** in settings to narrow the transcript and composer column (for example `50` centers a half-width column).
 
@@ -36,7 +39,9 @@ ACP `session/update` events map in [sessionUpdateToWebviewMessages](../../../src
 - `tool_call` and `tool_call_update` to tool trace items
 - `plan` to plan blocks
 
-[joinThoughtChunks](../../../webview/acp-ui/src/chatReducer.ts#L339-L348) merges consecutive thought chunks.
+[joinThoughtChunks](../../../webview/acp-ui/src/chatReducer.ts#L439-L457) merges consecutive thought chunks.
+Client-measured thought durations (and other UI-only fields) are written to the sibling `.jsonl` beside the `.acp` session file.
+After `session/load` replay, [mergeThoughtDurationsFromCache](../../../webview/acp-ui/src/chatReducer.ts#L236-L264) copies those durations back onto the authoritative transcript.
 
 ### Trace rendering
 
@@ -53,8 +58,14 @@ ACP `session/update` events map in [sessionUpdateToWebviewMessages](../../../src
   Execute output uses [ToolCallCompactExecuteBlock](../../../webview/acp-ui/src/components/ToolCallCompactExecuteBlock.tsx).
   Summaries come from [toolCallCompactText.ts](../../../webview/acp-ui/src/toolCallCompactText.ts).
 
+[createChatStateFromInit](../../../webview/acp-ui/src/chatReducer.ts#L274-L301) seeds the trace from `init.visibleTrace`.
+While that cache is on screen and history is loading, transcript updates go to a side buffer in [chatReducer](../../../webview/acp-ui/src/chatReducer.ts#L631-L634).
+When loading ends, the buffer replaces the visible trace in one step ([sessionHistoryLoading](../../../webview/acp-ui/src/chatReducer.ts#L767-L791)).
+[anchoredScrollTop](../../../webview/acp-ui/src/anchoredScroll.ts#L1-L15) keeps the same pixels in view if you have scrolled up.
 [agent-trace-follow-gap](../../../webview/acp-ui/src/AcpUiApp.css#L46-L49) is one third of the transcript height, so follow-scroll stops above the composer.
-[SessionHistoryLoader](../../../webview/acp-ui/src/components/SessionHistoryLoader.tsx) shows while `sessionHistoryLoading` is true during load replay.
+[visibleTraceTail](../../../webview/acp-ui/src/visibleTraceTail.ts#L12-L53) chooses the rows that fill the scrollport and the webview writes them beside the session file.
+[SessionHistoryLoader](../../../webview/acp-ui/src/components/SessionHistoryLoader.tsx#L7-L26) fills the panel only when the cache is empty.
+A zero-height overlay is used at the top of a cached screen when you scroll up during load.
 
 ### Tool call verbosity setting
 

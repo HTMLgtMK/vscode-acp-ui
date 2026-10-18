@@ -18,6 +18,12 @@ function traceSegmentGapClass(
   if (previousType === undefined) {
     return "";
   }
+  if (
+    (previousType === "thought" && currentType === "tool") ||
+    (previousType === "tool" && currentType === "thought")
+  ) {
+    return " trace-segment-gap";
+  }
   const isAgentResponse = (type: TraceItem["type"]) => type === "agent";
   if (isAgentResponse(previousType) === isAgentResponse(currentType)) {
     return "";
@@ -122,6 +128,14 @@ function partitionTraceSegments(
   return segments;
 }
 
+function traceRow(start: number, end: number, child: ReactElement): ReactElement {
+  return (
+    <div key={`${start}:${end}`} data-trace-index={start} data-trace-end={end}>
+      {child}
+    </div>
+  );
+}
+
 function visibleTraceType(item: TraceItem, showThoughts: boolean): TraceItem["type"] | undefined {
   if (item.type === "thought" && !showThoughts) {
     return undefined;
@@ -156,41 +170,47 @@ export function TraceList({
         if (segment.kind === "toolExecute") {
           const gapClass = traceSegmentGapClass(previousVisibleType, "tool");
           previousVisibleType = "tool";
-          return (
+          return traceRow(
+            segment.index,
+            segment.index,
             <ToolCallCompactExecuteBlock
               key={segment.tool.toolCallId}
               className={gapClass.trim()}
               item={segment.tool}
               expandAllToolOutputs={expandAllToolOutputs}
               onCollapseExpandAll={onCollapseExpandAll}
-            />
+            />,
           );
         }
 
         if (segment.kind === "toolCompactSingle") {
           const gapClass = traceSegmentGapClass(previousVisibleType, "tool");
           previousVisibleType = "tool";
-          return (
+          return traceRow(
+            segment.index,
+            segment.index,
             <ToolCallCompactBlock
               key={segment.tool.toolCallId}
               className={gapClass.trim()}
               items={[segment.tool]}
               onOpenWorkspacePath={onOpenWorkspacePath}
-            />
+            />,
           );
         }
 
         if (segment.kind === "toolGroup") {
           const gapClass = traceSegmentGapClass(previousVisibleType, "tool");
           previousVisibleType = "tool";
-          return (
+          return traceRow(
+            segment.index,
+            segment.index + segment.tools.length - 1,
             <ToolCallCompactBlock
               key={segment.tools.map((tool) => tool.toolCallId).join(":")}
               className={gapClass.trim()}
               items={segment.tools}
               maxVisibleDetails={compactGroupMaxVisibleDetails}
               onOpenWorkspacePath={onOpenWorkspacePath}
-            />
+            />,
           );
         }
 
@@ -203,47 +223,59 @@ export function TraceList({
         previousVisibleType = currentType;
 
         if (item.type === "user") {
-          return (
+          return traceRow(
+            segment.index,
+            segment.index,
             <section
               key={segment.index}
               className={`user-prompt-bar${gapClass}`}
               aria-label="User message"
             >
               {item.text}
-            </section>
+            </section>,
           );
         }
         if (item.type === "agent") {
-          return (
+          return traceRow(
+            segment.index,
+            segment.index,
             <div key={segment.index} className={`agent-response-stream${gapClass}`}>
               <div className="agent-response-markdown" aria-label="Agent response">
                 <AgentMarkdown text={item.text} />
               </div>
-            </div>
+            </div>,
           );
         }
         if (item.type === "thought") {
-          return (
+          return traceRow(
+            segment.index,
+            segment.index,
             <AgentThoughtBlock
               key={segment.index}
               className={gapClass.trim()}
               text={item.text}
               durationMs={item.durationMs}
-            />
+            />,
           );
         }
         if (item.type === "tool") {
-          return (
+          return traceRow(
+            segment.index,
+            segment.index,
             <ToolCallBlock
               key={item.toolCallId}
               className={gapClass.trim()}
               item={item}
               expandAllToolOutputs={expandAllToolOutputs}
               onCollapseExpandAll={onCollapseExpandAll}
-            />
+            />,
           );
         }
-        return <PlanBlock key={segment.index} className={gapClass.trim()} entries={item.entries} />;
+        return traceRow(
+          segment.index,
+          segment.index,
+          <PlanBlock key={segment.index} className={gapClass.trim()} entries={item.entries} />,
+        );
       })}
     </>
   );

@@ -5,11 +5,11 @@
 ACP UI lives in VS Code as a custom editor for `*.acp` session files, an activity bar container, and a **Chats** tree view.
 
 Open **ACP UI** from the activity bar to focus the session list.
-Create a chat with **New ACP UI Chat (Default Agent)** or **Open ACP UI**.
+Create a chat from the Chats view **+**, from the `.acp` editor tab **New Chat** split control (`+ ▾`), or use **Open ACP UI**.
 `Ctrl+T` / `Cmd+T` opens a new chat when the Chats view or an ACP UI editor tab is focused.
 
 Each chat opens as an editor tab with the ACP UI webview.
-Editor title actions let you switch between the visual UI and the raw JSONL text editor.
+The editor title **…** menu includes switching between the visual UI and the raw JSONL text editor.
 
 The Chats sidebar lists sessions from the agent when `session/list` is supported, otherwise from local `.acp` files.
 Rename (`F2` when focused), delete, and refresh from the view toolbar and context menus.

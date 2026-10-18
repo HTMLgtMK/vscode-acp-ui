@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import type { WorkspacePathOpenTarget } from "../../../src/protocol/extensionHostMessages";
 import { createRoot } from "react-dom/client";
-import type { ChatState, ExtensionMessageAfterInit, InitPayload } from "./chatReducer";
+import type { ChatState, ExtensionMessageAfterInit, InitPayload, TraceItem } from "./chatReducer";
 import { AcpUiApp } from "./AcpUiApp";
 
 export type { ExtensionMessageAfterInit, InitPayload } from "./chatReducer";
@@ -22,7 +22,6 @@ export function mountChatView(
   postRenameSession: (title: string) => void,
   postResetSession: () => void,
   postSetSessionModel: (modelId: string) => void,
-  postSetSessionAgent: (agentName: string) => void,
   postSetSessionConfigOption: (configId: string, value: string | boolean) => void,
   postSaveHistory: (entries: string[]) => void,
   postPermissionResponse: (
@@ -53,6 +52,7 @@ export function mountChatView(
   initialChatState?: ChatState,
   postOpenNewChat?: () => void,
   postOpenWorkspacePath?: (path: string, options?: { target?: WorkspacePathOpenTarget }) => void,
+  postSaveVisibleTrace?: (items: TraceItem[]) => void,
 ): ChatView {
   root.replaceChildren();
   root.className = "root agent-root";
@@ -80,9 +80,9 @@ export function mountChatView(
       postRenameSession={postRenameSession}
       postResetSession={postResetSession}
       postSetSessionModel={postSetSessionModel}
-      postSetSessionAgent={postSetSessionAgent}
       postSetSessionConfigOption={postSetSessionConfigOption}
       postSaveHistory={postSaveHistory}
+      postSaveVisibleTrace={postSaveVisibleTrace}
       postOpenNewChat={postOpenNewChat}
       postOpenWorkspacePath={postOpenWorkspacePath}
       postPermissionResponse={postPermissionResponse}
