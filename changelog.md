@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- When the chat webview is narrower than 800px, collapse side padding to 4px and force the content column to full width so transcript and composer use the panel width.
 - Restyled the chat UI to the current VS Code design language.
   Added a design-token layer that mirrors the VS Code corner radius, spacing, and font size tokens.
   Chrome and message text now use the UI sans-serif font; code, diffs, and tool output stay monospace.

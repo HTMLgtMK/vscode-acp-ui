@@ -184,6 +184,24 @@ export function AcpUiApp({
     scrollTraceToBottomIfPinned();
   }, [state.trace, scrollTraceToBottomIfPinned]);
 
+  useLayoutEffect(() => {
+    const root = document.getElementById("root");
+    if (root === null) {
+      return;
+    }
+    const narrowMaxPx = 800;
+    const syncNarrow = (): void => {
+      root.classList.toggle("agent-root--narrow", root.clientWidth <= narrowMaxPx);
+    };
+    syncNarrow();
+    const observer = new ResizeObserver(syncNarrow);
+    observer.observe(root);
+    return () => {
+      observer.disconnect();
+      root.classList.remove("agent-root--narrow");
+    };
+  }, []);
+
   useEffect(() => {
     const content = traceContentRef.current;
     if (content === null) {

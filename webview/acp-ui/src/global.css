@@ -37,3 +37,15 @@ body {
   padding: var(--acp-ui-space-12) var(--acp-ui-space-16) var(--acp-ui-space-10);
   gap: 0;
 }
+
+.agent-root--narrow {
+  padding-inline: var(--acp-ui-space-4);
+}
+
+.agent-root--narrow .acp-ui-content-column {
+  width: 100%;
+}
+
+.agent-root--narrow .ib-permission-backdrop {
+  padding-inline: 0;
+}

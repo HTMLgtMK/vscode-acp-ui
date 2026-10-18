@@ -94,7 +94,8 @@ Fields:
 ```bash
 npm ci
 npm run build      # webview + extension bundle (vp pack)
-npm run watch      # extension vp pack watch + webview vp build watch
+npm run watch:extension  # vp pack --watch
+npm run watch:webview    # vp build --watch (or use the VS Code watch task)
 npm run check      # vp check (lint, format, types)
 npm run test       # vp test
 npm run lint       # vp lint
