@@ -28,6 +28,11 @@
   min-width: 0;
 }
 
+.tool-call-compact-execute-duration {
+  color: var(--vscode-descriptionForeground, var(--vscode-list-deemphasizedForeground));
+  white-space: nowrap;
+}
+
 .tool-call-compact-execute-output {
   margin: 2px 0 0;
   padding: 0 0 0 var(--acp-ui-trace-content-indent);

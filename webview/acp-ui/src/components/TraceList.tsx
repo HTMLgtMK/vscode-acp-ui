@@ -1,9 +1,12 @@
-import type { ReactElement } from "react";
+import { lazy, Suspense, type ReactElement } from "react";
 import "./TraceList.css";
 import type { ToolCallVerbosity } from "../../../../src/protocol/extensionHostMessages";
 import type { WorkspacePathOpenTarget } from "../../../../src/protocol/extensionHostMessages";
 import type { TraceItem, TraceToolItem } from "../chatReducer";
-import { AgentMarkdown } from "./AgentMarkdown";
+
+const AgentMarkdown = lazy(() =>
+  import("./AgentMarkdown").then((module) => ({ default: module.AgentMarkdown })),
+);
 import { AgentThoughtBlock } from "./AgentThoughtBlock";
 import { PlanBlock } from "./PlanBlock";
 import { ToolCallBlock } from "./ToolCallBlock";
@@ -241,7 +244,9 @@ export function TraceList({
             segment.index,
             <div key={segment.index} className={`agent-response-stream${gapClass}`}>
               <div className="agent-response-markdown" aria-label="Agent response">
-                <AgentMarkdown text={item.text} />
+                <Suspense fallback={<div className="agent-markdown-pending">{item.text}</div>}>
+                  <AgentMarkdown text={item.text} />
+                </Suspense>
               </div>
             </div>,
           );

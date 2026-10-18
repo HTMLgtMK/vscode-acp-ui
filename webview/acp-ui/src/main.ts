@@ -4,15 +4,9 @@ import type {
 } from "../../../src/protocol/extensionHostMessages";
 import "./global.css";
 import "./boot.css";
-import {
-  replayChatState,
-  createChatStateFromInit,
-  type ChatState,
-  type ExtensionMessageAfterInit,
-} from "./chatReducer";
+import type { ChatState, ExtensionMessageAfterInit, InitPayload } from "./chatReducer";
 import { createVsCodeAcpUiHost } from "./host";
-import { setCompactToolPathHome } from "./toolCallCompactText";
-import { type ChatView, type InitPayload, mountChatView } from "./ui";
+import type { ChatView } from "./ui";
 
 function isInitPayload(message: ExtensionToWebviewMessage): message is InitPayload {
   return message.type === "init";
@@ -23,20 +17,22 @@ if (!mount) {
   throw new Error("Missing #root");
 }
 
-mount.className = "root agent-root";
-mount.replaceChildren();
-const bootLine = document.createElement("div");
-bootLine.className = "acp-ui-boot";
-const bootSpinner = document.createElement("div");
-bootSpinner.className = "acp-ui-boot__spinner";
-bootSpinner.setAttribute("aria-hidden", "true");
-const bootText = document.createElement("span");
-bootText.textContent = "Connecting...";
-bootLine.append(bootSpinner, bootText);
-mount.appendChild(bootLine);
+mount.classList.add("root", "agent-root");
+if (mount.querySelector(".acp-ui-boot") === null) {
+  const bootLine = document.createElement("div");
+  bootLine.className = "acp-ui-boot";
+  const bootSpinner = document.createElement("div");
+  bootSpinner.className = "acp-ui-boot__spinner";
+  bootSpinner.setAttribute("aria-hidden", "true");
+  const bootText = document.createElement("span");
+  bootText.textContent = "Connecting...";
+  bootLine.append(bootSpinner, bootText);
+  mount.appendChild(bootLine);
+}
 
 const host = createVsCodeAcpUiHost();
 let view: ChatView | null = null;
+let mountPromise: Promise<void> | null = null;
 let initReceived = false;
 let pendingInit: InitPayload | null = null;
 let pendingHistory: AcpUiHistoryReplayEvent[] | undefined;
@@ -65,21 +61,38 @@ function applyPendingSessionHistoryLoading(state: ChatState): ChatState {
 }
 
 function tryMountView(): void {
-  if (view !== null || pendingInit === null) {
+  if (view !== null || pendingInit === null || mountPromise !== null) {
     return;
   }
   initReceived = true;
   clearTimeout(initRetryTimer);
-  if (pendingInit.homeDir !== undefined && pendingInit.homeDir.length > 0) {
-    setCompactToolPathHome(pendingInit.homeDir);
+  mountPromise = mountView().catch((error: unknown) => {
+    mountPromise = null;
+    initReceived = false;
+    console.error(error);
+  });
+}
+
+async function mountView(): Promise<void> {
+  const init = pendingInit;
+  if (init === null) {
+    return;
+  }
+  const [{ mountChatView }, { createChatStateFromInit, replayChatState }, { setCompactToolPathHome }] =
+    await Promise.all([import("./ui"), import("./chatReducer"), import("./toolCallCompactText")]);
+  if (view !== null || pendingInit === null) {
+    return;
+  }
+  if (init.homeDir !== undefined && init.homeDir.length > 0) {
+    setCompactToolPathHome(init.homeDir);
   }
   const initialChatState =
     pendingHistory !== undefined && pendingHistory.length > 0
-      ? applyPendingSessionHistoryLoading(replayChatState(pendingInit, pendingHistory))
-      : applyPendingSessionHistoryLoading(createChatStateFromInit(pendingInit));
+      ? applyPendingSessionHistoryLoading(replayChatState(init, pendingHistory))
+      : applyPendingSessionHistoryLoading(createChatStateFromInit(init));
   view = mountChatView(
     mount as HTMLElement,
-    pendingInit,
+    init,
     (body) => {
       host.post({ type: "send", body });
     },

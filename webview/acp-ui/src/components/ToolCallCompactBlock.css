@@ -104,21 +104,36 @@
   text-underline-offset: 2px;
 }
 
-.tool-call-compact-path-link .tool-call-compact-path-short,
-.tool-call-compact-path-link .tool-call-compact-path-full {
-  color: inherit;
+.acp-ui-hover-tooltip {
+  position: fixed;
+  z-index: 50;
+  visibility: hidden;
+  box-sizing: border-box;
+  max-width: min(700px, calc(100vw - 8px));
+  padding: 2px 8px;
+  overflow: hidden;
+  color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+  font-family: var(--acp-ui-font-sans);
+  font-size: 12px;
+  font-weight: var(--acp-ui-font-weight-regular);
+  line-height: 19px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  background: var(--vscode-editorHoverWidget-background, var(--vscode-editorWidget-background));
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--vscode-widget-border));
+  border-radius: var(--vscode-cornerRadius-large, 5px);
+  box-shadow: var(--vscode-shadow-lg, 0 0 12px rgba(0, 0, 0, 0.14));
+  animation: acp-ui-hover-tooltip-fade-in 0.1s linear;
 }
 
-.tool-call-compact-path-full {
-  display: none;
-}
-
-.tool-call-compact-path-link:hover .tool-call-compact-path-short {
-  display: none;
-}
-
-.tool-call-compact-path-link:hover .tool-call-compact-path-full {
-  display: inline;
+@keyframes acp-ui-hover-tooltip-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .tool-call-compact-stat--added {

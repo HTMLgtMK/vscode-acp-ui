@@ -15,21 +15,21 @@ export default defineConfig({
   },
   plugins: [react()],
   root: dir,
+  base: "./",
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
   build: {
-    lib: {
-      entry: path.join(dir, "src/main.ts"),
-      name: "AcpUi",
-      fileName: () => "main.js",
-      formats: ["iife"],
-    },
     outDir: path.join(dir, "../../media/acp-ui"),
     emptyOutDir: true,
     cssCodeSplit: false,
+    modulePreload: false,
     rollupOptions: {
+      input: path.join(dir, "src/main.ts"),
       output: {
+        format: "es",
+        entryFileNames: "main.js",
+        chunkFileNames: "chunks/[name]-[hash].js",
         assetFileNames: "main[extname]",
       },
     },

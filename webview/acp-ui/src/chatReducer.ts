@@ -11,6 +11,10 @@ import {
   writeCachedSessionConfigOptions,
   writeCachedSessionModels,
 } from "../../../src/acp/session/sessionConfigOptionsCache";
+import {
+  canonicalToolCallId,
+  resolveToolIndexByCallId,
+} from "../../../src/acp/mapping/canonicalToolCallId";
 import type {
   ExtensionToWebviewMessage,
   AcpUiSlashCommand,
@@ -19,7 +23,10 @@ import type {
   ToolCallDiffRow,
   ToolCallStatus,
 } from "../../../src/protocol/extensionHostMessages";
-import type { AcpUiVisibleTraceItem } from "../../../src/protocol/visibleTrace";
+import {
+  positiveDurationMs,
+  type AcpUiVisibleTraceItem,
+} from "../../../src/protocol/visibleTrace";
 
 export type InitPayload = Extract<ExtensionToWebviewMessage, { type: "init" }>;
 export type ExtensionMessageAfterInit = Exclude<ExtensionToWebviewMessage, { type: "init" }>;
@@ -36,6 +43,7 @@ export type TraceToolItem = {
   /** Structured diff when the agent sent `diff` content (preferred over plain `content`). */
   diffRows: ToolCallDiffRow[] | undefined;
   detailVisible: boolean;
+  durationMs?: number;
 };
 
 export type TraceItem =
@@ -82,6 +90,7 @@ export type ChatState = {
   replayToolIndexById: Map<string, number>;
   replayOpenStreamIndex: number | null;
   replayThoughtStartedAtMs: number | null;
+  replayToolStartedAtMsById: Map<string, number>;
   historyCommit: number;
   acpAgentSelection: AcpAgentSelectionState | null;
   slashCommands: AcpUiSlashCommand[];
@@ -99,6 +108,8 @@ export type ChatState = {
   /** When true, hide model/config controls in the composer footer. */
   hideComposerModelControls: boolean;
   thoughtStartedAtMs: number | null;
+  /** Client clock start for tool rows waiting on a completed/failed status. */
+  toolStartedAtMsById: Map<string, number>;
 };
 
 export type ChatAction =
@@ -198,6 +209,7 @@ export function createInitialChatState(): ChatState {
     replayToolIndexById: new Map(),
     replayOpenStreamIndex: null,
     replayThoughtStartedAtMs: null,
+    replayToolStartedAtMsById: new Map(),
     historyCommit: 0,
     acpAgentSelection: null,
     slashCommands: [],
@@ -208,7 +220,66 @@ export function createInitialChatState(): ChatState {
     composerPicksLocked: false,
     hideComposerModelControls: false,
     thoughtStartedAtMs: null,
+    toolStartedAtMsById: new Map(),
   };
+}
+
+function isTerminalToolStatus(status: ToolCallStatus): boolean {
+  return status === "completed" || status === "failed";
+}
+
+function rememberToolStartedAt(
+  toolStartedAtMsById: Map<string, number>,
+  toolCallId: string,
+  startedAtMs: number,
+): Map<string, number> {
+  const next = new Map(toolStartedAtMsById);
+  next.set(toolCallId, startedAtMs);
+  const canonicalId = canonicalToolCallId(toolCallId);
+  if (canonicalId !== toolCallId) {
+    next.set(canonicalId, startedAtMs);
+  }
+  return next;
+}
+
+function forgetToolStartedAt(
+  toolStartedAtMsById: Map<string, number>,
+  toolCallId: string,
+): Map<string, number> {
+  if (!toolStartedAtMsById.has(toolCallId) && !toolStartedAtMsById.has(canonicalToolCallId(toolCallId))) {
+    return toolStartedAtMsById;
+  }
+  const next = new Map(toolStartedAtMsById);
+  next.delete(toolCallId);
+  next.delete(canonicalToolCallId(toolCallId));
+  return next;
+}
+
+function resolveToolStartedAtMs(
+  toolStartedAtMsById: Map<string, number>,
+  toolCallId: string,
+): number | undefined {
+  return toolStartedAtMsById.get(toolCallId) ?? toolStartedAtMsById.get(canonicalToolCallId(toolCallId));
+}
+
+function resolveToolDurationMs(
+  provided: number | undefined,
+  existing: number | undefined,
+  startedAtMs: number | undefined,
+  status: ToolCallStatus,
+): number | undefined {
+  const fromProvided = positiveDurationMs(provided);
+  if (fromProvided !== undefined) {
+    return fromProvided;
+  }
+  const fromExisting = positiveDurationMs(existing);
+  if (fromExisting !== undefined) {
+    return fromExisting;
+  }
+  if (!isTerminalToolStatus(status) || startedAtMs === undefined) {
+    return undefined;
+  }
+  return positiveDurationMs(Date.now() - startedAtMs);
 }
 
 function finalizeOpenThoughtDuration(state: ChatState): ChatState {
@@ -263,6 +334,43 @@ export function mergeThoughtDurationsFromCache(
   });
 }
 
+/**
+ * Copies UI-only tool metadata (durationMs) from a cached visible-trace onto
+ * the authoritative agent-replay transcript by toolCallId.
+ */
+export function mergeToolDurationsFromCache(
+  authoritative: readonly TraceItem[],
+  metadataSource: readonly TraceItem[],
+): TraceItem[] {
+  const cachedById = new Map<string, number>();
+  for (const item of metadataSource) {
+    if (item.type !== "tool") {
+      continue;
+    }
+    const durationMs = positiveDurationMs(item.durationMs);
+    if (durationMs === undefined) {
+      continue;
+    }
+    cachedById.set(canonicalToolCallId(item.toolCallId), durationMs);
+  }
+  if (cachedById.size === 0) {
+    return authoritative.slice();
+  }
+  return authoritative.map((item) => {
+    if (item.type !== "tool") {
+      return item;
+    }
+    if (positiveDurationMs(item.durationMs) !== undefined) {
+      return item;
+    }
+    const cached = cachedById.get(canonicalToolCallId(item.toolCallId));
+    if (cached === undefined) {
+      return item;
+    }
+    return { ...item, durationMs: cached };
+  });
+}
+
 function stateAfterLeavingOpenThoughtStream(state: ChatState): ChatState {
   const open = state.openStreamIndex;
   if (open === null) {
@@ -286,6 +394,9 @@ function traceFromVisibleCache(items: readonly AcpUiVisibleTraceItem[] | undefin
   const toolIndexById = new Map<string, number>();
   for (const item of items ?? []) {
     if (item.type === "tool") {
+      const hasDiff = item.diffRows !== undefined && item.diffRows.length > 0;
+      const hasContent = item.content !== undefined && item.content.trim().length > 0;
+      const durationMs = positiveDurationMs(item.durationMs);
       const tool: TraceToolItem = {
         type: "tool",
         toolCallId: item.toolCallId,
@@ -295,9 +406,14 @@ function traceFromVisibleCache(items: readonly AcpUiVisibleTraceItem[] | undefin
         status: item.status,
         content: item.content,
         diffRows: item.diffRows,
-        detailVisible: item.detailVisible === true,
+        detailVisible: item.detailVisible === true || hasDiff || hasContent,
+        ...(durationMs !== undefined ? { durationMs } : {}),
       };
       toolIndexById.set(tool.toolCallId, trace.length);
+      const canonicalId = canonicalToolCallId(tool.toolCallId);
+      if (canonicalId !== tool.toolCallId) {
+        toolIndexById.set(canonicalId, trace.length);
+      }
       trace.push(tool);
       continue;
     }
@@ -456,6 +572,18 @@ export function joinThoughtChunks(existing: string, incoming: string): string {
   return existing + incoming;
 }
 
+function rememberToolIndex(
+  toolIndexById: Map<string, number>,
+  toolCallId: string,
+  index: number,
+): void {
+  toolIndexById.set(toolCallId, index);
+  const canonicalId = canonicalToolCallId(toolCallId);
+  if (canonicalId !== toolCallId) {
+    toolIndexById.set(canonicalId, index);
+  }
+}
+
 function appendToolCall(
   state: ChatState,
   toolCallId: string,
@@ -463,47 +591,79 @@ function appendToolCall(
   kind: string | undefined,
   status: ToolCallStatus | undefined,
   subtitle: string | undefined,
+  durationMs: number | undefined,
 ): ChatState {
   state = stateAfterLeavingOpenThoughtStream(state);
-  const existingIdx = state.toolIndexById.get(toolCallId);
+  const id = canonicalToolCallId(toolCallId);
+  const existingIdx = resolveToolIndexByCallId(state.toolIndexById, toolCallId);
   if (existingIdx !== undefined) {
     const existing = state.trace[existingIdx];
     if (existing?.type === "tool") {
+      const mergedStatus = status ?? existing.status;
       const mergedSubtitle =
         subtitle !== undefined && subtitle.trim().length > 0 ? subtitle.trim() : existing.subtitle;
+      const startedAtMs = resolveToolStartedAtMs(state.toolStartedAtMsById, id);
+      const resolvedDuration = resolveToolDurationMs(
+        durationMs,
+        existing.durationMs,
+        startedAtMs,
+        mergedStatus,
+      );
       const trace = state.trace.slice();
       trace[existingIdx] = {
         ...existing,
         title: toolDisplayTitle(kind !== undefined ? kind : existing.kind, title),
         kind: kind !== undefined ? kind : existing.kind,
-        status: status ?? existing.status,
+        status: mergedStatus,
         subtitle: mergedSubtitle,
+        ...(resolvedDuration !== undefined ? { durationMs: resolvedDuration } : {}),
       };
+      const toolIndexById = new Map(state.toolIndexById);
+      rememberToolIndex(toolIndexById, id, existingIdx);
+      let toolStartedAtMsById = state.toolStartedAtMsById;
+      if (resolvedDuration !== undefined || isTerminalToolStatus(mergedStatus)) {
+        toolStartedAtMsById = forgetToolStartedAt(toolStartedAtMsById, id);
+      } else if (startedAtMs === undefined) {
+        toolStartedAtMsById = rememberToolStartedAt(toolStartedAtMsById, id, Date.now());
+      }
       return {
         ...state,
         trace,
+        toolIndexById,
+        toolStartedAtMsById,
         openStreamIndex: null,
       };
     }
   }
+  const newStatus = status ?? "pending";
+  const startedAtMs = resolveToolStartedAtMs(state.toolStartedAtMsById, id);
+  const resolvedDuration = resolveToolDurationMs(durationMs, undefined, startedAtMs, newStatus);
   const newItem: TraceToolItem = {
     type: "tool",
-    toolCallId,
+    toolCallId: id,
     title: toolDisplayTitle(kind, title),
     kind,
     subtitle,
-    status: status ?? "pending",
+    status: newStatus,
     content: undefined,
     diffRows: undefined,
     detailVisible: false,
+    ...(resolvedDuration !== undefined ? { durationMs: resolvedDuration } : {}),
   };
   const trace = [...state.trace, newItem];
   const toolIndexById = new Map(state.toolIndexById);
-  toolIndexById.set(toolCallId, trace.length - 1);
+  rememberToolIndex(toolIndexById, id, trace.length - 1);
+  let toolStartedAtMsById = state.toolStartedAtMsById;
+  if (resolvedDuration !== undefined || isTerminalToolStatus(newStatus)) {
+    toolStartedAtMsById = forgetToolStartedAt(toolStartedAtMsById, id);
+  } else {
+    toolStartedAtMsById = rememberToolStartedAt(toolStartedAtMsById, id, Date.now());
+  }
   return {
     ...state,
     trace,
     toolIndexById,
+    toolStartedAtMsById,
     openStreamIndex: null,
   };
 }
@@ -516,8 +676,10 @@ function updateToolCall(
   subtitle: string | undefined,
   diffRows: ToolCallDiffRow[] | undefined,
   kind: string | undefined,
+  durationMs: number | undefined,
 ): ChatState {
-  const idx = state.toolIndexById.get(toolCallId);
+  const id = canonicalToolCallId(toolCallId);
+  const idx = resolveToolIndexByCallId(state.toolIndexById, toolCallId);
   if (idx !== undefined) {
     const item = state.trace[idx];
     if (item?.type !== "tool") {
@@ -535,9 +697,17 @@ function updateToolCall(
       mergedKind ??
       (mergedDiffRows !== undefined && mergedDiffRows.length > 0 ? "edit" : undefined);
     const mergedTitle = toolDisplayTitle(inferredKind, item.title);
+    const startedAtMs = resolveToolStartedAtMs(state.toolStartedAtMsById, id);
+    const resolvedDuration = resolveToolDurationMs(
+      durationMs,
+      item.durationMs,
+      startedAtMs,
+      status,
+    );
     const trace = state.trace.slice();
     trace[idx] = {
       ...item,
+      toolCallId: canonicalToolCallId(item.toolCallId),
       status,
       content: mergedContent,
       diffRows: mergedDiffRows,
@@ -545,8 +715,17 @@ function updateToolCall(
       subtitle: mergedSubtitle,
       kind: inferredKind,
       title: mergedTitle,
+      ...(resolvedDuration !== undefined ? { durationMs: resolvedDuration } : {}),
     };
-    return { ...state, trace };
+    const toolIndexById = new Map(state.toolIndexById);
+    rememberToolIndex(toolIndexById, id, idx);
+    let toolStartedAtMsById = state.toolStartedAtMsById;
+    if (resolvedDuration !== undefined || isTerminalToolStatus(status)) {
+      toolStartedAtMsById = forgetToolStartedAt(toolStartedAtMsById, id);
+    } else if (startedAtMs === undefined) {
+      toolStartedAtMsById = rememberToolStartedAt(toolStartedAtMsById, id, Date.now());
+    }
+    return { ...state, trace, toolIndexById, toolStartedAtMsById };
   }
   state = stateAfterLeavingOpenThoughtStream(state);
   const mergedContent = content;
@@ -560,9 +739,11 @@ function updateToolCall(
       : mergedDiffRows !== undefined && mergedDiffRows.length > 0
         ? "edit"
         : undefined;
+  const startedAtMs = resolveToolStartedAtMs(state.toolStartedAtMsById, id);
+  const resolvedDuration = resolveToolDurationMs(durationMs, undefined, startedAtMs, status);
   const newItem: TraceToolItem = {
     type: "tool",
-    toolCallId,
+    toolCallId: id,
     title: toolDisplayTitle(inferredKind, ""),
     kind: inferredKind,
     subtitle: subtitle !== undefined && subtitle.trim().length > 0 ? subtitle.trim() : undefined,
@@ -570,14 +751,22 @@ function updateToolCall(
     content: mergedContent,
     diffRows: mergedDiffRows,
     detailVisible,
+    ...(resolvedDuration !== undefined ? { durationMs: resolvedDuration } : {}),
   };
   const trace = [...state.trace, newItem];
   const toolIndexById = new Map(state.toolIndexById);
-  toolIndexById.set(toolCallId, trace.length - 1);
+  rememberToolIndex(toolIndexById, id, trace.length - 1);
+  let toolStartedAtMsById = state.toolStartedAtMsById;
+  if (resolvedDuration !== undefined || isTerminalToolStatus(status)) {
+    toolStartedAtMsById = forgetToolStartedAt(toolStartedAtMsById, id);
+  } else {
+    toolStartedAtMsById = rememberToolStartedAt(toolStartedAtMsById, id, Date.now());
+  }
   return {
     ...state,
     trace,
     toolIndexById,
+    toolStartedAtMsById,
     openStreamIndex: null,
   };
 }
@@ -605,8 +794,10 @@ function applySessionReset(state: ChatState): ChatState {
     replayToolIndexById: new Map(),
     replayOpenStreamIndex: null,
     replayThoughtStartedAtMs: null,
+    replayToolStartedAtMsById: new Map(),
     composerPicksLocked: false,
     thoughtStartedAtMs: null,
+    toolStartedAtMsById: new Map(),
   };
 }
 
@@ -648,6 +839,7 @@ function replayShadow(state: ChatState): ChatState {
     toolIndexById: state.replayToolIndexById,
     openStreamIndex: state.replayOpenStreamIndex,
     thoughtStartedAtMs: state.replayThoughtStartedAtMs,
+    toolStartedAtMsById: state.replayToolStartedAtMsById,
     sessionHistoryLoading: false,
     viewportCacheActive: false,
   };
@@ -660,6 +852,7 @@ function withReplayResult(state: ChatState, next: ChatState): ChatState {
     replayToolIndexById: next.toolIndexById,
     replayOpenStreamIndex: next.openStreamIndex,
     replayThoughtStartedAtMs: next.thoughtStartedAtMs,
+    replayToolStartedAtMsById: next.toolStartedAtMsById,
   };
 }
 
@@ -676,6 +869,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       errorText: null,
       openStreamIndex: null,
       toolIndexById: new Map(),
+      toolStartedAtMsById: new Map(),
       composerPicksLocked: state.lockSessionAgent === true ? state.composerPicksLocked : true,
     };
   }
@@ -791,14 +985,19 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           ...state,
           sessionHistoryLoading: false,
           viewportCacheActive: false,
-          trace: mergeThoughtDurationsFromCache(state.replayTrace, state.trace),
+          trace: mergeToolDurationsFromCache(
+            mergeThoughtDurationsFromCache(state.replayTrace, state.trace),
+            state.trace,
+          ),
           toolIndexById: state.replayToolIndexById,
           openStreamIndex: state.replayOpenStreamIndex,
           thoughtStartedAtMs: state.replayThoughtStartedAtMs,
+          toolStartedAtMsById: state.replayToolStartedAtMsById,
           replayTrace: [],
           replayToolIndexById: new Map(),
           replayOpenStreamIndex: null,
           replayThoughtStartedAtMs: null,
+          replayToolStartedAtMsById: new Map(),
           historyCommit: state.historyCommit + 1,
         };
       }
@@ -821,6 +1020,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         action.kind,
         action.status,
         action.subtitle,
+        action.durationMs,
       );
     case "updateToolCall":
       return updateToolCall(
@@ -831,6 +1031,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         action.subtitle,
         action.diffRows,
         action.kind,
+        action.durationMs,
       );
     case "slashCommands":
       return { ...state, slashCommands: action.commands };

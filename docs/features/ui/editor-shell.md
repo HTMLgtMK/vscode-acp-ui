@@ -22,14 +22,16 @@ Absolute paths and workspace-relative paths are supported.
 
 ### Extension activation
 
-[activate](../../../src/extension.ts#L10-L18) wires RPC logging, session store init, the Chats tree, custom editor registration, and panel commands.
+[activate](../../../src/extension.ts#L16-L29) wires RPC logging, session store init, the Chats tree, custom editor registration, and panel commands.
+The manifest starts the extension with `onStartupFinished` in [package.json](../../../package.json#L367-L369); commands, the Chats view, and `.acp` editors reuse the activation events VS Code generates from those contributions.
 
 ### Custom editor
 
 [acpUiCustomEditorViewType](../../../src/extension/acpUiCustomEditorProvider.ts#L20) is `ibAcpUi.session`.
 [AcpUiCustomEditorProvider.resolveCustomTextEditor](../../../src/extension/acpUiCustomEditorProvider.ts#L70-L80) hosts the webview and creates an [AcpUiSessionController](../../../src/extension/acpUiSessionController.ts#L66) per document.
 
-[getAcpUiWebviewHtml](../../../src/extension/acpUiWebviewShell.ts) loads the bundled React app from `media/acp-ui/`.
+[getAcpUiWebviewHtml](../../../src/extension/acpUiWebviewShell.ts#L11-L43) paints the connecting state in HTML and loads `main.js` as a module.
+The chat UI and the markdown renderer load as later chunks from `media/acp-ui/chunks/`.
 
 ### Chats tree view
 

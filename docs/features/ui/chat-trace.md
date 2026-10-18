@@ -15,6 +15,8 @@ Choose how much detail you want with the **Tool call verbosity** setting (`minim
 
 - **Verbose** (default) shows full file previews and diffs per tool call.
 - **Compact** shows one summary line per tool call.
+  A file name on that line stays the file name.
+  The full path appears in a tooltip after the pointer rests on the name.
 - **Minimal** groups consecutive tool calls with a short summary and shows details for the last three only.
 
 While a session loads from the agent, a saved last screen is shown when one exists.
@@ -39,9 +41,13 @@ ACP `session/update` events map in [sessionUpdateToWebviewMessages](../../../src
 - `tool_call` and `tool_call_update` to tool trace items
 - `plan` to plan blocks
 
-[joinThoughtChunks](../../../webview/acp-ui/src/chatReducer.ts#L439-L457) merges consecutive thought chunks.
-Client-measured thought durations (and other UI-only fields) are written to the sibling `.jsonl` beside the `.acp` session file.
-After `session/load` replay, [mergeThoughtDurationsFromCache](../../../webview/acp-ui/src/chatReducer.ts#L236-L264) copies those durations back onto the authoritative transcript.
+Edit tools with ACP `diff` content get line-level `diffRows` for the verbose inline preview.
+Cursor multi-line `toolCallId` values are normalized to the first line so pending and completed updates land on the same row.
+Permission requests that carry edit diffs also update that row before you approve.
+
+[joinThoughtChunks](../../../webview/acp-ui/src/chatReducer.ts#L555-L573) merges consecutive thought chunks.
+Client-measured thought and command durations (and other UI-only fields) are written to the sibling `.jsonl` beside the `.acp` session file.
+After `session/load` replay, [mergeThoughtDurationsFromCache](../../../webview/acp-ui/src/chatReducer.ts#L307-L335) and [mergeToolDurationsFromCache](../../../webview/acp-ui/src/chatReducer.ts#L341-L372) copy those durations back onto the authoritative transcript.
 
 ### Trace rendering
 
@@ -51,11 +57,13 @@ After `session/load` replay, [mergeThoughtDurationsFromCache](../../../webview/a
 - Agent text: [AgentMarkdown](../../../webview/acp-ui/src/components/AgentMarkdown.tsx#L117-L167) with [remark-gfm](https://github.com/remarkjs/remark-gfm).
   Code highlighting uses [renderHighlightedCode](../../../webview/acp-ui/src/components/codeHighlighting.tsx#L101-L120) with workbench theme colors.
 - Thoughts: [AgentThoughtBlock](../../../webview/acp-ui/src/components/AgentThoughtBlock.tsx) is a disclosure.
-  The heading stays open until it is clicked.
+  The heading stays open until it is clicked and shows a duration when known (`Thought for 1.2s`).
 - Plans: [PlanBlock](../../../webview/acp-ui/src/components/PlanBlock.tsx#L8-L40).
 - Verbose tools: [ToolCallBlock](../../../webview/acp-ui/src/components/ToolCallBlock.tsx).
 - Compact tools: [ToolCallCompactBlock](../../../webview/acp-ui/src/components/ToolCallCompactBlock.tsx).
+  [CompactPathLink](../../../webview/acp-ui/src/components/ToolCallCompactBlock.tsx#L33-L152) shows the file name and the full path in a workbench-style tooltip.
   Execute output uses [ToolCallCompactExecuteBlock](../../../webview/acp-ui/src/components/ToolCallCompactExecuteBlock.tsx).
+  Command lines show a compact duration when known (`$ ls 117ms`).
   Summaries come from [toolCallCompactText.ts](../../../webview/acp-ui/src/toolCallCompactText.ts).
 
 [createChatStateFromInit](../../../webview/acp-ui/src/chatReducer.ts#L274-L301) seeds the trace from `init.visibleTrace`.

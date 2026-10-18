@@ -54,8 +54,8 @@ See [editor-shell](../ui/editor-shell.md).
 
 ACP transcript events are not persisted in `.acp` files.
 [visibleTraceFileNameForSessionFile](../../../src/extension/acpUiSessionJsonlFormat.ts#L10-L15) names a `.jsonl` file beside the session file, with the same stem.
-That sibling file is the store for the last on-screen transcript and for UI-only metadata (for example thought `durationMs`).
-[serializeVisibleTraceJsonl](../../../src/protocol/visibleTrace.ts#L208-L229) writes an optional `meta` header that references the session id and `.acp` file name (`acpUi/visibleTrace/1`), then one trace item per line.
+That sibling file is the store for the last on-screen transcript and for UI-only metadata (for example thought and tool `durationMs`).
+[serializeVisibleTraceJsonl](../../../src/protocol/visibleTrace.ts#L222-L243) writes an optional `meta` header that references the session id and `.acp` file name (`acpUi/visibleTrace/1`), then one trace item per line.
 [writeVisibleTraceBesideSession](../../../src/extension/acpUiSessionJsonl.ts#L124-L150) stores that document, capped at the last screen.
 [readVisibleTraceBesideSession](../../../src/extension/acpUiSessionJsonl.ts#L112-L122) sends the items on `init`.
 Renaming or moving the `.acp` file moves the `.jsonl` with it.
@@ -63,7 +63,8 @@ Deleting a flat session file deletes the sibling cache.
 Deleting a session folder removes both.
 When `session/load` succeeds, agent replay is authoritative for the transcript text.
 The webview keeps the cached screen until replay finishes, then swaps the full transcript in without moving the scroll position.
-[mergeThoughtDurationsFromCache](../../../webview/acp-ui/src/chatReducer.ts#L236-L264) copies thought durations from the cached `.jsonl` onto the replayed thoughts.
+[mergeThoughtDurationsFromCache](../../../webview/acp-ui/src/chatReducer.ts#L307-L335) copies thought durations from the cached `.jsonl` onto the replayed thoughts.
+[mergeToolDurationsFromCache](../../../webview/acp-ui/src/chatReducer.ts#L341-L372) copies command durations by `toolCallId`.
 On load failure, the bridge falls back to `session/new` and the cached screen stays if replay produced no items (composer history still comes from `init.history`).
 
 ### List and delete

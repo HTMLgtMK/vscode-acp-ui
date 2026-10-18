@@ -75,6 +75,11 @@
   color: inherit;
 }
 
+.tool-call-terminal-duration {
+  color: var(--vscode-descriptionForeground, var(--vscode-list-deemphasizedForeground));
+  white-space: nowrap;
+}
+
 .tool-call-terminal-status {
   flex-shrink: 0;
   user-select: none;

@@ -70,6 +70,62 @@ describe("chatReducer", () => {
     expect(thought.durationMs).toBe(200);
   });
 
+  it("measures command duration client-side when the agent omits durationMs", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    let state = createInitialChatState();
+    state = chatReducer(state, {
+      type: "appendToolCall",
+      toolCallId: "exec1",
+      title: "Run",
+      kind: "execute",
+      status: "pending",
+      subtitle: "ls -la tests",
+    });
+    expect(state.toolStartedAtMsById.get("exec1")).toBe(Date.now());
+    vi.advanceTimersByTime(117);
+    state = chatReducer(state, {
+      type: "updateToolCall",
+      toolCallId: "exec1",
+      status: "completed",
+      content: "total 0",
+    });
+    const tool = state.trace[0];
+    expect(tool?.type).toBe("tool");
+    if (tool?.type !== "tool") {
+      return;
+    }
+    expect(tool.durationMs).toBe(117);
+    expect(state.toolStartedAtMsById.has("exec1")).toBe(false);
+  });
+
+  it("keeps agent-provided command duration over client timing", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    let state = createInitialChatState();
+    state = chatReducer(state, {
+      type: "appendToolCall",
+      toolCallId: "exec1",
+      title: "Run",
+      kind: "execute",
+      status: "in_progress",
+      subtitle: "pwd",
+    });
+    vi.advanceTimersByTime(5000);
+    state = chatReducer(state, {
+      type: "updateToolCall",
+      toolCallId: "exec1",
+      status: "completed",
+      durationMs: 88,
+    });
+    const tool = state.trace[0];
+    expect(tool?.type).toBe("tool");
+    if (tool?.type !== "tool") {
+      return;
+    }
+    expect(tool.durationMs).toBe(88);
+  });
+
   it("merges appendAgentThought chunks into one thought row", () => {
     let state = createInitialChatState();
     state = chatReducer(state, {
@@ -158,6 +214,69 @@ describe("chatReducer", () => {
     expect(row.title).toBe("Write File");
     expect(row.kind).toBe("edit");
     expect(row.subtitle).toContain("test.txt");
+  });
+
+  it("merges Cursor multi-line toolCallId update onto the pending edit row with diff preview", () => {
+    let state = createInitialChatState();
+    state = chatReducer(state, {
+      type: "appendToolCall",
+      toolCallId: "call-c4d9d88d-ab6e-48ed-9ff3-5425c287173c-4",
+      title: "Write File",
+      kind: "edit",
+      status: "pending",
+      subtitle: undefined,
+    });
+    state = chatReducer(state, {
+      type: "updateToolCall",
+      toolCallId:
+        "call-c4d9d88d-ab6e-48ed-9ff3-5425c287173c-4\nfc_p5fq8ry-6jKPYy-8ee7667a-aws_ue1_0",
+      status: "completed",
+      subtitle: "/home/econn/git/irishbruse-utilities/docs/test.md",
+      diffRows: [
+        { kind: "removed", text: "old line" },
+        { kind: "added", text: "new line" },
+      ],
+    });
+    expect(state.trace).toHaveLength(1);
+    const row = state.trace[0];
+    expect(row?.type).toBe("tool");
+    if (row?.type !== "tool") {
+      return;
+    }
+    expect(row.toolCallId).toBe("call-c4d9d88d-ab6e-48ed-9ff3-5425c287173c-4");
+    expect(row.status).toBe("completed");
+    expect(row.detailVisible).toBe(true);
+    expect(row.diffRows).toEqual([
+      { kind: "removed", text: "old line" },
+      { kind: "added", text: "new line" },
+    ]);
+    expect(row.subtitle).toContain("test.md");
+  });
+
+  it("restores detailVisible from cached diffRows when the flag was omitted", () => {
+    const state = createChatStateFromInit({
+      type: "init",
+      sessionId: "s1",
+      title: "Chat",
+      visibleTrace: [
+        {
+          type: "tool",
+          toolCallId: "write-cached",
+          title: "Write File",
+          kind: "edit",
+          status: "completed",
+          subtitle: "docs/test.md",
+          diffRows: [{ kind: "added", text: "hello" }],
+        },
+      ],
+    });
+    expect(state.trace).toHaveLength(1);
+    const row = state.trace[0];
+    expect(row?.type).toBe("tool");
+    if (row?.type !== "tool") {
+      return;
+    }
+    expect(row.detailVisible).toBe(true);
   });
 
   it("replays submit and agent text from persisted events", () => {
@@ -380,6 +499,51 @@ describe("chatReducer", () => {
       { type: "thought", text: "Thinking about hi.", durationMs: 1500 },
       { type: "agent", text: "Hello" },
     ]);
+  });
+
+  it("merges cached command durations onto agent replay when load finishes", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    const cached = [
+      { type: "user" as const, text: "list tests" },
+      {
+        type: "tool" as const,
+        toolCallId: "exec1",
+        title: "Terminal",
+        kind: "execute",
+        status: "completed" as const,
+        subtitle: "ls -la tests",
+        durationMs: 117,
+      },
+    ];
+    let state = createChatStateFromInit({
+      type: "init",
+      sessionId: "s1",
+      title: "Chat",
+      sessionHistoryLoading: true,
+      visibleTrace: cached,
+    });
+    state = chatReducer(state, { type: "appendUserText", text: "list tests" });
+    state = chatReducer(state, {
+      type: "appendToolCall",
+      toolCallId: "exec1",
+      title: "Terminal",
+      kind: "execute",
+      status: "pending",
+      subtitle: "ls -la tests",
+    });
+    state = chatReducer(state, {
+      type: "updateToolCall",
+      toolCallId: "exec1",
+      status: "completed",
+    });
+    state = chatReducer(state, { type: "sessionHistoryLoading", loading: false });
+    const tool = state.trace[1];
+    expect(tool?.type).toBe("tool");
+    if (tool?.type !== "tool") {
+      return;
+    }
+    expect(tool.durationMs).toBe(117);
   });
 
   it("ignores non-positive agent thought durations so client timing can run", () => {

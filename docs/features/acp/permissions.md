@@ -5,6 +5,7 @@
 When an agent needs approval before running a tool, ACP UI shows a permission dialog above the composer.
 The dialog names the tool (for example a shell command or file write) and lists the options the agent provided.
 Pick an option to continue, or dismiss to cancel.
+For file edits, the Write File row in the chat trace shows a small inline diff preview when the agent included the change in the permission request.
 
 While a permission prompt is open, the composer is blocked so you cannot send another message until you respond.
 
@@ -20,8 +21,9 @@ Dispose cancels all pending waiters.
 
 ### Webview dialog
 
-[extensionMessagesForPermissionRequest](../../../src/acp/mapping/sessionUpdateMapping.ts#L126-L160) builds `permissionRequest` messages.
-For execute-style tools it may also append a tool subtitle update when the shell line can be resolved.
+[extensionMessagesForPermissionRequest](../../../src/acp/mapping/sessionUpdateMapping.ts) builds `permissionRequest` messages.
+When the permission `toolCall` includes content (for example a `diff`), it also posts `updateToolCall` with `diffRows` or text so the tool row can show a preview while you decide.
+Execute-style tools still get a command subtitle when the shell line can be resolved.
 
 [chatReducer](../../../webview/acp-ui/src/chatReducer.ts#L707-L718) stores `permissionPrompt` state.
 [PermissionDialog](../../../webview/acp-ui/src/components/PermissionDialog.tsx#L18-L68) renders the modal strip.

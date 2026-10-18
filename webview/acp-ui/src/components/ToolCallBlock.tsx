@@ -1,6 +1,7 @@
 import { type KeyboardEvent, type ReactElement, useEffect, useRef, useState } from "react";
-import "./ToolCallBlock.css";
 import type { ToolCallStatus } from "../../../../src/protocol/extensionHostMessages";
+import { formatCompactDurationMs } from "../../../../src/protocol/visibleTrace";
+import "./ToolCallBlock.css";
 import type { TraceToolItem } from "../chatReducer";
 
 const collapsiblePreviewLineCount = 3;
@@ -150,6 +151,10 @@ export function ToolCallBlock({
       ? item.subtitle.trim()
       : null;
   const executeCommandLine = item.kind === "execute" ? commandLineForExecuteTitle(item) : null;
+  const executeDurationLabel =
+    item.kind === "execute" && item.durationMs !== undefined
+      ? formatCompactDurationMs(item.durationMs)
+      : "";
   const contentText = item.content ?? "";
   const contentLines = contentText.split(/\r?\n/);
   const outputCollapsible =
@@ -242,7 +247,12 @@ export function ToolCallBlock({
               <ToolCallStatusGlyph status={item.status} />
               <span className="tool-call-terminal-title tool-call-terminal-title--execute">
                 {executeCommandLine === null ? (
-                  "Terminal"
+                  <>
+                    Terminal
+                    {executeDurationLabel.length > 0 ? (
+                      <span className="tool-call-terminal-duration"> {executeDurationLabel}</span>
+                    ) : null}
+                  </>
                 ) : (
                   <>
                     <span
@@ -251,7 +261,12 @@ export function ToolCallBlock({
                     >
                       $
                     </span>
-                    <span className="tool-call-terminal-command-text">{executeCommandLine}</span>
+                    <span className="tool-call-terminal-command-text">
+                      {executeCommandLine}
+                      {executeDurationLabel.length > 0 ? (
+                        <span className="tool-call-terminal-duration"> {executeDurationLabel}</span>
+                      ) : null}
+                    </span>
                   </>
                 )}
               </span>

@@ -1,4 +1,5 @@
 import { type ReactElement, useEffect, useRef, useState } from "react";
+import { formatCompactDurationMs } from "../../../../src/protocol/visibleTrace";
 import "./ToolCallCompactExecuteBlock.css";
 import type { TraceToolItem } from "../chatReducer";
 import { executeCommandText, executeOutputPreview } from "../toolCallCompactText";
@@ -30,6 +31,8 @@ export function ToolCallCompactExecuteBlock({
   const command = executeCommandText(item);
   const { previewLines, hiddenLineCount } = executeOutputPreview(item, expanded);
   const inProgress = item.status === "pending" || item.status === "in_progress";
+  const durationLabel =
+    item.durationMs !== undefined ? formatCompactDurationMs(item.durationMs) : "";
 
   return (
     <div
@@ -49,6 +52,9 @@ export function ToolCallCompactExecuteBlock({
         </span>
         <span className="tool-call-compact-execute-command-text">
           {command.length > 0 ? command : "Terminal"}
+          {durationLabel.length > 0 ? (
+            <span className="tool-call-compact-execute-duration"> {durationLabel}</span>
+          ) : null}
         </span>
       </div>
       {previewLines.length > 0 ? (

@@ -18,6 +18,15 @@
   word-break: break-word;
 }
 
+.agent-markdown-pending {
+  font-family: var(--acp-ui-font-sans);
+  font-size: var(--acp-markdown-font-size, var(--acp-ui-font-size-body));
+  line-height: var(--acp-markdown-line-height, var(--acp-ui-line-height-body));
+  color: var(--acp-ui-text-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .agent-response-stream {
   margin: 0 0 var(--acp-ui-space-8);
   padding: 0;

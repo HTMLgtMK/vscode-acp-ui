@@ -31,8 +31,13 @@ export function getAcpUiWebviewHtml(extensionRoot: Uri, webview: Webview): strin
   <link rel="stylesheet" href="${styleUri.toString()}" />
 </head>
 <body>
-  <div id="root"></div>
-  <script src="${scriptUri.toString()}"></script>
+  <div id="root" class="root agent-root">
+    <div class="acp-ui-boot">
+      <div class="acp-ui-boot__spinner" aria-hidden="true"></div>
+      <span>Connecting...</span>
+    </div>
+  </div>
+  <script type="module" src="${scriptUri.toString()}"></script>
 </body>
 </html>`;
 }

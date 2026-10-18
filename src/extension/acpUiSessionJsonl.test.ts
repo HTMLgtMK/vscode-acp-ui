@@ -215,6 +215,38 @@ describe("visible trace jsonl", () => {
         ]);
     });
 
+    it("round-trips tool command durations and drops non-positive values", () => {
+        const items = [
+            {
+                type: "tool" as const,
+                toolCallId: "exec1",
+                title: "Terminal",
+                kind: "execute",
+                status: "completed" as const,
+                subtitle: "ls -la tests",
+                durationMs: 117,
+            },
+        ];
+        expect(parseVisibleTraceJsonl(serializeVisibleTraceJsonl(items))).toEqual(items);
+        const text = JSON.stringify({
+            type: "tool",
+            toolCallId: "exec2",
+            title: "Terminal",
+            kind: "execute",
+            status: "completed",
+            durationMs: 0,
+        });
+        expect(parseVisibleTraceJsonl(text)).toEqual([
+            {
+                type: "tool",
+                toolCallId: "exec2",
+                title: "Terminal",
+                kind: "execute",
+                status: "completed",
+            },
+        ]);
+    });
+
     it("keeps the last 40 items", () => {
         const items = Array.from({ length: 45 }, (_, index) => ({
             type: "user" as const,

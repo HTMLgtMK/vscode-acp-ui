@@ -64,7 +64,7 @@ export type CompactToolDetailParts = {
   verb: string;
   /** Visible detail text (uses short path labels). */
   detail: string;
-  /** When set, the path portion is a clickable link with hover expansion. */
+  /** When set, the path portion is a clickable link. The full path is a tooltip. */
   pathSegment?: {
     prefix?: string;
     label: string;

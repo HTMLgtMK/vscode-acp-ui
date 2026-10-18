@@ -365,7 +365,6 @@
         ]
     },
     "activationEvents": [
-        "onCustomEditor:ibAcpUi.session",
         "onStartupFinished"
     ],
     "icon": "icon.png",

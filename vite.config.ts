@@ -11,7 +11,10 @@ export default defineConfig({
         outDir: "dist",
         fixedExtension: false,
         clean: true,
-        deps: { neverBundle: ["vscode"] },
+        deps: {
+            neverBundle: ["vscode"],
+            alwaysBundle: ["@agentclientprotocol/sdk"],
+        },
         failOnWarn: false,
     },
     fmt: {

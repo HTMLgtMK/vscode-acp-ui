@@ -1,4 +1,5 @@
-import type { MouseEvent, ReactElement } from "react";
+import { type MouseEvent, type ReactElement, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { WorkspacePathOpenTarget } from "../../../../src/protocol/extensionHostMessages";
 import "./ToolCallCompactBlock.css";
 import type { TraceToolItem } from "../chatReducer";
@@ -14,6 +15,10 @@ import {
 export type OpenWorkspacePathOptions = {
   target?: WorkspacePathOpenTarget;
 };
+
+const pathTooltipDelayMs = 500;
+const pathTooltipInstantWindowMs = 200;
+let lastPathTooltipHideAt = 0;
 
 function openPathClick(
   event: MouseEvent<HTMLAnchorElement>,
@@ -32,17 +37,117 @@ function CompactPathLink({
   segment: NonNullable<CompactToolDetailParts["pathSegment"]>;
   onOpenWorkspacePath: ((path: string, options?: OpenWorkspacePathOptions) => void) | undefined;
 }): ReactElement {
+  const linkRef = useRef<HTMLAnchorElement | null>(null);
+  const tipRef = useRef<HTMLSpanElement | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const [open, setOpen] = useState(false);
+  const openRef = useRef(false);
+
+  const clearTimer = (): void => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const hide = (): void => {
+    clearTimer();
+    if (openRef.current) {
+      lastPathTooltipHideAt = Date.now();
+    }
+    openRef.current = false;
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearTimer();
+      if (openRef.current) {
+        lastPathTooltipHideAt = Date.now();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onScroll = (): void => {
+      hide();
+    };
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+    const link = linkRef.current;
+    const tip = tipRef.current;
+    if (link === null || tip === null) {
+      return;
+    }
+    const anchor = link.getBoundingClientRect();
+    const box = tip.getBoundingClientRect();
+    const gap = 4;
+    let top = anchor.bottom + gap;
+    if (top + box.height > window.innerHeight - 4) {
+      top = Math.max(4, anchor.top - gap - box.height);
+    }
+    let left = anchor.left + anchor.width / 2 - box.width / 2;
+    left = Math.min(Math.max(4, left), Math.max(4, window.innerWidth - box.width - 4));
+    tip.style.top = `${top}px`;
+    tip.style.left = `${left}px`;
+    tip.style.visibility = "visible";
+  }, [open]);
+
+  const arm = (): void => {
+    clearTimer();
+    const elapsed = Date.now() - lastPathTooltipHideAt;
+    const delay = elapsed < pathTooltipInstantWindowMs ? 0 : pathTooltipDelayMs;
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
+      const link = linkRef.current;
+      if (link === null) {
+        return;
+      }
+      const resting = link.matches(":hover") || document.activeElement === link;
+      if (!resting) {
+        return;
+      }
+      openRef.current = true;
+      setOpen(true);
+    }, delay);
+  };
+
   return (
-    <a
-      className="tool-call-compact-path-link"
-      href="#"
-      onClick={(event) => {
-        openPathClick(event, segment.openPath, segment.openTarget, onOpenWorkspacePath);
-      }}
-    >
-      <span className="tool-call-compact-path-short">{segment.label}</span>
-      <span className="tool-call-compact-path-full">{segment.title}</span>
-    </a>
+    <>
+      <a
+        ref={linkRef}
+        className="tool-call-compact-path-link"
+        href="#"
+        onClick={(event) => {
+          openPathClick(event, segment.openPath, segment.openTarget, onOpenWorkspacePath);
+        }}
+        onMouseEnter={arm}
+        onMouseLeave={hide}
+        onFocus={arm}
+        onBlur={hide}
+      >
+        {segment.label}
+      </a>
+      {open
+        ? createPortal(
+            <span ref={tipRef} className="acp-ui-hover-tooltip" role="tooltip">
+              {segment.title}
+            </span>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 

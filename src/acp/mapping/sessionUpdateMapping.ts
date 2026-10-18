@@ -4,9 +4,28 @@ import type {
     ToolCallDiffRow,
     ToolCallStatus,
 } from "../../protocol/extensionHostMessages";
+import { positiveDurationMs } from "../../protocol/visibleTrace";
 import { sessionConfigOptionsFromAgent } from "../session/sessionConfigOptions";
 import { normalizeSlashCommand } from "../slashCommandMetadata";
+import { canonicalToolCallId } from "./canonicalToolCallId";
 import { computeToolCallDiffRows } from "./toolCallDiffLines";
+
+function durationMsFromUpdatePayload(value: unknown): number | undefined {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return undefined;
+    }
+    const record = value as Record<string, unknown>;
+    const top = positiveDurationMs(record.durationMs) ?? positiveDurationMs(record.duration_ms);
+    if (top !== undefined) {
+        return top;
+    }
+    const meta = record._meta;
+    if (meta === null || typeof meta !== "object" || Array.isArray(meta)) {
+        return undefined;
+    }
+    const metaRecord = meta as Record<string, unknown>;
+    return positiveDurationMs(metaRecord.durationMs) ?? positiveDurationMs(metaRecord.duration_ms);
+}
 
 const maxToolDisplayChars = 120_000;
 
@@ -42,7 +61,7 @@ function formatContentBlockForTool(block: acp.ContentBlock): string | undefined 
 function formatDiffPieceAsFullText(piece: acp.ToolCallContent & { type: "diff" }): string {
     const pathLabel = piece.path.trim();
     const oldRaw = piece.oldText;
-    const newText = piece.newText;
+    const newText = piece.newText ?? "";
     const oldText = oldRaw ?? "";
     const isNewFile = oldRaw === null || oldRaw === undefined;
     const oldLineCount = lineCountForToolSummary(oldText);
@@ -59,7 +78,7 @@ function formatDiffPieceAsFullText(piece: acp.ToolCallContent & { type: "diff" }
 function formatDiffSummaryOnly(piece: acp.ToolCallContent & { type: "diff" }): string {
     const pathLabel = piece.path.trim();
     const oldRaw = piece.oldText;
-    const newText = piece.newText;
+    const newText = piece.newText ?? "";
     const oldText = oldRaw ?? "";
     const isNewFile = oldRaw === null || oldRaw === undefined;
     const oldLineCount = lineCountForToolSummary(oldText);
@@ -113,7 +132,8 @@ export function toolCallExecuteCommandSubtitle(call: {
 }
 
 /**
- * Webview messages for a pending `session/request_permission`: dialog plus optional tool subtitle when the shell line can be resolved (same as {@link toolCallExecuteCommandSubtitle}).
+ * Webview messages for a pending `session/request_permission`: dialog plus optional tool row update
+ * (diff preview, content, subtitle) from the permission `toolCall`.
  */
 export function extensionMessagesForPermissionRequest(
     requestId: string,
@@ -136,25 +156,42 @@ export function extensionMessagesForPermissionRequest(
             })),
         },
     ];
+    const rawToolCallId = typeof toolCall.toolCallId === "string" ? toolCall.toolCallId.trim() : "";
+    if (rawToolCallId.length === 0) {
+        return messages;
+    }
+    const toolCallId = canonicalToolCallId(rawToolCallId);
+    const parts = toolCallUpdateToDisplayParts(toolCall);
     const commandSubtitle = toolCallExecuteCommandSubtitle(toolCall);
-    if (
-        commandSubtitle !== undefined &&
-        typeof toolCall.toolCallId === "string" &&
-        toolCall.toolCallId.length > 0
-    ) {
-        const rawStatus = toolCall.status;
-        const status: ToolCallStatus =
-            rawStatus === "failed" ||
-            rawStatus === "completed" ||
-            rawStatus === "in_progress" ||
-            rawStatus === "pending"
-                ? rawStatus
-                : "pending";
+    const pathOrSearchSubtitle = toolCallUpdateSubtitleHint(toolCall);
+    const subtitle =
+        commandSubtitle ??
+        (pathOrSearchSubtitle !== undefined && pathOrSearchSubtitle.trim().length > 0
+            ? pathOrSearchSubtitle.trim()
+            : undefined);
+    const kindFromUpdate =
+        toolCall.kind !== undefined && toolCall.kind !== null && String(toolCall.kind).length > 0
+            ? String(toolCall.kind)
+            : undefined;
+    const rawStatus = toolCall.status;
+    const status: ToolCallStatus =
+        rawStatus === "failed" ||
+        rawStatus === "completed" ||
+        rawStatus === "in_progress" ||
+        rawStatus === "pending"
+            ? rawStatus
+            : "pending";
+    const hasDiffRows = parts.diffRows !== undefined && parts.diffRows.length > 0;
+    const hasContent = parts.contentText !== undefined && parts.contentText.trim().length > 0;
+    if (hasDiffRows || hasContent || subtitle !== undefined || kindFromUpdate !== undefined) {
         messages.push({
             type: "updateToolCall",
-            toolCallId: toolCall.toolCallId,
+            toolCallId,
             status,
-            subtitle: commandSubtitle,
+            ...(kindFromUpdate !== undefined ? { kind: kindFromUpdate } : {}),
+            ...(parts.contentText !== undefined ? { content: parts.contentText } : {}),
+            ...(hasDiffRows ? { diffRows: parts.diffRows } : {}),
+            ...(subtitle !== undefined ? { subtitle } : {}),
         });
     }
     return messages;
@@ -317,7 +354,7 @@ function toolCallUpdateToDisplayParts(update: acp.ToolCallUpdate): {
             if (piece.type === "diff") {
                 if (diffRows === undefined) {
                     const oldText = piece.oldText ?? "";
-                    const newText = piece.newText;
+                    const newText = piece.newText ?? "";
                     diffRows = computeToolCallDiffRows(oldText, newText);
                     segments.push(formatDiffSummaryOnly(piece));
                 } else {
@@ -720,9 +757,6 @@ export function sessionUpdateToWebviewMessages(
             const thoughtUpdate = update as unknown as {
                 content?: { type?: string; text?: string };
                 text?: string;
-                durationMs?: number;
-                duration_ms?: number;
-                _meta?: Record<string, unknown>;
             };
             const textFromBlock =
                 thoughtUpdate.content?.type === "text" ? thoughtUpdate.content.text : undefined;
@@ -730,25 +764,7 @@ export function sessionUpdateToWebviewMessages(
             if (text.length === 0) {
                 return [];
             }
-            const durationFromMeta = (record: Record<string, unknown>): number | undefined => {
-                const ms = record.durationMs ?? record.duration_ms;
-                return typeof ms === "number" && Number.isFinite(ms) && ms > 0 ? ms : undefined;
-            };
-            const durationMs =
-                typeof thoughtUpdate.durationMs === "number" &&
-                Number.isFinite(thoughtUpdate.durationMs) &&
-                thoughtUpdate.durationMs > 0
-                    ? thoughtUpdate.durationMs
-                    : typeof thoughtUpdate.duration_ms === "number" &&
-                        Number.isFinite(thoughtUpdate.duration_ms) &&
-                        thoughtUpdate.duration_ms > 0
-                      ? thoughtUpdate.duration_ms
-                      : thoughtUpdate._meta !== undefined &&
-                          typeof thoughtUpdate._meta === "object" &&
-                          thoughtUpdate._meta !== null &&
-                          !Array.isArray(thoughtUpdate._meta)
-                        ? durationFromMeta(thoughtUpdate._meta)
-                        : undefined;
+            const durationMs = durationMsFromUpdatePayload(update);
             return [
                 {
                     type: "appendAgentThought",
@@ -772,22 +788,26 @@ export function sessionUpdateToWebviewMessages(
             return [];
         }
         case "tool_call": {
-            toolKindTracking?.kindByToolId.set(update.toolCallId, update.kind);
+            const toolCallId = canonicalToolCallId(update.toolCallId);
+            toolKindTracking?.kindByToolId.set(toolCallId, update.kind);
             const subtitle = toolCallSubtitleFromToolCall(update);
+            const durationMs = durationMsFromUpdatePayload(update);
             return [
                 {
                     type: "appendToolCall",
-                    toolCallId: update.toolCallId,
+                    toolCallId,
                     title: update.title,
                     kind: update.kind,
                     status: update.status ?? undefined,
                     ...(subtitle !== undefined ? { subtitle } : {}),
+                    ...(durationMs !== undefined ? { durationMs } : {}),
                 },
             ];
         }
         case "tool_call_update": {
+            const toolCallId = canonicalToolCallId(update.toolCallId);
             const parts = toolCallUpdateToDisplayParts(update);
-            const pendingKind = toolKindTracking?.kindByToolId.get(update.toolCallId);
+            const pendingKind = toolKindTracking?.kindByToolId.get(toolCallId);
             const subtitleHint = toolCallUpdateSubtitleHint(update, {
                 pendingKind,
             });
@@ -796,12 +816,13 @@ export function sessionUpdateToWebviewMessages(
                     ? String(update.kind)
                     : undefined;
             if (kindFromUpdate !== undefined) {
-                toolKindTracking?.kindByToolId.set(update.toolCallId, kindFromUpdate);
+                toolKindTracking?.kindByToolId.set(toolCallId, kindFromUpdate);
             }
+            const durationMs = durationMsFromUpdatePayload(update);
             return [
                 {
                     type: "updateToolCall",
-                    toolCallId: update.toolCallId,
+                    toolCallId,
                     status: update.status ?? "completed",
                     ...(kindFromUpdate !== undefined ? { kind: kindFromUpdate } : {}),
                     ...(parts.contentText !== undefined ? { content: parts.contentText } : {}),
@@ -809,6 +830,7 @@ export function sessionUpdateToWebviewMessages(
                         ? { diffRows: parts.diffRows }
                         : {}),
                     ...(subtitleHint !== undefined ? { subtitle: subtitleHint } : {}),
+                    ...(durationMs !== undefined ? { durationMs } : {}),
                 },
             ];
         }

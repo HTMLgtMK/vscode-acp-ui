@@ -1,14 +1,13 @@
 import { type ReactElement, type SyntheticEvent, useState } from "react";
+import { formatCompactDurationMs } from "../../../../src/protocol/visibleTrace";
 import "./AgentThoughtBlock.css";
 
 function durationLabel(durationMs: number | undefined): string {
   if (durationMs === undefined || !Number.isFinite(durationMs) || durationMs < 0) {
     return "Thought";
   }
-  if (durationMs < 1000) {
-    return `Thought for ${Math.round(durationMs)}ms`;
-  }
-  return `Thought for ${(durationMs / 1000).toFixed(1)}s`;
+  const compact = formatCompactDurationMs(durationMs);
+  return compact.length > 0 ? `Thought for ${compact}` : "Thought";
 }
 
 /**

@@ -7,6 +7,7 @@ import type {
 import type { AcpAgentSpawnConfig } from "../domain/agentSpawnConfig";
 import { resolveAuthMethodId } from "../domain/agentSpawnConfig";
 import { AcpAgentProcess } from "../infrastructure/acpAgentProcess";
+import { canonicalToolCallId } from "../mapping/canonicalToolCallId";
 import {
     createToolCallKindTracking,
     extensionMessagesForPermissionRequest,
@@ -856,7 +857,7 @@ export class AcpSessionBridge {
     private trackReadToolCallForFilesystemCorrelation(update: acp.SessionUpdate): void {
         if (update.sessionUpdate === "tool_call") {
             if (update.kind === "read") {
-                this.readToolCallQueue.push(update.toolCallId);
+                this.readToolCallQueue.push(canonicalToolCallId(update.toolCallId));
             }
             return;
         }
@@ -867,11 +868,12 @@ export class AcpSessionBridge {
         if (status !== "completed" && status !== "failed") {
             return;
         }
-        const kind = update.kind ?? this.toolCallKindTracking.kindByToolId.get(update.toolCallId);
+        const toolCallId = canonicalToolCallId(update.toolCallId);
+        const kind = update.kind ?? this.toolCallKindTracking.kindByToolId.get(toolCallId);
         if (kind !== "read") {
             return;
         }
-        this.readToolCallQueue = this.readToolCallQueue.filter((id) => id !== update.toolCallId);
+        this.readToolCallQueue = this.readToolCallQueue.filter((id) => id !== toolCallId);
     }
 
     private handleHostFilesystemRead(path: string): void {

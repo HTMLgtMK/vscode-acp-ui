@@ -37,6 +37,7 @@ export type AcpUiVisibleTraceItem =
           content?: string;
           diffRows?: ToolCallDiffRow[];
           detailVisible?: boolean;
+          durationMs?: number;
       }
     | { type: "plan"; entries: PlanEntry[] };
 
@@ -58,6 +59,17 @@ function optionalString(value: unknown): string | undefined {
 /** Positive finite millisecond durations only (0 / negative are treated as missing). */
 export function positiveDurationMs(value: unknown): number | undefined {
     return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+/** Compact clock label for thought and command durations (for example `450ms`, `1.2s`). */
+export function formatCompactDurationMs(durationMs: number): string {
+    if (!Number.isFinite(durationMs) || durationMs < 0) {
+        return "";
+    }
+    if (durationMs < 1000) {
+        return `${Math.round(durationMs)}ms`;
+    }
+    return `${(durationMs / 1000).toFixed(1)}s`;
 }
 
 function parseDiffRows(value: unknown): ToolCallDiffRow[] | undefined {
@@ -168,6 +180,7 @@ function parseVisibleTraceItem(value: unknown): AcpUiVisibleTraceItem | null {
     const content = optionalString(value.content);
     const diffRows = parseDiffRows(value.diffRows);
     const detailVisible = value.detailVisible === true;
+    const durationMs = positiveDurationMs(value.durationMs);
     return {
         type: "tool",
         toolCallId: value.toolCallId,
@@ -178,6 +191,7 @@ function parseVisibleTraceItem(value: unknown): AcpUiVisibleTraceItem | null {
         ...(content !== undefined ? { content } : {}),
         ...(diffRows !== undefined ? { diffRows } : {}),
         ...(detailVisible ? { detailVisible } : {}),
+        ...(durationMs !== undefined ? { durationMs } : {}),
     };
 }
 
@@ -203,7 +217,7 @@ export function normalizeVisibleTrace(entries: unknown): AcpUiVisibleTraceItem[]
 
 /**
  * One optional meta header line, then one trace item per line.
- * UI-only fields (for example thought `durationMs`) live here; the `.acp` file stays the session document.
+ * UI-only fields (for example thought and tool `durationMs`) live here; the `.acp` file stays the session document.
  */
 export function serializeVisibleTraceJsonl(
     items: readonly AcpUiVisibleTraceItem[],
