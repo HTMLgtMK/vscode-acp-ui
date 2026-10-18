@@ -4,6 +4,7 @@
 
 The chat trace is the scrolling conversation panel above the composer.
 It shows your messages, streaming agent replies, reasoning thoughts, tool calls, file diffs, terminal output, and structured agent plans.
+Click a thought heading to hide or show that block.
 
 Agent text renders as theme-aware markdown with colored headings, GFM tables, and syntax-highlighted fenced code blocks.
 Each code block has a copy button.
@@ -43,7 +44,8 @@ ACP `session/update` events map in [sessionUpdateToWebviewMessages](../../../src
 
 - Agent text: [AgentMarkdown](../../../webview/acp-ui/src/components/AgentMarkdown.tsx#L117-L167) with [remark-gfm](https://github.com/remarkjs/remark-gfm).
   Code highlighting uses [renderHighlightedCode](../../../webview/acp-ui/src/components/codeHighlighting.tsx#L101-L120) with workbench theme colors.
-- Thoughts: [AgentThoughtBlock](../../../webview/acp-ui/src/components/AgentThoughtBlock.tsx).
+- Thoughts: [AgentThoughtBlock](../../../webview/acp-ui/src/components/AgentThoughtBlock.tsx) is a disclosure.
+  The heading stays open until it is clicked.
 - Plans: [PlanBlock](../../../webview/acp-ui/src/components/PlanBlock.tsx#L8-L40).
 - Verbose tools: [ToolCallBlock](../../../webview/acp-ui/src/components/ToolCallBlock.tsx).
 - Compact tools: [ToolCallCompactBlock](../../../webview/acp-ui/src/components/ToolCallCompactBlock.tsx).

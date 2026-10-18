@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { type ReactElement, type SyntheticEvent, useState } from "react";
 import "./AgentThoughtBlock.css";
 
 function durationLabel(durationMs: number | undefined): string {
@@ -10,6 +10,7 @@ function durationLabel(durationMs: number | undefined): string {
 
 /**
  * Renders a compact model-thought chunk as a dim terminal-style block.
+ * The heading toggles the thought text.
  */
 export function AgentThoughtBlock({
   text,
@@ -20,17 +21,28 @@ export function AgentThoughtBlock({
   durationMs?: number;
   className?: string;
 }): ReactElement {
+  const [expanded, setExpanded] = useState(true);
+
+  const onToggle = (event: SyntheticEvent<HTMLDetailsElement>): void => {
+    setExpanded(event.currentTarget.open);
+  };
+
   return (
-    <section
+    <details
       className={
         className === undefined || className.length === 0
           ? "agent-thought-chunk"
           : `agent-thought-chunk ${className}`
       }
+      open={expanded}
+      onToggle={onToggle}
       aria-label="Agent thought"
     >
-      <div className="agent-thought-chunk-title">{durationLabel(durationMs)}</div>
+      <summary className="agent-thought-chunk-title">
+        <span className="agent-thought-chunk-chevron" aria-hidden="true" />
+        {durationLabel(durationMs)}
+      </summary>
       <pre className="agent-thought-chunk-body">{text}</pre>
-    </section>
+    </details>
   );
 }

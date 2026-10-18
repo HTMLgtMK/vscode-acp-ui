@@ -12,11 +12,51 @@
 }
 
 .agent-thought-chunk-title {
+  display: flex;
+  align-items: center;
+  gap: var(--acp-ui-space-6);
   margin: 0 0 var(--acp-ui-space-6);
   font-size: var(--acp-ui-font-size-x-small);
   line-height: var(--acp-ui-line-height-heading);
   color: var(--acp-ui-text-secondary);
   font-weight: var(--acp-ui-font-weight-semibold);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.agent-thought-chunk-title::-webkit-details-marker {
+  display: none;
+}
+
+.agent-thought-chunk-title::marker {
+  content: "";
+}
+
+.agent-thought-chunk-title:focus-visible {
+  outline: var(--acp-ui-stroke-width) solid var(--acp-ui-focus-border);
+  outline-offset: 2px;
+  border-radius: var(--acp-ui-radius-sm);
+}
+
+.agent-thought-chunk:not([open]) .agent-thought-chunk-title {
+  margin-bottom: 0;
+}
+
+.agent-thought-chunk-chevron {
+  position: relative;
+  top: -2px;
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+  border-left: 5px solid currentColor;
+  transform: rotate(0deg);
+}
+
+.agent-thought-chunk[open] .agent-thought-chunk-chevron {
+  transform: rotate(90deg);
 }
 
 .agent-thought-chunk-body {
