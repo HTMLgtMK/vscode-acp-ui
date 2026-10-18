@@ -72,7 +72,13 @@
   line-height: 1.357em;
   padding: 0.1em 0.35em;
   border-radius: var(--acp-ui-radius-sm);
-  background-color: transparent;
+  background-color: var(
+    --acp-markdown-inline-code-background,
+    var(
+      --vscode-textPreformat-background,
+      color-mix(in srgb, var(--vscode-textCodeBlock-background) 85%, transparent)
+    )
+  );
   border: 1px solid
     var(
       --acp-markdown-inline-code-border,

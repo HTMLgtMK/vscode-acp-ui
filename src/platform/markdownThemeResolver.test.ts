@@ -40,6 +40,7 @@ describe("buildMarkdownThemeCssVariables", () => {
         expect(vars["--acp-markdown-h2-foreground"]).toBe("#4ec9b0");
         expect(vars["--acp-markdown-h3-foreground"]).toBe("#569cd6");
         expect(vars["--acp-markdown-inline-code-foreground"]).toBe("#ce9178");
+        expect(vars["--acp-markdown-inline-code-background"]).toBe("#3C3C3C");
         expect(vars["--acp-markdown-inline-code-border"]).toBe("#454545");
     });
 
@@ -118,6 +119,13 @@ describe("applyMarkdownInlineEditorColors", () => {
         expect(vars["--acp-markdown-inline-code-foreground"]).toBe("#ce9178");
         applyMarkdownInlineEditorColors(vars, { inlineCode: "#C678DD" });
         expect(vars["--acp-markdown-inline-code-foreground"]).toBe("#C678DD");
+    });
+
+    it("overrides theme-derived inline code background", () => {
+        const vars = buildMarkdownThemeCssVariables(darkModernLikeTheme);
+        expect(vars["--acp-markdown-inline-code-background"]).toBe("#3C3C3C");
+        applyMarkdownInlineEditorColors(vars, { inlineCodeBackground: "#1E1E1E" });
+        expect(vars["--acp-markdown-inline-code-background"]).toBe("#1E1E1E");
     });
 });
 

@@ -135,6 +135,10 @@ export function applyMarkdownInlineEditorColors(
     if (inlineCode !== undefined && inlineCode.length > 0) {
         variables["--acp-markdown-inline-code-foreground"] = inlineCode;
     }
+    const inlineCodeBackground = colors.inlineCodeBackground;
+    if (inlineCodeBackground !== undefined && inlineCodeBackground.length > 0) {
+        variables["--acp-markdown-inline-code-background"] = inlineCodeBackground;
+    }
     const inlineCodeBorder = colors.inlineCodeBorder;
     if (inlineCodeBorder !== undefined && inlineCodeBorder.length > 0) {
         variables["--acp-markdown-inline-code-border"] = inlineCodeBorder;
@@ -184,6 +188,11 @@ export function buildMarkdownThemeCssVariables(
         colors["textPreformat.foreground"] ?? editorForeground,
     );
     variables["--acp-markdown-inline-code-foreground"] = inlineCodeForeground;
+
+    const textPreformatBackground = colors["textPreformat.background"];
+    if (textPreformatBackground !== undefined && textPreformatBackground.length > 0) {
+        variables["--acp-markdown-inline-code-background"] = textPreformatBackground;
+    }
 
     const textPreformatBorder = colors["textPreformat.border"];
     if (textPreformatBorder !== undefined && textPreformatBorder.length > 0) {
@@ -261,6 +270,7 @@ export const WEBVIEW_MARKDOWN_THEME_VARIABLE_NAMES = [
     "--acp-markdown-h3-foreground",
     "--acp-markdown-h4-foreground",
     "--acp-markdown-inline-code-foreground",
+    "--acp-markdown-inline-code-background",
     "--acp-markdown-inline-code-border",
     "--vscode-symbolIcon-keywordForeground",
     "--vscode-stringForeground",

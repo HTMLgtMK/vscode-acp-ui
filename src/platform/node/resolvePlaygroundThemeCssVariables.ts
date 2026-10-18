@@ -219,6 +219,11 @@ function workbenchColorCssVariables(colors: Record<string, string>): Record<stri
         variables["--vscode-textPreformat-foreground"] = textPreformatForeground;
     }
 
+    const textPreformatBackground = colors["textPreformat.background"];
+    if (textPreformatBackground !== undefined) {
+        variables["--vscode-textPreformat-background"] = textPreformatBackground;
+    }
+
     return variables;
 }
 
