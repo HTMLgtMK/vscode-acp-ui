@@ -43,6 +43,11 @@
   scrollbar-gutter: stable;
 }
 
+.agent-trace-follow-gap {
+  height: calc(100% / 3);
+  pointer-events: none;
+}
+
 .acp-ui-composer-stack {
   position: relative;
   flex-shrink: 0;

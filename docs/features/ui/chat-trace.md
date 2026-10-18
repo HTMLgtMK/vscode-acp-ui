@@ -4,6 +4,7 @@
 
 The chat trace is the scrolling conversation panel above the composer.
 It shows your messages, streaming agent replies, reasoning thoughts, tool calls, file diffs, terminal output, and structured agent plans.
+While the panel follows new text, empty space equal to one third of the panel height stays above the composer.
 Click a thought heading to hide or show that block.
 
 Agent text renders as theme-aware markdown with colored headings, GFM tables, and syntax-highlighted fenced code blocks.
@@ -52,6 +53,7 @@ ACP `session/update` events map in [sessionUpdateToWebviewMessages](../../../src
   Execute output uses [ToolCallCompactExecuteBlock](../../../webview/acp-ui/src/components/ToolCallCompactExecuteBlock.tsx).
   Summaries come from [toolCallCompactText.ts](../../../webview/acp-ui/src/toolCallCompactText.ts).
 
+[agent-trace-follow-gap](../../../webview/acp-ui/src/AcpUiApp.css#L46-L49) is one third of the transcript height, so follow-scroll stops above the composer.
 [SessionHistoryLoader](../../../webview/acp-ui/src/components/SessionHistoryLoader.tsx) shows while `sessionHistoryLoading` is true during load replay.
 
 ### Tool call verbosity setting

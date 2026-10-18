@@ -213,6 +213,10 @@ export function AcpUiApp({
       scrollTraceToBottomIfPinned();
     });
     observer.observe(content);
+    const trace = traceRef.current;
+    if (trace !== null) {
+      observer.observe(trace);
+    }
     return () => {
       observer.disconnect();
     };
@@ -608,6 +612,7 @@ export function AcpUiApp({
               <SessionHistoryLoader inline />
             ) : null}
           </div>
+          <div className="agent-trace-follow-gap" aria-hidden="true" />
         </main>
         <div className="acp-ui-composer-stack">
           <div className="acp-ui-content-column">
