@@ -1,4 +1,5 @@
 .composer-frame {
+  position: relative;
   flex-shrink: 0;
   margin-top: auto;
   border: var(--acp-ui-stroke-width) solid var(--acp-ui-border-panel);
@@ -113,10 +114,9 @@
 
 .composer-slash-menu {
   position: absolute;
-  bottom: 100%;
-  left: var(--acp-ui-space-8);
-  right: var(--acp-ui-space-8);
-  margin-bottom: var(--acp-ui-space-4);
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
   max-height: min(320px, 42vh);
   overflow-y: auto;
   scrollbar-color: var(

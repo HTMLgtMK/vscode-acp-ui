@@ -58,6 +58,8 @@ export type ChatComposerProps = {
   autocompleteDismissed: boolean;
   draft: string;
   onDraftChange: (value: string) => void;
+  /** Hide autocomplete until the draft changes (Escape / outside click). */
+  onDismissAutocomplete: () => void;
   onPickSessionModel: (modelId: string) => void;
   onPickSessionConfigOption: (configId: string, value: string | boolean) => void;
   onSubmit: () => void;
@@ -86,6 +88,7 @@ export function ChatComposer({
   autocompleteDismissed,
   draft,
   onDraftChange,
+  onDismissAutocomplete,
   onPickSessionModel,
   onPickSessionConfigOption,
   onSubmit,
@@ -103,12 +106,37 @@ export function ChatComposer({
       workspaceFiles,
     });
   }, [draft, slashCommands, workspaceFiles]);
+  const autocompleteOpen = autocomplete !== null && !autocompleteDismissed;
   const activeIndex =
     autocomplete !== null ? wrapIndex(suggestionIndex, autocomplete.items.length) : 0;
   const activeItemRef = useRef<HTMLButtonElement | null>(null);
+  const slashMenuRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     activeItemRef.current?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, autocomplete?.items.length]);
+  useEffect(() => {
+    if (!autocompleteOpen) {
+      return;
+    }
+    const onPointerDown = (event: MouseEvent): void => {
+      const menu = slashMenuRef.current;
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (menu !== null && menu.contains(target)) {
+        return;
+      }
+      if (target instanceof Element && target.closest(".composer-input") !== null) {
+        return;
+      }
+      onDismissAutocomplete();
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, [autocompleteOpen, onDismissAutocomplete]);
   const configState = useMemo(
     () => (sessionConfigOptions !== null ? { options: sessionConfigOptions } : null),
     [sessionConfigOptions],
@@ -192,6 +220,62 @@ export function ChatComposer({
   const activityDisplay = inflight ? activityLabel : workspacePathHint;
   return (
     <footer className="composer-frame">
+      {autocomplete !== null && autocompleteOpen ? (
+        <div
+          ref={slashMenuRef}
+          className="composer-slash-menu"
+          role="listbox"
+          aria-label={autocomplete.mode === "slash" ? "Slash commands" : "Workspace files"}
+        >
+          {(() => {
+            let itemIndex = 0;
+            return autocomplete.groups.map((group) => (
+              <Fragment key={group.label ?? "built-in"}>
+                {group.label !== undefined ? (
+                  <div className="composer-slash-group" role="presentation" aria-hidden="true">
+                    {group.label}
+                  </div>
+                ) : null}
+                {group.items.map((item) => {
+                  const index = itemIndex;
+                  itemIndex += 1;
+                  return (
+                    <button
+                      key={item.key}
+                      ref={index === activeIndex ? activeItemRef : undefined}
+                      type="button"
+                      role="option"
+                      aria-selected={index === activeIndex}
+                      className={
+                        index === activeIndex
+                          ? "composer-slash-item composer-slash-item--active"
+                          : "composer-slash-item"
+                      }
+                      onClick={() => {
+                        onDraftChange(
+                          draft.replace(
+                            /(?:^|\s)(?:\/[^\s]*|@[^\s]*)$/,
+                            (match) =>
+                              `${match.startsWith(" ") ? " " : ""}${item.insertText.trimEnd()}`,
+                          ),
+                        );
+                      }}
+                    >
+                      <span className="composer-slash-name">{item.primary}</span>
+                      {item.secondary !== undefined && item.secondary.length > 0 ? (
+                        <span className="composer-slash-desc">{item.secondary}</span>
+                      ) : null}
+                      {item.source !== undefined && item.source.length > 0 ? (
+                        <span className="composer-slash-source">{item.source}</span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </Fragment>
+            ));
+          })()}
+        </div>
+      ) : null}
       <div className="composer-top-bar">
         <div
           className={
@@ -206,61 +290,6 @@ export function ChatComposer({
         <span className="composer-top-bar-hint">/ commands · @ files</span>
       </div>
       <div className="composer-input-wrap">
-        {autocomplete !== null && !autocompleteDismissed ? (
-          <div
-            className="composer-slash-menu"
-            role="listbox"
-            aria-label={autocomplete.mode === "slash" ? "Slash commands" : "Workspace files"}
-          >
-            {(() => {
-              let itemIndex = 0;
-              return autocomplete.groups.map((group) => (
-                <Fragment key={group.label ?? "built-in"}>
-                  {group.label !== undefined ? (
-                    <div className="composer-slash-group" role="presentation" aria-hidden="true">
-                      {group.label}
-                    </div>
-                  ) : null}
-                  {group.items.map((item) => {
-                    const index = itemIndex;
-                    itemIndex += 1;
-                    return (
-                      <button
-                        key={item.key}
-                        ref={index === activeIndex ? activeItemRef : undefined}
-                        type="button"
-                        role="option"
-                        aria-selected={index === activeIndex}
-                        className={
-                          index === activeIndex
-                            ? "composer-slash-item composer-slash-item--active"
-                            : "composer-slash-item"
-                        }
-                        onClick={() => {
-                          onDraftChange(
-                            draft.replace(
-                              /(?:^|\s)(?:\/[^\s]*|@[^\s]*)$/,
-                              (match) =>
-                                `${match.startsWith(" ") ? " " : ""}${item.insertText.trimEnd()}`,
-                            ),
-                          );
-                        }}
-                      >
-                        <span className="composer-slash-name">{item.primary}</span>
-                        {item.secondary !== undefined && item.secondary.length > 0 ? (
-                          <span className="composer-slash-desc">{item.secondary}</span>
-                        ) : null}
-                        {item.source !== undefined && item.source.length > 0 ? (
-                          <span className="composer-slash-source">{item.source}</span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </Fragment>
-              ));
-            })()}
-          </div>
-        ) : null}
         <textarea
           ref={composerInputRef}
           className="composer-input"

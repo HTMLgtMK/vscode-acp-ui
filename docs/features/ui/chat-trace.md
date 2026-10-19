@@ -4,7 +4,7 @@
 
 The chat trace is the scrolling conversation panel above the composer.
 It shows your messages, streaming agent replies, reasoning thoughts, tool calls, file diffs, terminal output, and structured agent plans.
-While the panel follows new text, empty space equal to one third of the panel height stays above the composer.
+While the panel follows new text, empty space equal to 10% of the panel height stays above the composer.
 Click a thought heading to hide or show that block.
 
 Agent text renders as theme-aware markdown with colored headings, GFM tables, and syntax-highlighted fenced code blocks.
@@ -70,7 +70,7 @@ After `session/load` replay, [mergeThoughtDurationsFromCache](../../../webview/a
 While that cache is on screen and history is loading, transcript updates go to a side buffer in [chatReducer](../../../webview/acp-ui/src/chatReducer.ts#L631-L634).
 When loading ends, the buffer replaces the visible trace in one step ([sessionHistoryLoading](../../../webview/acp-ui/src/chatReducer.ts#L767-L791)).
 [anchoredScrollTop](../../../webview/acp-ui/src/anchoredScroll.ts#L1-L15) keeps the same pixels in view if you have scrolled up.
-[agent-trace-follow-gap](../../../webview/acp-ui/src/AcpUiApp.css#L46-L49) is one third of the transcript height, so follow-scroll stops above the composer.
+[agent-trace-follow-gap](../../../webview/acp-ui/src/AcpUiApp.css#L46-L49) is 10% of the transcript height, so follow-scroll stops above the composer.
 [visibleTraceTail](../../../webview/acp-ui/src/visibleTraceTail.ts#L12-L53) chooses the rows that fill the scrollport and the webview writes them beside the session file.
 [SessionHistoryLoader](../../../webview/acp-ui/src/components/SessionHistoryLoader.tsx#L7-L26) fills the panel only when the cache is empty.
 A zero-height overlay is used at the top of a cached screen when you scroll up during load.

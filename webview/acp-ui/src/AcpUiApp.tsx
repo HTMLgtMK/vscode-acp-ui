@@ -393,6 +393,11 @@ export function AcpUiApp({
     setComposerAutocompleteDismissed(false);
   }, []);
 
+  const onDismissAutocomplete = useCallback((): void => {
+    setComposerSuggestionIndex(0);
+    setComposerAutocompleteDismissed(true);
+  }, []);
+
   const submit = (): void => {
     if (state.permissionPrompt !== null) {
       return;
@@ -505,8 +510,7 @@ export function AcpUiApp({
 
     if (autocompleteActive && event.key === "Escape") {
       event.preventDefault();
-      setComposerSuggestionIndex(0);
-      setComposerAutocompleteDismissed(true);
+      onDismissAutocomplete();
       return;
     }
 
@@ -774,6 +778,7 @@ export function AcpUiApp({
               autocompleteDismissed={composerAutocompleteDismissed}
               draft={draft}
               onDraftChange={onDraftChange}
+              onDismissAutocomplete={onDismissAutocomplete}
               onPickSessionModel={(modelId) => {
                 dispatch({ type: "pickSessionModel", modelId });
                 postSetSessionModel(modelId);
