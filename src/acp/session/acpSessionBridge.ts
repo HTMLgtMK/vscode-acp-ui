@@ -84,6 +84,7 @@ export function shouldLoadRuntimeSession(
 export class AcpSessionBridge {
     private agentProcess: AcpAgentProcess;
     private acpSessionId: string | null = null;
+    private initResponse: acp.InitializeResponse | null = null;
     private prompting = false;
     private lastModelSelection: AcpUiSessionModelSelection | null = null;
     private lastConfigOptions: AcpUiSessionConfigState | null = null;
@@ -511,6 +512,7 @@ export class AcpSessionBridge {
     async connect(options?: AcpSessionConnectOptions): Promise<void> {
         this.seedConfigOptionsBeforeConnect();
         const init = await this.agentProcess.start();
+        this.initResponse = init;
         await this.ensureAuthenticated(init);
         const runtimeSessionId = options?.runtimeSessionId?.trim();
         const useLoad = shouldLoadRuntimeSession(
@@ -875,20 +877,44 @@ export class AcpSessionBridge {
         this.readToolCallQueue = [];
         this.prompting = true;
         try {
-            const result = await this.agentProcess.prompt(
-                this.acpSessionId,
-                text,
-            );
-            this.postToWebview({
-                type: "turnComplete",
-                stopReason: result.stopReason,
-            });
+            await this.promptOnce(text);
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            this.postToWebview({ type: "error", message });
+            if (
+                this.acpSessionId !== null &&
+                this.initResponse !== null &&
+                isSessionSupersededError(err)
+            ) {
+                try {
+                    const created = await this.newSessionWithAuthRetry(
+                        this.initResponse,
+                    );
+                    this.acpSessionId = created.sessionId;
+                    await this.promptOnce(text);
+                    return;
+                } catch (retryErr: unknown) {
+                    this.postToWebview({
+                        type: "error",
+                        message: errorMessage(retryErr),
+                    });
+                    return;
+                }
+            }
+            this.postToWebview({ type: "error", message: errorMessage(err) });
         } finally {
             this.prompting = false;
         }
+    }
+
+    private async promptOnce(text: string): Promise<void> {
+        const sessionId = this.acpSessionId;
+        if (sessionId === null) {
+            throw new Error("Agent session not connected.");
+        }
+        const result = await this.agentProcess.prompt(sessionId, text);
+        this.postToWebview({
+            type: "turnComplete",
+            stopReason: result.stopReason,
+        });
     }
 
     /** Cancels the current prompt turn, if one is in progress. */
@@ -918,6 +944,7 @@ export class AcpSessionBridge {
         void this.logoutBestEffort();
         this.agentProcess.dispose();
         this.acpSessionId = null;
+        this.initResponse = null;
     }
 
     private async ensureAuthenticated(
@@ -985,6 +1012,7 @@ export class AcpSessionBridge {
 
     private handleAgentProcessExit(): void {
         this.acpSessionId = null;
+        this.initResponse = null;
         this.prompting = false;
         this.postToWebview({
             type: "error",
@@ -1054,6 +1082,34 @@ export class AcpSessionBridge {
     }
 }
 
+function errorMessage(err: unknown): string {
+    return err instanceof Error ? err.message : String(err);
+}
+
+// GOWORKER 把 -32000 复用于会话状态错误（busy / superseded / read-only / unknown），
+// 不能只看 code，否则一次互踢会被误判成需要重新认证。
+function isSessionStateError(err: unknown): boolean {
+    return (
+        err instanceof RequestError &&
+        err.code === -32000 &&
+        /session busy|no longer active|read-only|unknown session|not supported/i.test(
+            err.message,
+        )
+    );
+}
+
+function isSessionSupersededError(err: unknown): boolean {
+    return (
+        err instanceof RequestError &&
+        err.code === -32000 &&
+        /no longer active/i.test(err.message)
+    );
+}
+
 function isAuthRequiredError(err: unknown): boolean {
-    return err instanceof RequestError && err.code === -32000;
+    return (
+        err instanceof RequestError &&
+        err.code === -32000 &&
+        !isSessionStateError(err)
+    );
 }

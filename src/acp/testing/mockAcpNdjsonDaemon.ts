@@ -12,11 +12,15 @@ export type RecordedAcpDaemonMessage = {
     id?: number | string;
 };
 
+export type MockAcpPromptResult =
+    | string
+    | { error: { code: number; message: string } };
+
 export type MockAcpNdjsonDaemonOptions = {
     /** `agentCapabilities` returned from `initialize`. */
     agentCapabilities?: acp.AgentCapabilities;
     /** `sessionId` returned from `session/new`. */
-    sessionId?: string;
+    sessionId?: string | (() => string);
     /**
      * Invoked on `session/prompt`. May stream `session/update` notifications before
      * returning the `stopReason` for the prompt response.
@@ -24,7 +28,7 @@ export type MockAcpNdjsonDaemonOptions = {
     onPrompt?: (
         daemon: MockAcpNdjsonDaemon,
         params: { sessionId: string },
-    ) => string | Promise<string>;
+    ) => MockAcpPromptResult | Promise<MockAcpPromptResult>;
     /** Invoked on the `session/cancel` notification. */
     onCancel?: (
         daemon: MockAcpNdjsonDaemon,
@@ -210,24 +214,35 @@ export class MockAcpNdjsonDaemon {
             return;
         }
         if (method === acp.AGENT_METHODS.session_new) {
+            const configured = this.options.sessionId;
+            const sessionId =
+                typeof configured === "function"
+                    ? configured()
+                    : (configured ?? defaultSessionId);
             this.send(socket, {
                 jsonrpc: "2.0",
                 id,
-                result: {
-                    sessionId: this.options.sessionId ?? defaultSessionId,
-                },
+                result: { sessionId },
             });
             return;
         }
         if (method === acp.AGENT_METHODS.session_prompt) {
             const sessionId = sessionIdFromParams(params);
-            const stopReason =
+            const outcome =
                 (await this.options.onPrompt?.(this, { sessionId })) ??
                 "end_turn";
+            if (typeof outcome !== "string") {
+                this.send(socket, {
+                    jsonrpc: "2.0",
+                    id,
+                    error: outcome.error,
+                });
+                return;
+            }
             this.send(socket, {
                 jsonrpc: "2.0",
                 id,
-                result: { stopReason },
+                result: { stopReason: outcome },
             });
             return;
         }
