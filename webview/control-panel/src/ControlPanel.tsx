@@ -89,9 +89,14 @@ function leafCount(nodes: TreeNode[]): number {
     return total;
 }
 
+/** 会话行（chats / projects 两棵树共用同一套渲染）：不画状态字形（◇/● 已废），
+ * run 在飞时由 gw-node-spin 旋转环表达。绝不为不同树复制第二套行渲染。 */
+function isSessionRow(node: TreeNode, kind: TreeKind): boolean {
+    return !node.group && (kind === "chat" || kind === "project");
+}
+
 function glyphFor(node: TreeNode, kind: TreeKind, selected: boolean): string {
-    // 会话行不画状态字形（◇/● 已废——宿主给 running 时由 gw-node-spin 表达）。
-    if (kind === "chat" && !node.group) {
+    if (isSessionRow(node, kind)) {
         return "";
     }
     return node.state ? STATE_GLYPH[node.state] : "◇";
@@ -234,12 +239,14 @@ const NodeRow = memo(
                 ) : (
                     <span className="gw-node-twist" />
                 )}
-                {node.group ? null : kind === "chat" && node.running ? (
-                    // run 在飞：旋转标识（无字形，纯 CSS 动画，读屏走 aria-label 状态词）。
-                    <span
-                        className="gw-node-icon gw-node-spin"
-                        aria-hidden={true}
-                    />
+                {isSessionRow(node, kind) ? (
+                    node.running ? (
+                        // run 在飞：旋转标识（无字形，纯 CSS 动画，读屏走 aria-label 状态词）。
+                        <span className="gw-node-icon gw-node-spin" aria-hidden={true} />
+                    ) : (
+                        // 无状态字形：占位保持行高与对齐一致。
+                        <span className="gw-node-icon" aria-hidden={true} />
+                    )
                 ) : node.group ? null : (
                     <span
                         className="gw-node-icon"
