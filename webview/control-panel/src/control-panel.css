@@ -3,6 +3,10 @@
    .gw-conn* / .gw-foot* 同一套观感，画法是那份稿子的落地。 */
 
 @import url("../../acp-ui/src/tokens.css");
+/* 内置三套皮肤跟在 tokens 后面：`:root` 与 `[data-skin=…]` 特异度相同，后加载的赢。 */
+@import url("../../acp-ui/src/skins/terminal.css");
+@import url("../../acp-ui/src/skins/vscode.css");
+@import url("../../acp-ui/src/skins/light-paper.css");
 
 /* 行高跟着字号走：基准 12px 时算出来仍是原来的 22 / 34，放大字号才不会裁字。 */
 :root {
@@ -21,6 +25,13 @@ body {
     height: 100%;
 }
 
+/* 挂载节点也要满高：宿主 webview 的 HTML 只有一个裸 <div id="root">，父高是 auto，
+   .gw-shell 的 height:100% 便退化成 auto —— 三树一长就把 connection 和底部顶出可视区，
+   ⚙ 点不到。模板里不能写 inline style（style-src 不放），只能在这补。 */
+#root {
+    height: 100%;
+}
+
 body {
     font-family: var(--gw-font-ui);
     font-size: var(--gw-text-md);
@@ -31,6 +42,7 @@ body {
 }
 
 .gw-shell {
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -184,6 +196,17 @@ button {
     cursor: default;
 }
 
+/* 只给读屏的一份文字：颜色、灯和符号它们拿不到，界面上又不能再多一列。
+   1px + clip 而不是 display:none —— 后者整棵子树都不在无障碍树里，念不到。 */
+.gw-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .gw-node {
     display: flex;
     align-items: center;
@@ -233,9 +256,6 @@ button {
     min-width: 0;
     font-family: var(--gw-font-item);
     text-align: left;
-    background: transparent;
-    border: none;
-    padding: 0;
     flex: 1 1 auto;
 }
 .gw-node-meta {
@@ -254,13 +274,67 @@ button {
     flex: none;
     gap: 1px;
 }
+/* 键盘焦点环（FR-005）。用 :focus 而不是 :focus-visible —— ↑↓ 与 type-ahead 是我们
+   调 el.focus() 程序化挪焦点的，浏览器不一定把这当成"可见意图"，:focus-visible 会没环。
+   描 inside 一圈，免得被 .gw-node 的左边框和相邻行裁掉。
+   环画在整行上：行自己就是 treeitem 和焦点落点（一棵树一个 Tab 停靠点），
+   不再是里面那个行标。 */
+.gw-node:focus,
+.gw-node-twist:focus,
+.gw-hicon:focus,
+.gw-iconbtn:focus {
+    outline: 1px solid var(--gw-focus);
+    outline-offset: -2px;
+}
+/* 键盘选中一行也要顶出动作钮（SC-006：键盘得覆盖鼠标能做的全部动作项）。
+   没有这条的话动作钮是 display:none。它们自己不吃 Tab（一棵树一个停靠点，Tab 落在整行上），
+   键盘那条路是菜单键 → ↑↓ → Enter 的浮层（T018）。:focus-within 而不是 :focus ——
+   点完动作钮焦点停在钮上，用 :focus 会让这一行的钮当场消失。 */
 .gw-node:hover .gw-node-act,
-.gw-node[data-hover] .gw-node-act {
+.gw-node[data-hover] .gw-node-act,
+.gw-node:focus-within .gw-node-act {
     display: flex;
 }
 .gw-node:hover .gw-node-meta,
-.gw-node[data-hover] .gw-node-meta {
+.gw-node[data-hover] .gw-node-meta,
+.gw-node:focus-within .gw-node-meta {
     display: none;
+}
+/* 右键浮层（T018 / FR-006）。绝对定位在 .gw-shell 里，位置由 placeMenu 夹过界。
+   配色全走皮肤既有的 overlay 两枚 token，不新造第三套。 */
+.gw-menu {
+    position: absolute;
+    z-index: 20;
+    min-width: 148px;
+    max-width: 268px;
+    padding: var(--gw-space-1) 0;
+    background: var(--gw-surface-overlay);
+    border: var(--gw-border-w) solid var(--gw-border-strong);
+    border-radius: var(--gw-radius);
+    box-shadow: var(--gw-shadow-overlay);
+}
+.gw-menu-item {
+    display: block;
+    width: 100%;
+    padding: var(--gw-space-1) var(--gw-space-3);
+    font: inherit;
+    font-size: var(--gw-text-sm);
+    text-align: left;
+    color: var(--gw-text);
+    background: none;
+    border: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gw-menu-item:hover {
+    background: var(--gw-surface-hover);
+}
+/* 同一条 :focus 口径：↑↓ 是程序化挪焦点，:focus-visible 会没环。 */
+.gw-menu-item:focus {
+    outline: 1px solid var(--gw-focus);
+    outline-offset: -2px;
+    background: var(--gw-surface-hover);
 }
 .gw-node[data-state="running"] .gw-node-icon,
 .gw-node-icon[data-state="running"] {
@@ -292,6 +366,8 @@ button {
     border-top: var(--gw-border-w) solid var(--gw-border);
     padding: var(--gw-space-2) var(--gw-space-3) var(--gw-space-3);
     display: grid;
+    /* 轨道默认是 auto，会被最长那行撑破：不锁成 minmax(0,1fr)，行尾的省略号永远不触发。 */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--gw-space-1);
 }
 .gw-conn-head {
@@ -320,6 +396,33 @@ button {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* 缺了这行 flex 项不会收缩到内容宽度以下：断开时那句长错误会把行尾顶出面板。 */
+    min-width: 0;
+}
+/* 连接行的动作：与树行同一套「hover/聚焦时把行尾 meta 换成按钮」的退让。
+   常驻会把 socket 文件名挤掉，而断连时那个文件名正是要看的东西。 */
+.gw-conn-act {
+    display: none;
+    flex: none;
+    gap: 1px;
+    margin-left: auto;
+}
+.gw-conn-row:hover .gw-conn-act,
+.gw-conn-row:focus-within .gw-conn-act {
+    display: flex;
+}
+.gw-conn-row:hover .gw-conn-val,
+.gw-conn-row:focus-within .gw-conn-val {
+    display: none;
+}
+.gw-conn-row button {
+    cursor: default;
+}
+/* 连接行本身不足一个行高，按钮跟着缩，否则两行 connection 能把面板顶高一截。 */
+.gw-conn-row .gw-iconbtn {
+    width: var(--gw-text-lg);
+    height: var(--gw-text-lg);
+    font-size: var(--gw-text-2xs);
 }
 .gw-led {
     width: 6px;
@@ -386,7 +489,6 @@ button {
     border: none;
     padding: 0;
     cursor: default;
-    opacity: 0.75;
 }
 
 /* ─── 空态 / 断连态 ──────────────────────────────────────── */
@@ -433,9 +535,35 @@ button {
     border: none;
     border-radius: var(--gw-radius);
     font-family: var(--gw-font-mono);
+    /* 图标与文案由同一个 action 给（glyph + label），并排时留一点间距。 */
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gw-space-2);
 }
 .gw-btn[data-secondary] {
     color: var(--gw-text);
     background: var(--gw-surface-sunken);
     border: var(--gw-border-w) solid var(--gw-border);
+}
+
+/* 会话行 run 在飞的旋转标识（Plan B）：纯边框环 + 旋转动画，随主题色。 */
+.gw-node-icon.gw-node-spin {
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--gw-text-dim, currentColor);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: gw-spin 0.9s linear infinite;
+}
+
+@keyframes gw-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-node-icon.gw-node-spin {
+        animation-duration: 2.4s;
+    }
 }
