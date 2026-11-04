@@ -96,15 +96,6 @@ export class AcpSessionBridge {
         string,
         (outcome: acp.RequestPermissionResponse) => void
     >();
-    private nextCursorExtensionRequestId = 0;
-    private askQuestionWaiters = new Map<
-        string,
-        (result: Record<string, unknown>) => void
-    >();
-    private createPlanWaiters = new Map<
-        string,
-        (result: Record<string, unknown>) => void
-    >();
 
     constructor(
         private readonly config: AcpAgentSpawnConfig,
@@ -118,8 +109,7 @@ export class AcpSessionBridge {
                 ? { transport: host.createAgentTransport(config) }
                 : {}),
             requestPermission: (params) => this.queuePermissionRequest(params),
-            extMethod: (method, params) =>
-                this.handleExtensionMethod(method, params),
+            extMethod: (method) => this.handleExtensionMethod(method),
             extNotification: (method, params) =>
                 this.handleExtensionNotification(method, params),
             hostFilesystem: host.hostFilesystem,
@@ -178,34 +168,6 @@ export class AcpSessionBridge {
         resolve({ outcome: { outcome: "cancelled" } });
     }
 
-    handleCursorAskQuestionResponse(
-        message: Extract<
-            WebviewToExtensionMessage,
-            { type: "cursorAskQuestionResponse" }
-        >,
-    ): void {
-        const resolve = this.askQuestionWaiters.get(message.requestId);
-        if (resolve === undefined) {
-            return;
-        }
-        this.askQuestionWaiters.delete(message.requestId);
-        resolve({ outcome: message.outcome });
-    }
-
-    handleCursorCreatePlanResponse(
-        message: Extract<
-            WebviewToExtensionMessage,
-            { type: "cursorCreatePlanResponse" }
-        >,
-    ): void {
-        const resolve = this.createPlanWaiters.get(message.requestId);
-        if (resolve === undefined) {
-            return;
-        }
-        this.createPlanWaiters.delete(message.requestId);
-        resolve({ outcome: message.outcome });
-    }
-
     private cancelPendingPermissions(): void {
         for (const resolve of this.permissionWaiters.values()) {
             resolve({ outcome: { outcome: "cancelled" } });
@@ -213,178 +175,15 @@ export class AcpSessionBridge {
         this.permissionWaiters.clear();
     }
 
-    private cancelPendingExtensionRequests(): void {
-        for (const resolve of this.askQuestionWaiters.values()) {
-            resolve({ outcome: { outcome: "cancelled" } });
-        }
-        this.askQuestionWaiters.clear();
-        for (const resolve of this.createPlanWaiters.values()) {
-            resolve({ outcome: { outcome: "cancelled" } });
-        }
-        this.createPlanWaiters.clear();
-    }
-
-    private nextCursorRequestId(prefix: string): string {
-        const next = this.nextCursorExtensionRequestId++;
-        return `${prefix}-${next}`;
-    }
-
     private async handleExtensionMethod(
         method: string,
-        params: Record<string, unknown>,
     ): Promise<Record<string, unknown>> {
+        // FR-019：弹窗已撤，没有回话方 —— 当场判拒，不留挂到 dispose 的 waiter。
         if (method === "cursor/ask_question") {
-            const requestId = this.nextCursorRequestId("cursor-ask-question");
-            const questionsRaw = params.questions;
-            const questions = Array.isArray(questionsRaw)
-                ? questionsRaw
-                      .map((q) => {
-                          if (q === null || typeof q !== "object") {
-                              return null;
-                          }
-                          const record = q as Record<string, unknown>;
-                          const id =
-                              typeof record.id === "string"
-                                  ? record.id.trim()
-                                  : "";
-                          const prompt =
-                              typeof record.prompt === "string"
-                                  ? record.prompt.trim()
-                                  : "";
-                          const optionsRaw = record.options;
-                          const options = Array.isArray(optionsRaw)
-                              ? optionsRaw
-                                    .map((o) => {
-                                        if (
-                                            o === null ||
-                                            typeof o !== "object"
-                                        ) {
-                                            return null;
-                                        }
-                                        const option = o as Record<
-                                            string,
-                                            unknown
-                                        >;
-                                        const optionId =
-                                            typeof option.id === "string"
-                                                ? option.id.trim()
-                                                : "";
-                                        const label =
-                                            typeof option.label === "string"
-                                                ? option.label.trim()
-                                                : "";
-                                        if (
-                                            optionId.length === 0 ||
-                                            label.length === 0
-                                        ) {
-                                            return null;
-                                        }
-                                        return { id: optionId, label };
-                                    })
-                                    .filter(
-                                        (
-                                            o,
-                                        ): o is { id: string; label: string } =>
-                                            o !== null,
-                                    )
-                              : [];
-                          if (
-                              id.length === 0 ||
-                              prompt.length === 0 ||
-                              options.length === 0
-                          ) {
-                              return null;
-                          }
-                          return {
-                              id,
-                              prompt,
-                              options,
-                              ...(record.allowMultiple === true
-                                  ? { allowMultiple: true }
-                                  : {}),
-                          };
-                      })
-                      .filter((q): q is NonNullable<typeof q> => q !== null)
-                : [];
-            if (questions.length === 0) {
-                return { outcome: { outcome: "cancelled" } };
-            }
-            this.postToWebview({
-                type: "cursorAskQuestionRequest",
-                requestId,
-                ...(typeof params.title === "string" &&
-                params.title.trim().length > 0
-                    ? { title: params.title.trim() }
-                    : {}),
-                questions,
-            });
-            return await new Promise((resolve) => {
-                this.askQuestionWaiters.set(requestId, resolve);
-            });
+            return { outcome: { outcome: "cancelled" } };
         }
         if (method === "cursor/create_plan") {
-            const requestId = this.nextCursorRequestId("cursor-create-plan");
-            const plan =
-                typeof params.plan === "string" ? params.plan.trim() : "";
-            if (plan.length === 0) {
-                return { outcome: { outcome: "cancelled" } };
-            }
-            const todos = Array.isArray(params.todos)
-                ? (params.todos as unknown[])
-                      .map((todo) => {
-                          if (todo === null || typeof todo !== "object") {
-                              return null;
-                          }
-                          const record = todo as Record<string, unknown>;
-                          if (
-                              typeof record.id !== "string" ||
-                              typeof record.content !== "string" ||
-                              typeof record.status !== "string"
-                          ) {
-                              return null;
-                          }
-                          const statusRaw = record.status;
-                          if (
-                              statusRaw !== "pending" &&
-                              statusRaw !== "in_progress" &&
-                              statusRaw !== "completed" &&
-                              statusRaw !== "cancelled"
-                          ) {
-                              return null;
-                          }
-                          const status:
-                              | "pending"
-                              | "in_progress"
-                              | "completed"
-                              | "cancelled" = statusRaw;
-                          return {
-                              id: record.id,
-                              content: record.content,
-                              status,
-                          };
-                      })
-                      .filter(
-                          (todo): todo is NonNullable<typeof todo> =>
-                              todo !== null,
-                      )
-                : [];
-            this.postToWebview({
-                type: "cursorCreatePlanRequest",
-                requestId,
-                ...(typeof params.name === "string" && params.name.length > 0
-                    ? { name: params.name }
-                    : {}),
-                ...(typeof params.overview === "string" &&
-                params.overview.length > 0
-                    ? { overview: params.overview }
-                    : {}),
-                plan,
-                todos,
-                ...(params.isProject === true ? { isProject: true } : {}),
-            });
-            return await new Promise((resolve) => {
-                this.createPlanWaiters.set(requestId, resolve);
-            });
+            return { outcome: { outcome: "cancelled" } };
         }
         return {};
     }
@@ -920,7 +719,6 @@ export class AcpSessionBridge {
     /** Cancels the current prompt turn, if one is in progress. */
     async cancel(): Promise<void> {
         this.cancelPendingPermissions();
-        this.cancelPendingExtensionRequests();
         if (!this.prompting || !this.acpSessionId) {
             return;
         }
@@ -940,7 +738,6 @@ export class AcpSessionBridge {
     /** Kills the agent process and releases resources. */
     dispose(): void {
         this.cancelPendingPermissions();
-        this.cancelPendingExtensionRequests();
         void this.logoutBestEffort();
         this.agentProcess.dispose();
         this.acpSessionId = null;
@@ -962,7 +759,7 @@ export class AcpSessionBridge {
         } catch (err: unknown) {
             const detail = err instanceof Error ? err.message : String(err);
             throw new Error(
-                `Authentication failed for agent "${this.config.name}" (methodId="${methodId}"): ${detail}. Try running agent login or set ib-acp-ui.agents authMethodId.`,
+                `Authentication failed for agent "${this.config.name}" (methodId="${methodId}"): ${detail}. Try running agent login or set authMethodId in the host's spawn config.`,
             );
         }
     }
