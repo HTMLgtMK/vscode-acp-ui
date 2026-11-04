@@ -9,6 +9,7 @@ import { PlanBlock } from "./PlanBlock";
 import { ToolCallBlock } from "./ToolCallBlock";
 import { ToolCallCompactBlock } from "./ToolCallCompactBlock";
 import { ToolCallCompactExecuteBlock } from "./ToolCallCompactExecuteBlock";
+import { UnknownUpdateBlock } from "./UnknownUpdateBlock";
 import {
     compactGroupMaxVisibleDetails,
     isCompactGroupableTool,
@@ -147,6 +148,7 @@ function visibleTraceType(
  */
 export function TraceList({
     items,
+    completed,
     showThoughts,
     expandAllToolOutputs,
     toolCallVerbosity,
@@ -154,6 +156,8 @@ export function TraceList({
     onOpenWorkspacePath,
 }: {
     items: TraceItem[];
+    /** 宿主报过 `taskTraceCompleted`：尾部补一行 `── worker trace completed ──`。 */
+    completed: boolean;
     showThoughts: boolean;
     expandAllToolOutputs: boolean;
     toolCallVerbosity: ToolCallVerbosity;
@@ -269,6 +273,7 @@ export function TraceList({
                             className={gapClass.trim()}
                             text={item.text}
                             durationMs={item.durationMs}
+                            streaming={item.streaming === true}
                         />
                     );
                 }
@@ -283,14 +288,28 @@ export function TraceList({
                         />
                     );
                 }
+                if (item.type === "plan") {
+                    return (
+                        <PlanBlock
+                            key={segment.index}
+                            className={gapClass.trim()}
+                            entries={item.entries}
+                        />
+                    );
+                }
                 return (
-                    <PlanBlock
+                    <UnknownUpdateBlock
                         key={segment.index}
                         className={gapClass.trim()}
-                        entries={item.entries}
+                        item={item}
                     />
                 );
             })}
+            {completed ? (
+                <p className="trace-completed" data-testid="trace-completed">
+                    ── worker trace completed ──
+                </p>
+            ) : null}
         </>
     );
 }

@@ -1,12 +1,23 @@
 import type { AcpUiSessionConfigOption } from "../acp/session/sessionConfigOptions";
 import type { AcpUiSessionModelSelection } from "../acp/session/sessionModels";
+import type {
+    ControlPanelDownMessage,
+    ControlPanelUpMessage,
+} from "./controlPanelMessages";
+import {
+    isControlPanelUpMessageType,
+    tryParseControlPanelUpMessage,
+} from "./controlPanelMessages";
 
 /** Replayable session log events (user submit + post-init extension messages). */
 export type AcpUiHistoryReplayEvent =
     | { type: "submit"; body: string }
     | Exclude<
           ExtensionToWebviewMessage,
-          { type: "init" } | { type: "historyReplay" }
+          | { type: "init" }
+          | { type: "historyReplay" }
+          // 控制面板快照是"当前状态"不是"发生过什么"，不进聊天回放流。
+          | { type: "controlPanel" }
       >;
 
 /** Plan entry forwarded from an ACP agent plan update. */
@@ -70,35 +81,12 @@ export type WebviewToExtensionMessage =
           configId: string;
           value: string | boolean;
       }
-    | { type: "setSessionAgent"; agentName: string }
     | {
           type: "permissionResponse";
           requestId: string;
           selectedOptionId: string;
       }
     | { type: "permissionResponse"; requestId: string; cancelled: true }
-    | {
-          type: "cursorAskQuestionResponse";
-          requestId: string;
-          outcome:
-              | {
-                    outcome: "answered";
-                    answers: Array<{
-                        questionId: string;
-                        selectedOptionIds: string[];
-                    }>;
-                }
-              | { outcome: "skipped"; reason?: string }
-              | { outcome: "cancelled" };
-      }
-    | {
-          type: "cursorCreatePlanResponse";
-          requestId: string;
-          outcome:
-              | { outcome: "accepted"; planUri?: string }
-              | { outcome: "rejected"; reason?: string }
-              | { outcome: "cancelled" };
-      }
     /** Persists composer Arrow Up / Down user message history for this session. */
     | { type: "saveHistory"; entries: string[] }
     /** Open a new chat with the default agent (extension host handles creation). */
@@ -108,7 +96,24 @@ export type WebviewToExtensionMessage =
           type: "openWorkspacePath";
           path: string;
           target?: WorkspacePathOpenTarget;
-      };
+      }
+    /** 自绘控制面板的回传动作，见 `controlPanelMessages.ts`。 */
+    | ControlPanelUpMessage;
+
+/**
+ * 任务详情面板 header 的几栏（T028）。宿主只给字段，渲的位置与样式全在面板侧：
+ * 这块在 trace 组件外面、由 `AcpUiApp` 画。聊天面板不发这条，整块就不存在。
+ */
+export interface TaskHeaderInfo {
+    /** 面板上显示的任务标题（宿主取 prompt 的第一行）。 */
+    title: string;
+    taskId: string;
+    kind?: string;
+    worker?: string;
+    branch?: string;
+    /** daemon 的 task status（working / awaiting_review / done …），只当文本用。 */
+    status?: string;
+}
 
 /**
  * Messages sent from the extension host to a webview (or other UI host).
@@ -125,17 +130,22 @@ export type ExtensionToWebviewMessage =
           workspaceFiles?: string[];
           agentVersionLabel?: string;
           acpAgentName?: string;
-          /** Display names from `ib-acp-ui.agents` for the agent picker. */
+          /** 宿主给出的 agent 显示名列表（standalone 取配置里那几条），缺省第一条为当前。 */
           availableAcpAgents?: string[];
           /** Optional `--vscode-*` overrides applied on `document.documentElement`. */
           vscodeThemeVariables?: Record<string, string>;
           sessionModels?: AcpUiSessionModelSelection;
           history?: string[];
           /**
-           * When true, the agent picker is read-only (agent was chosen when the chat was created).
-           * The model picker may still change until the first user message in standalone mode.
+           * When true，模型/配置选择器过了首条消息也仍可改（agent 在建会话时就定死了）。
+           * 缺省 false：发出首条消息后选择器锁住。
            */
           lockSessionAgent?: boolean;
+          /**
+           * 观察用的面板（任务详情）：同一套 trace 组件，但输入区只读。
+           * textarea 打不进、Send 走不通，输入区里写明 reply / resume 尚未开放。
+           */
+          composerReadOnly?: boolean;
           /** Cached config options applied on mount before the agent connects. */
           sessionConfigOptionsSeed?: AcpUiSessionConfigOption[];
           /** Hides composer model/config controls (standalone demo and screenshots). */
@@ -178,11 +188,6 @@ export type ExtensionToWebviewMessage =
           type: "sessionHistoryLoading";
           loading: boolean;
       }
-    | {
-          type: "acpAgentSelection";
-          currentAgentName: string;
-          availableAgentNames: string[];
-      }
     | { type: "appendAgentThought"; text: string; durationMs?: number }
     | { type: "appendAgentText"; text: string }
     | { type: "appendUserText"; text: string }
@@ -211,25 +216,12 @@ export type ExtensionToWebviewMessage =
           options: { optionId: string; name: string }[];
       }
     | {
-          type: "cursorAskQuestionRequest";
+          /**
+           * 这条请求已经作废（宿主 150s 兜底到点、换任务、面板没连上就被判拒）：
+           * 审批卡收掉，不再等用户 —— 裁决已在 daemon 侧发生，这里只是把界面同步干净。
+           */
+          type: "permissionDismiss";
           requestId: string;
-          title?: string;
-          questions: Array<{
-              id: string;
-              prompt: string;
-              options: Array<{ id: string; label: string }>;
-              allowMultiple?: boolean;
-          }>;
-      }
-    | {
-          type: "cursorCreatePlanRequest";
-          requestId: string;
-          name?: string;
-          overview?: string;
-          plan: string;
-          todos: TodoEntry[];
-          isProject?: boolean;
-          phases?: Array<{ name: string; todos: TodoEntry[] }>;
       }
     | {
           type: "cursorUpdateTodos";
@@ -256,13 +248,43 @@ export type ExtensionToWebviewMessage =
       }
     | { type: "slashCommands"; commands: AcpUiSlashCommand[] }
     | { type: "appendPlan"; entries: PlanEntry[] }
+    /**
+     * 映射层认不出的 `session/update`（`usage_update`、以后新增的类型…）。
+     * 以前这些直接 `return []` 丢掉，现在带原文到界面上折叠展示（FR-011）。
+     */
+    | {
+          type: "appendUnknownSessionUpdate";
+          sessionUpdate: string;
+          rawJson: string;
+      }
     | { type: "commandFeedback"; message: string }
     | { type: "turnComplete"; stopReason: string }
+    /**
+     * 这条任务的 trace 流走完了（宿主那条 `--attach` 正常 resolve）。跟 `turnComplete` 不是一回事：
+     * 那个是"这一轮问答完了"，这个是"整个任务观察到底了"，只在任务详情那种只读面板发。
+     * trace 尾部补一行 `── worker trace completed ──`。
+     */
+    | { type: "taskTraceCompleted" }
     | { type: "error"; message: string }
     /** Clears the transcript and tool state; sent before the host reconnects the agent session. */
     | { type: "sessionReset" }
+    /**
+     * 任务详情 header 的内容（换任务时跟 `sessionReset` 一起再推一次）。
+     * `null` 表示收掉整块 —— 聊天面板走的就是"不发这条"，默认就没有 header。
+     */
+    | { type: "taskHeader"; header: TaskHeaderInfo | null }
+    /**
+     * 换皮肤：写 `<html data-skin>`，并照 `styleUris` 增删皮肤包那几条 `<link>`，
+     * 当场重绘、不用重开面板。
+     * 两条都得给：只换属性不换 `<link>`，「装好皮肤包 → 改设置项」这一发就会
+     * 停在旧的那份样式表上（`:root` 写的皮肤包还会继续盖住内置档）。
+     * `skin` 不给等于抹掉属性，回到 `:root` 那套跟随宿主的 token。
+     */
+    | { type: "setSkin"; skin?: string; styleUris?: string[] }
     /** Replays persisted session log lines after `init` (custom editor restore). */
-    | { type: "historyReplay"; events: AcpUiHistoryReplayEvent[] };
+    | { type: "historyReplay"; events: AcpUiHistoryReplayEvent[] }
+    /** 控制面板的完整快照（幂等全量推送），见 `controlPanelMessages.ts`。 */
+    | ControlPanelDownMessage;
 
 /**
  * True when `raw` is a non-null object (`typeof null === "object"` is excluded).
@@ -334,13 +356,6 @@ export function tryParseWebviewMessage(
         };
     }
     if (
-        messageType === "setSessionAgent" &&
-        typeof record.agentName === "string" &&
-        record.agentName.length > 0
-    ) {
-        return { type: "setSessionAgent", agentName: record.agentName };
-    }
-    if (
         messageType === "permissionResponse" &&
         typeof record.requestId === "string" &&
         record.requestId.length > 0
@@ -362,40 +377,6 @@ export function tryParseWebviewMessage(
                 selectedOptionId: record.selectedOptionId,
             };
         }
-    }
-    if (
-        messageType === "cursorAskQuestionResponse" &&
-        typeof record.requestId === "string" &&
-        record.requestId.length > 0 &&
-        record.outcome !== undefined &&
-        record.outcome !== null &&
-        typeof record.outcome === "object"
-    ) {
-        return {
-            type: "cursorAskQuestionResponse",
-            requestId: record.requestId,
-            outcome: record.outcome as Extract<
-                WebviewToExtensionMessage,
-                { type: "cursorAskQuestionResponse" }
-            >["outcome"],
-        };
-    }
-    if (
-        messageType === "cursorCreatePlanResponse" &&
-        typeof record.requestId === "string" &&
-        record.requestId.length > 0 &&
-        record.outcome !== undefined &&
-        record.outcome !== null &&
-        typeof record.outcome === "object"
-    ) {
-        return {
-            type: "cursorCreatePlanResponse",
-            requestId: record.requestId,
-            outcome: record.outcome as Extract<
-                WebviewToExtensionMessage,
-                { type: "cursorCreatePlanResponse" }
-            >["outcome"],
-        };
     }
     if (messageType === "saveHistory" && Array.isArray(record.entries)) {
         const entries: string[] = [];
@@ -427,6 +408,9 @@ export function tryParseWebviewMessage(
             path: record.path.trim(),
             ...(target !== undefined && target !== "file" ? { target } : {}),
         };
+    }
+    if (isControlPanelUpMessageType(messageType)) {
+        return tryParseControlPanelUpMessage(record);
     }
     return null;
 }

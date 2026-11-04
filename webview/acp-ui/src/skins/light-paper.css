@@ -1,0 +1,72 @@
+/* ------------------------------------------------------------
+ * 内置皮肤 3 / light-paper —— 亮色，用来反证 token 层够不够抽象。
+ * 若这里出现任何需要覆写组件选择器才能成立的效果，说明 token 层有洞。
+ * ------------------------------------------------------------ */
+[data-skin="light-paper"] {
+    --gw-radius: 6px;
+    --gw-radius-lg: 10px;
+    --gw-radius-cta: 9px;
+    --gw-font-item: var(--gw-font-ui);
+    --gw-surface-base: #fbfaf7;
+    --gw-surface-raised: #ffffff;
+    --gw-surface-sunken: #f2efe9;
+    --gw-surface-overlay: #ffffff;
+    --gw-surface-hover: #efece5;
+    --gw-border: #e3ded3;
+    --gw-border-strong: #cec8ba;
+    --gw-text: #2b2925;
+    /* 与 terminal 同一档阶梯：13.9 / 6.8 / 4.7（对最暗的那层表面 #f2efe9 算）。 */
+    --gw-text-dim: #57524a;
+    --gw-text-faint: #6f6a60;
+    --gw-text-invert: #ffffff;
+    --gw-text-link: #8a5a1f;
+    /* accent 配白字 5.62:1（#b4652a 只有 4.34，那颗悬浮按钮就是栽在这） */
+    --gw-accent: #9c5522;
+    --gw-accent-hover: #8a4a1e;
+    --gw-on-accent: #ffffff;
+    --gw-selected: #f0e3d2;
+    --gw-on-selected: #2b2925;
+    --gw-focus: #9c5522;
+    --gw-state-running: #2f6f9e;
+    /* 3.47 → 5.24：paused 那档字色压在纸底上要读得清 */
+    --gw-state-review: #8a6212;
+    --gw-state-done: #3f7d43;
+    --gw-state-queued: #6f6a60;
+    --gw-state-failed: #b03a30;
+    --gw-state-failed-bg: #f8e4e0;
+    --gw-danger-border: #b03a30;
+    --gw-diff-add-fg: #2b2925;
+    --gw-diff-add-bg: #e2efdd;
+    --gw-diff-remove-fg: #2b2925;
+    --gw-diff-remove-bg: #f7ded8;
+    --gw-surface-input: #ffffff;
+    --gw-secondary: #efece5;
+    --gw-secondary-hover: #e3ded3;
+    --gw-on-secondary: #2b2925;
+    --gw-progress: #9c5522;
+    --gw-inline-code-fg: #7d4a17;
+    --gw-inline-code-border: #e0d8c8;
+    --gw-md-h1-fg: #2b2925;
+    --gw-md-h2-fg: #2b2925;
+    --gw-md-h3-fg: #2b2925;
+    --gw-md-h4-fg: #2b2925;
+    --gw-role-user-bg: #f5f0e6;
+    --gw-role-tool-bg: #f4f1ea;
+    --gw-role-thought-fg: #6f6a60;
+    --gw-role-thought-border: #ded7c9;
+    --gw-role-plan-fg: #7d4a17;
+    --gw-syntax-warn: #7d4a17;
+    --gw-shadow-key: rgba(90, 70, 40, 0.35);
+    --gw-scrollbar: rgba(43, 41, 37, 0.22);
+    --gw-scrollbar-hover: rgba(43, 41, 37, 0.36);
+    --gw-scrollbar-active: rgba(43, 41, 37, 0.5);
+    --gw-code-bg: #f0ede5;
+    --gw-surface-dropdown: #ffffff;
+    --gw-text-placeholder: #6f6a60;
+    --gw-code-fg: #3a352c;
+    --gw-syntax-key: #7b3f9d;
+    --gw-syntax-str: #2f6b3f;
+    --gw-syntax-num: #a34a22;
+    --gw-syntax-com: #6b6252;
+    --gw-shadow-overlay: 0 8px 24px rgba(90, 70, 40, 0.18);
+}

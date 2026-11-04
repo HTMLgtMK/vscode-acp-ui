@@ -1,20 +1,16 @@
 .composer-frame {
     flex-shrink: 0;
     margin-top: auto;
-    border: 1px solid
-        var(--vscode-editorWidget-border, var(--vscode-widget-border));
+    border: 1px solid var(--gw-border-strong);
     border-radius: 4px;
-    background-color: var(
-        --vscode-editorWidget-background,
-        var(--vscode-sideBar-background)
-    );
+    background-color: var(--gw-surface-overlay);
     overflow: visible;
 }
 
 .composer-frame:focus-within {
     outline: none;
     box-shadow: none;
-    border-color: var(--vscode-editorWidget-border, var(--vscode-widget-border));
+    border-color: var(--gw-border-strong);
 }
 
 .composer-top-bar {
@@ -29,7 +25,7 @@
     flex: 1;
     min-width: 0;
     font-size: 11px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -60,10 +56,34 @@
 .composer-top-bar-hint {
     flex-shrink: 0;
     font-size: 10px;
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
-    color: var(--vscode-descriptionForeground);
-    opacity: 0.8;
+    font-family: var(--gw-font-mono), ui-monospace, monospace;
+    color: var(--gw-text-faint);
     user-select: none;
+}
+
+/* 只读标记（FR-013：新增的组件样式只读 --gw-*，不再引 --vscode-*） */
+.composer-readonly-hint {
+    flex-shrink: 0;
+    padding: 1px var(--gw-space-1);
+    border: var(--gw-border-w) solid var(--gw-border-strong);
+    border-radius: 3px;
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    letter-spacing: var(--gw-tracking-meta);
+    line-height: 1.3;
+    color: var(--gw-text-faint);
+    text-transform: uppercase;
+    user-select: none;
+}
+
+/* 只读那句「为什么不能回」是内容，不是占位提示：按 placeholder 的淡法看不清。 */
+.composer-input--readonly {
+    cursor: default;
+}
+
+.composer-input--readonly::placeholder {
+    color: var(--gw-text-faint);
+    opacity: 1;
 }
 
 .composer-footer-model {
@@ -73,10 +93,89 @@
     gap: 8px;
 }
 
-.composer-inline-label {
-    flex-shrink: 0;
+.composer-agent-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+}
+
+.composer-workspace-pill,
+.composer-model-capsule__trigger {
+    height: 28px;
+    padding: 0 10px 0 11px;
+    color: var(--gw-text);
+    background-color: var(--gw-surface-dropdown);
+    border: 1px solid var(--gw-border-strong);
+    border-radius: 999px;
+    font-family: inherit;
     font-size: 11px;
-    color: var(--vscode-descriptionForeground);
+}
+
+.composer-workspace-pill {
+    flex: 0 1 auto;
+    max-width: 12rem;
+}
+
+.composer-workspace-pill:focus,
+.composer-workspace-pill:focus-visible,
+.composer-model-capsule__trigger:focus,
+.composer-model-capsule__trigger:focus-visible {
+    border-color: var(--gw-accent);
+    outline: 0;
+}
+
+.composer-model-capsule {
+    position: relative;
+    flex: 0 1 auto;
+    min-width: 0;
+    /* 胶囊紧靠右侧：mode / Cancel / Send 之前，workspace 留在左侧。 */
+    margin-left: auto;
+}
+
+.composer-model-capsule__trigger {
+    max-width: 14rem;
+    cursor: pointer;
+}
+
+.composer-model-capsule__popover {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 50;
+    display: grid;
+    gap: 10px;
+    width: 260px;
+    padding: 12px;
+    border: 1px solid var(--gw-border-strong);
+    border-radius: 8px;
+    background: var(--gw-surface-overlay);
+    box-shadow: 0 -8px 22px color-mix(in srgb, var(--gw-shadow-key) 35%, transparent);
+}
+
+.composer-model-capsule__popover label {
+    display: grid;
+    gap: 4px;
+    color: var(--gw-text-faint);
+    font-size: 10px;
+}
+
+.composer-model-capsule__popover select {
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    color: var(--gw-text);
+    background: var(--gw-surface-dropdown);
+    border: 1px solid var(--gw-border-strong);
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 11px;
+}
+
+.composer-model-capsule__popover select:focus-visible {
+    border-color: var(--gw-accent);
+    outline: 0;
 }
 
 .composer-pick-value {
@@ -85,7 +184,7 @@
     max-width: 12rem;
     padding: 3px 7px;
     font-size: 11px;
-    color: var(--vscode-foreground);
+    color: var(--gw-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -97,12 +196,9 @@
     min-width: 0;
     max-width: 12rem;
     padding: 3px 6px;
-    color: var(--vscode-foreground);
-    background-color: var(
-        --vscode-dropdown-background,
-        var(--vscode-editor-background)
-    );
-    border: 1px solid var(--vscode-dropdown-border, var(--vscode-widget-border));
+    color: var(--gw-text);
+    background-color: var(--gw-surface-dropdown);
+    border: 1px solid var(--gw-border-strong);
     border-radius: 3px;
     font-family: inherit;
     font-size: 11px;
@@ -125,28 +221,18 @@
     margin-bottom: 4px;
     max-height: min(320px, 42vh);
     overflow-y: auto;
-    scrollbar-color: var(
-            --vscode-scrollbarSlider-hoverBackground,
-            var(--vscode-scrollbarSlider-background)
-        )
-        var(--vscode-editor-background, var(--vscode-sideBar-background));
+    scrollbar-color: var(--gw-scrollbar-hover)
+        var(--gw-surface-base);
     z-index: 50;
     display: flex;
     flex-direction: column;
     gap: 0;
     padding: 4px 0;
-    border: 1px solid
-        var(
-            --vscode-widget-border,
-            color-mix(in srgb, var(--vscode-foreground) 14%, transparent)
-        );
+    border: 1px solid var(--gw-border-strong);
     border-radius: 4px;
-    background: var(
-        --vscode-editorWidget-background,
-        var(--vscode-sideBar-background)
-    );
+    background: var(--gw-surface-overlay);
     box-shadow: 0 -6px 16px
-        color-mix(in srgb, var(--vscode-widget-shadow) 45%, transparent);
+        color-mix(in srgb, var(--gw-shadow-key) 45%, transparent);
 }
 
 .composer-slash-menu::-webkit-scrollbar {
@@ -154,18 +240,12 @@
 }
 
 .composer-slash-menu::-webkit-scrollbar-track {
-    background: var(
-        --vscode-editor-background,
-        var(--vscode-sideBar-background)
-    );
+    background: var(--gw-surface-base);
     border-radius: 4px;
 }
 
 .composer-slash-menu::-webkit-scrollbar-thumb {
-    background: var(
-        --vscode-scrollbarSlider-hoverBackground,
-        var(--vscode-scrollbarSlider-background)
-    );
+    background: var(--gw-scrollbar-hover);
     border-radius: 5px;
     border: 2px solid transparent;
     background-clip: padding-box;
@@ -177,10 +257,7 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(
-        --vscode-list-deemphasizedForeground,
-        var(--vscode-descriptionForeground)
-    );
+    color: var(--gw-text-dim);
 }
 
 .composer-slash-item {
@@ -194,7 +271,7 @@
     padding: 5px 10px;
     border: none;
     background: transparent;
-    color: var(--vscode-foreground);
+    color: var(--gw-text);
     font: inherit;
     font-size: 12px;
     text-align: left;
@@ -203,19 +280,19 @@
 
 .composer-slash-item:hover,
 .composer-slash-item:focus-visible {
-    background: var(--vscode-list-hoverBackground);
+    background: var(--gw-surface-hover);
     outline: none;
 }
 
 .composer-slash-item--active {
-    background: var(--vscode-list-activeSelectionBackground);
-    color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground));
+    background: var(--gw-selected);
+    color: var(--gw-on-selected);
 }
 
 .composer-slash-name {
     flex-shrink: 0;
     font-weight: 600;
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
+    font-family: var(--gw-font-mono), ui-monospace, monospace;
     font-size: 11px;
 }
 
@@ -223,7 +300,7 @@
     flex: 1 1 auto;
     min-width: 0;
     font-size: 11px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
     line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
@@ -239,10 +316,7 @@
     line-height: 1.3;
     letter-spacing: 0.02em;
     text-transform: lowercase;
-    color: var(
-        --vscode-list-deemphasizedForeground,
-        var(--vscode-descriptionForeground)
-    );
+    color: var(--gw-text-dim);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -256,7 +330,7 @@
     resize: none;
     margin: 0;
     padding: 0 12px;
-    color: var(--vscode-foreground);
+    color: var(--gw-text);
     background: transparent;
     border: none;
     font-family: inherit;
@@ -265,11 +339,9 @@
 }
 
 .composer-input::placeholder {
-    color: var(
-        --vscode-input-placeholderForeground,
-        var(--vscode-descriptionForeground)
-    );
-    opacity: 0.7;
+    /* 淡一档由 --gw-text-placeholder 负责，这里不再乘 opacity：
+       乘完 0.7 之后三套皮肤实测只有 2.9~3.5:1 */
+    color: var(--gw-text-placeholder);
 }
 
 .composer-input:focus,
@@ -302,8 +374,8 @@
 .composer-send {
     flex-shrink: 0;
     padding: 4px 14px;
-    color: var(--vscode-button-foreground);
-    background-color: var(--vscode-button-background);
+    color: var(--gw-on-accent);
+    background-color: var(--gw-accent);
     border: none;
     border-radius: 3px;
     font-family: inherit;
@@ -313,23 +385,26 @@
     transition: background-color 0.1s ease;
 }
 
-.composer-send:hover {
-    background-color: var(--vscode-button-hoverBackground);
+.composer-send:hover:not(:disabled) {
+    background-color: var(--gw-accent-hover);
 }
 
-.composer-send:active {
+.composer-send:active:not(:disabled) {
     opacity: 0.85;
+}
+
+/* Send 点了没反应时得看得出来：以前只禁用不降亮度，只读面板上它照样是亮的。 */
+.composer-send:disabled {
+    opacity: 0.45;
+    cursor: default;
 }
 
 .composer-cancel {
     flex-shrink: 0;
     padding: 4px 12px;
-    color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
-    background-color: var(
-        --vscode-button-secondaryBackground,
-        var(--vscode-button-background)
-    );
-    border: 1px solid var(--vscode-widget-border);
+    color: var(--gw-on-secondary);
+    background-color: var(--gw-secondary);
+    border: 1px solid var(--gw-border-strong);
     border-radius: 3px;
     font-family: inherit;
     font-size: 11px;
@@ -337,10 +412,7 @@
 }
 
 .composer-cancel:hover:not(:disabled) {
-    background-color: var(
-        --vscode-button-secondaryHoverBackground,
-        var(--vscode-button-hoverBackground)
-    );
+    background-color: var(--gw-secondary-hover);
 }
 
 .composer-cancel:disabled {

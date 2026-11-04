@@ -1,3 +1,4 @@
+import type * as acp from "@agentclientprotocol/sdk";
 import { describe, expect, it } from "vitest";
 import {
     createToolCallKindTracking,
@@ -5,6 +6,11 @@ import {
     sessionUpdateToWebviewMessages,
     toolCallUpdateSubtitleHint,
 } from "./sessionUpdateMapping";
+
+/** 映射层只认 `sessionUpdate` 的字面量，测试要喂协议里还没有的名字就得绕一层断言。 */
+function rawUpdate(update: Record<string, unknown>): acp.SessionUpdate {
+    return update as unknown as acp.SessionUpdate;
+}
 
 describe("sessionUpdateToWebviewMessages", () => {
     it("maps user_message_chunk to appendUserText", () => {
@@ -92,5 +98,45 @@ describe("sessionUpdateToWebviewMessages", () => {
         expect(hint).toBe(
             '"createChatStateFromInit" in webview/acp-ui/src/chatReducer.test.ts',
         );
+    });
+
+    // FR-011：认不出来的 `session/update` 不能静默丢掉，得带原文往下走。
+    it("turns an unrecognised sessionUpdate into one unknown message with raw text", () => {
+        const messages = sessionUpdateToWebviewMessages(
+            rawUpdate({
+                sessionUpdate: "usage_update",
+                used: 1234,
+                size: 8000,
+            }),
+        );
+        expect(messages).toHaveLength(1);
+        const message = messages[0];
+        expect(message?.type).toBe("appendUnknownSessionUpdate");
+        if (message?.type !== "appendUnknownSessionUpdate") {
+            return;
+        }
+        expect(message.sessionUpdate).toBe("usage_update");
+        expect(JSON.parse(message.rawJson)).toEqual({
+            sessionUpdate: "usage_update",
+            used: 1234,
+            size: 8000,
+        });
+    });
+
+    it("still surfaces a payload whose own type tag is missing or unreadable", () => {
+        const messages = sessionUpdateToWebviewMessages(rawUpdate({ used: 1 }));
+        const message = messages[0];
+        expect(message?.type).toBe("appendUnknownSessionUpdate");
+        if (message?.type !== "appendUnknownSessionUpdate") {
+            return;
+        }
+        expect(message.sessionUpdate.length).toBeGreaterThan(0);
+    });
+
+    it("does not throw on an unrecognised update JSON cannot serialise", () => {
+        const messages = sessionUpdateToWebviewMessages(
+            rawUpdate({ sessionUpdate: "quantum_update", amount: BigInt(7) }),
+        );
+        expect(messages[0]?.type).toBe("appendUnknownSessionUpdate");
     });
 });

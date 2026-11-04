@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     shouldCancelRunOnCtrlC,
+    shouldConfirmOnEnter,
     shouldCycleSessionModeOnShiftTab,
     shouldOpenNewChatOnCtrlT,
 } from "./composerKeybindings";
@@ -80,6 +81,33 @@ describe("shouldCycleSessionModeOnShiftTab", () => {
                 metaKey: false,
                 altKey: false,
             }),
+        ).toBe(false);
+    });
+});
+
+describe("shouldConfirmOnEnter", () => {
+    it("confirms on plain Enter", () => {
+        expect(
+            shouldConfirmOnEnter({ key: "Enter", shiftKey: false, isComposing: false }),
+        ).toBe(true);
+    });
+
+    it("does not confirm on shift+Enter (newline)", () => {
+        expect(
+            shouldConfirmOnEnter({ key: "Enter", shiftKey: true, isComposing: false }),
+        ).toBe(false);
+    });
+
+    it("does not confirm while an IME composition is active", () => {
+        // 中文输入法开着打英文时，Enter 是"确认候选词"，不能当成发送。
+        expect(
+            shouldConfirmOnEnter({ key: "Enter", shiftKey: false, isComposing: true }),
+        ).toBe(false);
+    });
+
+    it("does not confirm on other keys", () => {
+        expect(
+            shouldConfirmOnEnter({ key: "a", shiftKey: false, isComposing: false }),
         ).toBe(false);
     });
 });

@@ -36,18 +36,18 @@ const darkModernLikeTheme: ColorThemeJson = {
 describe("buildMarkdownThemeCssVariables", () => {
     it("uses markup.heading and per-level heading token colors", () => {
         const vars = buildMarkdownThemeCssVariables(darkModernLikeTheme);
-        expect(vars["--acp-markdown-h1-foreground"]).toBe("#569cd6");
-        expect(vars["--acp-markdown-h2-foreground"]).toBe("#4ec9b0");
-        expect(vars["--acp-markdown-h3-foreground"]).toBe("#569cd6");
-        expect(vars["--acp-markdown-inline-code-foreground"]).toBe("#ce9178");
-        expect(vars["--acp-markdown-inline-code-border"]).toBe("#454545");
+        expect(vars["--gw-theme-md-h1-fg"]).toBe("#569cd6");
+        expect(vars["--gw-theme-md-h2-fg"]).toBe("#4ec9b0");
+        expect(vars["--gw-theme-md-h3-fg"]).toBe("#569cd6");
+        expect(vars["--gw-theme-inline-code-fg"]).toBe("#ce9178");
+        expect(vars["--gw-theme-inline-code-border"]).toBe("#454545");
     });
 
     it("maps fenced-code syntax token colors", () => {
         const vars = buildSyntaxHighlightCssVariables(darkModernLikeTheme);
         expect(vars["--vscode-symbolIcon-keywordForeground"]).toBe("#c586c0");
         expect(vars["--vscode-stringForeground"]).toBe("#ce9178");
-        expect(vars["--acp-code-token-comment-foreground"]).toBe("#6a9955");
+        expect(vars["--gw-theme-syntax-com"]).toBe("#6a9955");
     });
 
     it("merges user token color customizations after theme rules", () => {
@@ -66,8 +66,8 @@ describe("buildMarkdownThemeCssVariables", () => {
             darkModernLikeTheme,
             customRules,
         );
-        expect(vars["--acp-markdown-h1-foreground"]).toBe("#ff0000");
-        expect(vars["--acp-markdown-h2-foreground"]).toBe("#4ec9b0");
+        expect(vars["--gw-theme-md-h1-fg"]).toBe("#ff0000");
+        expect(vars["--gw-theme-md-h2-fg"]).toBe("#4ec9b0");
     });
 });
 
@@ -79,8 +79,8 @@ describe("buildMarkdownTypographyCssVariables", () => {
                 lineHeight: 1.6,
             }),
         ).toEqual({
-            "--acp-markdown-font-size": "14px",
-            "--acp-markdown-line-height": "1.6",
+            "--gw-theme-md-font-size": "14px",
+            "--gw-theme-md-leading": "1.6",
         });
     });
 });
@@ -118,9 +118,9 @@ describe("mergeColorThemeJson", () => {
 describe("applyMarkdownInlineEditorColors", () => {
     it("overrides token-derived inline code foreground", () => {
         const vars = buildMarkdownThemeCssVariables(darkModernLikeTheme);
-        expect(vars["--acp-markdown-inline-code-foreground"]).toBe("#ce9178");
+        expect(vars["--gw-theme-inline-code-fg"]).toBe("#ce9178");
         applyMarkdownInlineEditorColors(vars, { inlineCode: "#C678DD" });
-        expect(vars["--acp-markdown-inline-code-foreground"]).toBe("#C678DD");
+        expect(vars["--gw-theme-inline-code-fg"]).toBe("#C678DD");
     });
 });
 
@@ -128,13 +128,13 @@ describe("pickWebviewMarkdownThemeVariables", () => {
     it("keeps heading and syntax variables for webview init", () => {
         const picked = pickWebviewMarkdownThemeVariables({
             "--vscode-editor-background": "#282c34",
-            "--acp-markdown-h1-foreground": "#D19A66",
-            "--acp-markdown-h2-foreground": "#E06C75",
+            "--gw-theme-md-h1-fg": "#D19A66",
+            "--gw-theme-md-h2-fg": "#E06C75",
             "--vscode-symbolIcon-keywordForeground": "#C678DD",
             "": "skip",
         });
-        expect(picked["--acp-markdown-h1-foreground"]).toBe("#D19A66");
-        expect(picked["--acp-markdown-h2-foreground"]).toBe("#E06C75");
+        expect(picked["--gw-theme-md-h1-fg"]).toBe("#D19A66");
+        expect(picked["--gw-theme-md-h2-fg"]).toBe("#E06C75");
         expect(picked["--vscode-symbolIcon-keywordForeground"]).toBe("#C678DD");
         expect(picked["--vscode-editor-background"]).toBeUndefined();
     });

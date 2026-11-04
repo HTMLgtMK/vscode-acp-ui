@@ -1,0 +1,55 @@
+.unknown-update {
+    margin-bottom: var(--gw-space-4);
+    padding: var(--gw-space-2) var(--gw-space-3);
+    border: var(--gw-border-w) dashed var(--gw-border-strong);
+    border-radius: var(--gw-radius);
+    background: var(--gw-surface-raised);
+}
+
+.unknown-update-header {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--gw-text-faint);
+    font-family: var(--gw-font-ui);
+    font-size: var(--gw-text-xs);
+    text-align: left;
+    cursor: pointer;
+}
+
+.unknown-update-caret {
+    /* 琥珀色只做"这一行不寻常"的提示，不承担信息：三套皮肤里量下来它在亮色纸上只有 3.6:1。 */
+    color: var(--gw-state-review);
+}
+
+.unknown-update-label {
+    color: var(--gw-text);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--gw-tracking-meta);
+}
+
+.unknown-update-kind {
+    color: var(--gw-text-dim);
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    word-break: break-all;
+}
+
+.unknown-update-raw {
+    margin: var(--gw-space-2) 0 0;
+    padding: var(--gw-space-2);
+    border-top: var(--gw-border-w) solid var(--gw-border);
+    color: var(--gw-text-dim);
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    line-height: var(--gw-leading);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 40vh;
+    overflow: auto;
+}

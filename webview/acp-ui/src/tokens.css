@@ -1,0 +1,199 @@
+/* ============================================================
+ * GOWORKER 皮肤契约 —— 语义 token 层（**运行时唯一源**）
+ *
+ * 本文件是全部界面（控制面板 + trace + 聊天）共用的 token 定义。
+ * goworker-vscode-extension 仓的 design/tokens.css 已退为设计基线，
+ * 内容 @import 指向这里；两边冲突以本文件为准。
+ *
+ * 三层变量模型：
+ *   1. --vscode-*   宿主注入。VSCode webview 自动有；浏览器里由
+ *                   standalone 的 /api/standalone-theme 补齐（见 standalone/src/standaloneTheme.ts）。
+ *   2. --gw-*       本文件。组件唯一允许读取的层。皮肤包只重写这一层。
+ *   3. 组件规则     只写 --gw-*，不出现 --vscode-*、不出现字面量颜色。
+ *
+ * 为什么中间要有第 2 层：没有它，皮肤只能去覆写组件选择器 —— 每加一套皮肤
+ * 就重画一遍全部组件，且覆写顺序依赖加载次序。有了 token 层，
+ * 一套皮肤 = 一份只含 :root 赋值的 CSS。
+ *
+ * 第三方皮肤的投递形式受 webview CSP 约束（style-src 只放行 cspSource，
+ * 禁 inline style 与外链），因此必须是本地 .css 文件、经扩展注册进
+ * localResourceRoots 后以 <link href="{webviewUri}"> 注入。
+ * ============================================================ */
+
+:root {
+    /* —— 字体 —— */
+    --gw-font-ui: var(--vscode-font-family, -apple-system, "SF Pro Text", sans-serif);
+    --gw-font-mono: var(--vscode-editor-font-family, ui-monospace, "SF Mono", Menlo, monospace);
+    /* 字号阶梯由一个基准派生：基准 12px 时与阶梯写死的年代逐像素相同，
+       要整体放大只改 --gw-text-base（控制面板把它接到宿主设置项上）。 */
+    --gw-text-base: 12px;
+    --gw-text-2xs: calc(var(--gw-text-base) - 2px);
+    --gw-text-xs: calc(var(--gw-text-base) - 1px);
+    --gw-text-sm: var(--gw-text-base);
+    --gw-text-md: calc(var(--gw-text-base) + 1px);
+    --gw-text-lg: calc(var(--gw-text-base) + 3px);
+    --gw-text-xl: calc(var(--gw-text-base) + 7px);
+    --gw-leading: 1.55;
+    --gw-tracking-meta: 0.04em;
+    /* 内容条目主字体：中文标题在等宽下回退系统字体会撑出丑间距，
+       等宽只留给元信息、路径与代码。 */
+    --gw-font-item: var(--gw-font-ui);
+
+    /* —— 形状与密度 —— */
+    --gw-radius: 4px;
+    --gw-radius-lg: 8px;
+    /* 主操作按钮单独一档：基调是方角时它也要跳出来，不能跟着归零 */
+    --gw-radius-cta: 6px;
+    --gw-space-1: 3px;
+    --gw-space-2: 6px;
+    --gw-space-3: 10px;
+    --gw-space-4: 14px;
+    --gw-space-5: 20px;
+    --gw-space-6: 28px;
+    --gw-row-pad-y: 5px;
+    --gw-row-pad-x: 8px;
+    --gw-border-w: 1px;
+    --gw-accent-bar: 2px;
+    --gw-content-max: 78ch;
+    /* 树行缩进的单位宽度，由 --gw-indent 按层数乘上去 */
+    --gw-indent-step: 14px;
+
+    /* —— 表面 —— */
+    --gw-surface-base: var(--vscode-editor-background, #1f1f1f);
+    --gw-surface-raised: var(--vscode-sideBar-background, #252526);
+    --gw-surface-sunken: var(--vscode-editor-inactiveSelectionBackground, #2a2d2e);
+    --gw-surface-overlay: var(--vscode-editorWidget-background, #252526);
+    --gw-surface-hover: var(--vscode-list-hoverBackground, #2a2d2e);
+    /* 输入面与浮层不同：composer、user 条目底都吃这一档 */
+    --gw-surface-input: var(--vscode-input-background, #313131);
+    --gw-surface-dropdown: var(--vscode-dropdown-background, var(--vscode-input-background, #313131));
+    /* placeholder 与"未填"的提示文字：比 --gw-text-faint 还要轻一档，但不吃 disabledForeground（半透明） */
+    --gw-text-placeholder: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground, #9d9d9d));
+
+    /* —— 描边 —— */
+    --gw-border: var(--vscode-panel-border, #3c3c3c);
+    --gw-border-strong: var(--vscode-widget-border, #4a4a4a);
+    --gw-divider: var(--vscode-descriptionForeground, #6f6f6f);
+
+    /* —— 文本 —— */
+    --gw-text: var(--vscode-foreground, #cccccc);
+    /* 二级：前景向背景混 12%。明暗两套主题都还在 8:1 以上，且不依赖具体主题。 */
+    --gw-text-dim: color-mix(
+        in srgb,
+        var(--vscode-foreground, #cccccc) 88%,
+        var(--vscode-editor-background, #1e1e1e)
+    );
+    /* 三级承载的是要读的信息（行尾 meta、socket 路径、组名、空态文案），
+       所以不能用 --vscode-disabledForeground —— 那是半透明的，Dark+ 落在 #1e1e1e 上
+       只有 2.5:1，肉眼就是"黑底上完全看不清"。descriptionForeground 单独用还不够：
+       它只对最暗的底算得过 4.9，压在 sunken（这次实测 #3a3d41）上只有 4.03。
+       往前景回混 24% 后：sunken 4.59 / base 6.93 / dim 8.22 / text 10.26，阶梯没塌。 */
+    --gw-text-faint: color-mix(
+        in srgb,
+        var(--vscode-descriptionForeground, #9d9d9d) 76%,
+        var(--vscode-foreground, #cccccc)
+    );
+    --gw-text-invert: var(--vscode-button-foreground, #ffffff);
+    --gw-text-link: var(--vscode-textLink-foreground, #4daafc);
+    /* 行内代码那一对：宿主主题算出来的值走 --gw-theme-* 这一层投递（原来叫 --acp-*），
+       token 层吃它、没有才算 `--vscode-textPreformat-*`。皮肤覆写 --gw-inline-code-*，
+       所以优先级是 皮肤 > 宿主主题算出来的 > 内置兜底。 */
+    --gw-inline-code-fg: var(--gw-theme-inline-code-fg, var(--vscode-textPreformat-foreground, #d7ba7d));
+    --gw-inline-code-border: var(
+        --gw-theme-inline-code-border,
+        var(
+            --vscode-textPreformat-border,
+            var(
+                --vscode-markdown-extension-editor-codeSpan-border,
+                color-mix(in srgb, var(--vscode-widget-border, #4a4a4a) 70%, transparent)
+            )
+        )
+    );
+    /* markdown 正文的字号阶梯与 h1~h4：同样由宿主算好后经 --gw-theme-* 投递 */
+    --gw-md-font-size: var(--gw-theme-md-font-size, var(--vscode-editor-font-size, 12px));
+    --gw-md-leading: var(--gw-theme-md-leading, 1.5);
+    --gw-md-h1-fg: var(--gw-theme-md-h1-fg, var(--vscode-foreground, #cccccc));
+    --gw-md-h2-fg: var(--gw-theme-md-h2-fg, var(--vscode-foreground, #cccccc));
+    --gw-md-h3-fg: var(--gw-theme-md-h3-fg, var(--vscode-foreground, #cccccc));
+    --gw-md-h4-fg: var(--gw-theme-md-h4-fg, var(--vscode-foreground, #cccccc));
+
+    /* —— 强调色 —— */
+    --gw-accent: var(--vscode-button-background, #0e639c);
+    --gw-accent-hover: var(--vscode-button-hoverBackground, #1177bb);
+    --gw-on-accent: var(--vscode-button-foreground, #ffffff);
+    /* 次级按钮：Send 旁边那几颗（审批的 Reject、工具块的动作钮） */
+    --gw-secondary: var(--vscode-button-secondaryBackground, #3a3d41);
+    --gw-secondary-hover: var(--vscode-button-secondaryHoverBackground, #45494e);
+    --gw-on-secondary: var(--vscode-button-secondaryForeground, #cccccc);
+    --gw-selected: var(--vscode-list-activeSelectionBackground, #094771);
+    --gw-on-selected: var(--vscode-list-activeSelectionForeground, #ffffff);
+    --gw-focus: var(--vscode-focusBorder, #0e639c);
+    --gw-progress: var(--vscode-progressBar-background, #0e70c0);
+
+    /* —— 任务生命周期状态：侧栏 badge / 详情 header 共用 —— */
+    --gw-state-running: var(--vscode-charts-blue, #4daafc);
+    --gw-state-queued: var(--vscode-descriptionForeground, #9d9d9d);
+    --gw-state-review: var(--vscode-editorWarning-foreground, #d8a657);
+    --gw-state-done: var(--vscode-charts-green, #3fb950);
+    --gw-state-failed: var(--vscode-errorForeground, #f48771);
+    /* 报错条幅那一块：底色 + 描边，与 --gw-state-failed 成套 */
+    --gw-state-failed-bg: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+    --gw-danger-border: var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground, #f48771));
+
+    /* —— diff（工具块的增删行）—— */
+    --gw-diff-add-fg: var(--vscode-diffEditor-insertedTextForeground, var(--vscode-foreground, #cccccc));
+    --gw-diff-add-bg: var(--vscode-diffEditor-insertedTextBackground, #1d3d2a);
+    --gw-diff-remove-fg: var(--vscode-diffEditor-removedTextForeground, var(--vscode-foreground, #cccccc));
+    --gw-diff-remove-bg: var(--vscode-diffEditor-removedTextBackground, #5a1d1d);
+
+    /* —— trace 角色：消息 / 思考 / 工具 / 计划 / 报错 —— */
+    --gw-role-user-fg: var(--gw-text);
+    --gw-role-user-bg: var(--gw-surface-input);
+    --gw-role-agent-fg: var(--gw-text);
+    --gw-role-agent-bg: transparent;
+    --gw-role-thought-fg: var(--gw-text-dim);
+    --gw-role-thought-bg: var(--vscode-textBlockQuote-background, transparent);
+    --gw-role-thought-border: var(--vscode-textBlockQuote-border, var(--vscode-widget-border, #4a4a4a));
+    --gw-role-tool-fg: var(--gw-text);
+    --gw-role-tool-bg: var(--gw-surface-sunken);
+    /* plan 块的字色宿主单独给（editorWarning 那一档），不是正文色；
+       宿主主题算出来的那份经 --gw-theme-role-plan-fg 投递 */
+    --gw-role-plan-fg: var(--gw-theme-role-plan-fg, var(--vscode-editorWarning-foreground, #d8a657));
+    --gw-role-plan-bg: var(--gw-surface-sunken);
+    --gw-role-error-fg: var(--gw-state-failed);
+    --gw-role-error-bg: transparent;
+    --gw-code-bg: var(--vscode-textCodeBlock-background, #1b1b1b);
+    /* 契约：改 --gw-code-bg 必须同时改 --gw-code-fg 与 --gw-syntax-*。
+       三者是成对的，只覆写 bg 会让代码块在对比度上塌掉（亮色皮肤实测踩过）。 */
+    --gw-code-fg: var(--vscode-editor-foreground, #d4d4d4);
+    --gw-syntax-key: var(--vscode-symbolIcon-keywordForeground, var(--vscode-terminal-ansiMagenta, #c586c0));
+    --gw-syntax-str: var(--vscode-stringForeground, var(--vscode-terminal-ansiGreen, #b5cea8));
+    --gw-syntax-num: var(--vscode-numberLiteralForeground, var(--vscode-terminal-ansiRed, #ce9178));
+    /* 注释档由宿主主题给，压在代码底（实测 #2b2b2b）上只有 4.25：往字色回混 12%，
+       色相不动、只提亮一档，抬到 4.5 以上。缺省档跟随宿主不等于照抄宿主的每一个像素。 */
+    --gw-syntax-com: color-mix(
+        in srgb,
+        var(--gw-theme-syntax-com, var(--vscode-terminal-ansiGreen, #6a9955)) 88%,
+        var(--gw-code-fg)
+    );
+    /* 工具块"在跑"那圈描边专用（terminal-ansiYellow），与语法色不同用途 */
+    --gw-syntax-warn: var(--vscode-terminal-ansiYellow, #cca700);
+
+    /* —— 其他 —— */
+    --gw-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.45);
+    /* 给 color-mix 用的纯阴影色（不是完整 box-shadow 值） */
+    --gw-shadow-key: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.5));
+    --gw-scrollbar: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+    --gw-scrollbar-hover: var(--vscode-scrollbarSlider-hoverBackground, rgba(121, 121, 121, 0.7));
+    --gw-scrollbar-active: var(--vscode-scrollbarSlider-activeBackground, rgba(191, 191, 191, 0.4));
+    --gw-glyph-run: "●";
+    --gw-glyph-user: "❯";
+    --gw-glyph-enter: "⏎";
+}
+
+/* 内置三套皮肤（terminal / vscode / light-paper）在 ./skins/ 下，一个文件一套。
+ * 那三份必须在 tokens 之后加载：`:root` 与 `[data-skin=…]` 特异度相同（都是 0,1,0），
+ * 谁在后面谁赢。加载点有两处 —— main.ts 的 import 顺序、
+ * webview/control-panel/src/control-panel.css 的 @import 顺序。
+ * 第三方皮肤包只能写 `--gw-*` 赋值（规则在本仓 src/views/controlPanel/skin.ts）；
+ * `--vscode-*` 的映射只留在这里与内置皮肤，不外放 —— "跟随宿主"由内置 vscode 那套代为实现。*/

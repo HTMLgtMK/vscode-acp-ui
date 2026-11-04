@@ -61,6 +61,31 @@ describe("parseAcpAgentSpawnConfig", () => {
         });
     });
 
+    it("parses socketPath when set", () => {
+        expect(
+            parseAcpAgentSpawnConfig({
+                name: "Goworker",
+                command: "unused",
+                socketPath: "/tmp/acp.sock",
+            }),
+        ).toEqual({
+            name: "Goworker",
+            command: "unused",
+            args: [],
+            socketPath: "/tmp/acp.sock",
+        });
+    });
+
+    it("omits blank socketPath", () => {
+        expect(
+            parseAcpAgentSpawnConfig({
+                name: "x",
+                command: "y",
+                socketPath: "   ",
+            }),
+        ).toEqual({ name: "x", command: "y", args: [] });
+    });
+
     it("rejects invalid entries", () => {
         expect(parseAcpAgentSpawnConfig(null)).toBeUndefined();
         expect(parseAcpAgentSpawnConfig({ name: "x" })).toBeUndefined();

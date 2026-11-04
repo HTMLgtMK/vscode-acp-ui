@@ -7,9 +7,9 @@
 }
 
 .composer-mode-indicator--ask {
-    color: var(--vscode-charts-green, var(--vscode-terminal-ansiGreen));
+    color: var(--gw-state-done);
 }
 
 .composer-mode-indicator--plan {
-    color: var(--acp-composer-plan-foreground, #d18616);
+    color: var(--gw-theme-role-plan-fg, #d18616);
 }

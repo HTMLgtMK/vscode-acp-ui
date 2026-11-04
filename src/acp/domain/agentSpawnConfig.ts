@@ -9,6 +9,11 @@ export type AcpAgentSpawnConfig = {
     env?: Record<string, string>;
     /** Overrides auto-selection when the agent advertises multiple auth methods. */
     authMethodId?: string;
+    /**
+     * Connects to an already-running ACP daemon on this unix socket (standard ACP
+     * NDJSON JSON-RPC) instead of spawning `command`.
+     */
+    socketPath?: string;
 };
 
 /** Auth method shape used for resolving which `authenticate` methodId to call. */
@@ -122,11 +127,17 @@ export function parseAcpAgentSpawnConfig(
         record.authMethodId.trim().length > 0
             ? record.authMethodId.trim()
             : undefined;
+    const socketPath =
+        typeof record.socketPath === "string" &&
+        record.socketPath.trim().length > 0
+            ? record.socketPath.trim()
+            : undefined;
     return {
         name: record.name,
         command: record.command,
         args,
         ...(env !== undefined ? { env } : {}),
         ...(authMethodId !== undefined ? { authMethodId } : {}),
+        ...(socketPath !== undefined ? { socketPath } : {}),
     };
 }

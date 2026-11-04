@@ -9,14 +9,6 @@ import "./ToolCallBlock.css";
 import type { ToolCallStatus } from "../../../../src/protocol/extensionHostMessages";
 import type { TraceToolItem } from "../chatReducer";
 
-const collapsiblePreviewLineCount = 3;
-
-const collapsibleDiffPreviewRowCount = 6;
-
-function toolKindUsesCollapsiblePreview(kind: string | undefined): boolean {
-    return kind === "read" || kind === "execute";
-}
-
 function collapsibleRegionAriaLabel(
     kind: string | undefined,
     expanded: boolean,
@@ -48,36 +40,12 @@ function collapsibleHintText(expandAllGlobal: boolean): string {
 
 function CollapsibleHintRow({
     expandAllGlobal,
-    expanded,
-    onExpandThis,
-    onCollapseThis,
 }: {
     expandAllGlobal: boolean;
-    expanded: boolean;
-    onExpandThis: () => void;
-    onCollapseThis: () => void;
 }): ReactElement {
+    // 只展示快捷键说明：展开/收起点击入口是 header 本身，按钮是冗余噪音。
     return (
         <p className="tool-call-collapsible-hint">
-            <button
-                type="button"
-                className="tool-call-collapsible-expand"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (expanded) {
-                        onCollapseThis();
-                    } else {
-                        onExpandThis();
-                    }
-                }}
-                aria-label={
-                    expanded
-                        ? "Collapse this tool output"
-                        : "Expand this tool output"
-                }
-            >
-                {expanded ? "Collapse" : "Expand"}
-            </button>
             <span className="tool-call-collapsible-hint-text">
                 {collapsibleHintText(expandAllGlobal)}
             </span>
@@ -85,23 +53,72 @@ function CollapsibleHintRow({
     );
 }
 
+/** Normalized header presentation: one label + one optional payload region. */
+type ToolHeaderPresentation = {
+    /** Collapsed header label: the tool name (e.g. "curl", "memory_search") or a structured title like "Write File". */
+    label: string;
+    /** Always-visible sub-line (paths etc.); null hides it. */
+    subtitle: string | null;
+    /** Payload revealed by expanding the header (command line, args JSON); null = nothing extra. */
+    payload: { kind: "command" | "arguments"; text: string } | null;
+};
+
 /**
- * Resolves the shell command text for the execute tool header (subtitle from the bridge, else backtick-wrapped title).
+ * Normalizes any daemon tool-call shape into one header presentation.
+ * Precedence: execute command (subtitle / backtick title) > generic
+ * `name(args)` title > structured title as-is. All tools render through
+ * this single path so header markup stays identical across shapes.
  */
-function commandLineForExecuteTitle(item: TraceToolItem): string | null {
+function toolHeaderPresentation(item: TraceToolItem): ToolHeaderPresentation {
+    // execute: shell line from subtitle (with optional "$" prefix) or `backtick` title
+    if (item.kind === "execute") {
+        const sub = item.subtitle?.trim() ?? "";
+        const fromSubtitle =
+            sub.length > 0
+                ? sub.startsWith("$")
+                  ? sub.slice(1).trimStart()
+                  : sub
+                : "";
+        const tit = item.title.trim();
+        const fromBacktick =
+            tit.length >= 2 && tit.startsWith("`") && tit.endsWith("`")
+                ? tit.slice(1, -1).trim()
+                : "";
+        const command = fromSubtitle.length > 0 ? fromSubtitle : fromBacktick;
+        if (command.length > 0) {
+            const firstWord = command.split(/\s+/)[0] ?? "";
+            return {
+                label: firstWord.length > 0 ? firstWord : "tool",
+                subtitle: null,
+                payload: { kind: "command", text: command },
+            };
+        }
+        return { label: "tool", subtitle: null, payload: null };
+    }
+
+    // generic daemon shape: `name(argsJson)` — name becomes the label, args the payload
+    const match = /^([A-Za-z_][A-Za-z0-9_.:-]*)\(([\s\S]*)\)\s*$/.exec(
+        item.title.trim(),
+    );
+    if (match !== null) {
+        const args = match[2]!.trim();
+        return {
+            label: match[1]!,
+            subtitle: null,
+            payload:
+                args.length > 0
+                    ? { kind: "arguments", text: args }
+                    : null,
+        };
+    }
+
+    // structured title (e.g. "Write File"): keep as-is with any sub-line
     const sub = item.subtitle?.trim() ?? "";
-    if (sub.length > 0) {
-        const withoutPrompt = sub.startsWith("$")
-            ? sub.slice(1).trimStart()
-            : sub;
-        return withoutPrompt.length > 0 ? withoutPrompt : null;
-    }
-    const tit = item.title.trim();
-    if (tit.length >= 2 && tit.startsWith("`") && tit.endsWith("`")) {
-        const inner = tit.slice(1, -1).trim();
-        return inner.length > 0 ? inner : null;
-    }
-    return null;
+    return {
+        label: item.title,
+        subtitle: sub.length > 0 ? sub : null,
+        payload: null,
+    };
 }
 
 function ToolCallStatusGlyph({
@@ -165,37 +182,18 @@ export function ToolCallBlock({
         item.detailVisible &&
         (hasDiff ||
             (item.content !== undefined && item.content.trim().length > 0));
-    const subtitle =
-        item.kind !== "execute" &&
-        item.subtitle !== undefined &&
-        item.subtitle.trim().length > 0
-            ? item.subtitle.trim()
-            : null;
-    const executeCommandLine =
-        item.kind === "execute" ? commandLineForExecuteTitle(item) : null;
+    const header = toolHeaderPresentation(item);
     const contentText = item.content ?? "";
-    const contentLines = contentText.split(/\r?\n/);
-    const outputCollapsible =
-        !hasDiff &&
-        showOutput &&
-        toolKindUsesCollapsiblePreview(item.kind) &&
-        contentLines.length > collapsiblePreviewLineCount;
-    const displayedOutput =
-        outputCollapsible && !expandedThis
-            ? contentLines.slice(0, collapsiblePreviewLineCount).join("\n")
-            : contentText;
+    // 全折叠模式（与 thought 的 <details> 行为一致）：收起时不渲染输出，
+    // 展开显示全文。
+    const outputCollapsible = !hasDiff && showOutput;
     const diffRows = item.diffRows;
-    const diffCollapsible =
-        hasDiff &&
-        diffRows !== undefined &&
-        diffRows.length > collapsibleDiffPreviewRowCount;
-    const displayedDiffRows =
-        diffCollapsible && !expandedThis
-            ? diffRows.slice(0, collapsibleDiffPreviewRowCount)
-            : (diffRows ?? []);
+    const diffCollapsible = hasDiff;
+    const displayedDiffRows = diffRows ?? [];
 
     const headerCollapsible =
-        showOutput && (diffCollapsible || outputCollapsible);
+        header.payload !== null ||
+        (showOutput && (diffCollapsible || outputCollapsible));
 
     const collapseThisOutput = (): void => {
         setLocalExpanded(false);
@@ -231,6 +229,9 @@ export function ToolCallBlock({
             }
             data-tool-id={item.toolCallId}
             data-status={item.status}
+            data-collapsed={
+                headerCollapsible ? String(!expandedThis) : "false"
+            }
             role="status"
             aria-label="Tool use"
         >
@@ -262,96 +263,61 @@ export function ToolCallBlock({
                         : undefined
                 }
             >
-                {item.kind === "execute" ? (
-                    <>
-                        <div className="tool-call-terminal-line-main">
-                            <ToolCallStatusGlyph status={item.status} />
-                            <span className="tool-call-terminal-title tool-call-terminal-title--execute">
-                                {executeCommandLine === null ? (
-                                    "Terminal"
-                                ) : (
-                                    <>
-                                        <span
-                                            className="tool-call-terminal-prompt tool-call-terminal-prompt--inline"
-                                            aria-hidden="true"
-                                        >
-                                            $
-                                        </span>
-                                        <span className="tool-call-terminal-command-text">
-                                            {executeCommandLine}
-                                        </span>
-                                    </>
-                                )}
-                            </span>
-                        </div>
-                        {kindHidden ? null : (
-                            <span className="tool-call-terminal-kind">
-                                [{item.kind}]
-                            </span>
-                        )}
-                    </>
-                ) : (
-                    <>
-                        <ToolCallStatusGlyph status={item.status} />
-                        <span className="tool-call-terminal-title">
-                            {item.title}
+                <div className="tool-call-terminal-line-main">
+                    <span
+                        className="tool-call-terminal-caret"
+                        aria-hidden="true"
+                    >
+                        ▸
+                    </span>
+                    <span className="tool-call-terminal-title">
+                        {header.label}
+                    </span>
+                    {kindHidden ? null : (
+                        <span className="tool-call-terminal-kind">
+                            [{item.kind}]
                         </span>
-                        {kindHidden ? null : (
-                            <span className="tool-call-terminal-kind">
-                                [{item.kind}]
-                            </span>
-                        )}
-                    </>
-                )}
+                    )}
+                </div>
             </div>
-            {subtitle !== null ? (
-                <div className="tool-call-terminal-subtitle">{subtitle}</div>
+            {header.subtitle !== null ? (
+                <div className="tool-call-terminal-subtitle">
+                    {header.subtitle}
+                </div>
+            ) : null}
+            {header.payload !== null &&
+            !(headerCollapsible && !expandedThis) ? (
+                <div
+                    className="tool-call-terminal-commandline"
+                    aria-label={
+                        header.payload.kind === "command"
+                            ? "Command"
+                            : "Tool arguments"
+                    }
+                >
+                    {header.payload.kind === "command" ? (
+                        <span
+                            className="tool-call-terminal-prompt tool-call-terminal-prompt--inline"
+                            aria-hidden="true"
+                        >
+                            $
+                        </span>
+                    ) : null}
+                    <span className="tool-call-terminal-command-text">
+                        {header.payload.text}
+                    </span>
+                </div>
             ) : null}
             {showOutput && hasDiff ? (
                 diffCollapsible && !expandedThis ? (
                     <div
                         className="tool-call-collapsible-output"
                         role="group"
-                        aria-expanded={expandedThis}
-                        aria-label={collapsibleDiffAriaLabel(expandedThis)}
+                        aria-expanded={false}
+                        aria-label={collapsibleDiffAriaLabel(false)}
                     >
-                        <div
-                            className="tool-call-diff"
-                            role="group"
-                            aria-label="File diff preview"
-                        >
-                            {displayedDiffRows.map((row, rowIndex) => (
-                                <div
-                                    key={rowIndex}
-                                    className={
-                                        row.kind === "removed"
-                                            ? "tool-call-diff-line tool-call-diff-line--removed"
-                                            : row.kind === "added"
-                                              ? "tool-call-diff-line tool-call-diff-line--added"
-                                              : "tool-call-diff-line tool-call-diff-line--context"
-                                    }
-                                >
-                                    <span
-                                        className="tool-call-diff-prefix"
-                                        aria-hidden="true"
-                                    >
-                                        {row.kind === "removed"
-                                            ? "-"
-                                            : row.kind === "added"
-                                              ? "+"
-                                              : " "}
-                                    </span>
-                                    <span className="tool-call-diff-text">
-                                        {row.text}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
                         <CollapsibleHintRow
                             expandAllGlobal={expandAllToolOutputs}
-                            expanded={false}
-                            onExpandThis={expandThisOutput}
-                            onCollapseThis={collapseThisOutput}
                         />
                     </div>
                 ) : (
@@ -361,15 +327,15 @@ export function ToolCallBlock({
                             role="group"
                             aria-label="File diff"
                         >
-                            {(diffRows ?? []).map((row, rowIndex) => (
+                            {displayedDiffRows.map((row, rowIndex) => (
                                 <div
                                     key={rowIndex}
                                     className={
                                         row.kind === "removed"
-                                            ? "tool-call-diff-line tool-call-diff-line--removed"
+                                            ? "tool-c…line tool-c…line--removed"
                                             : row.kind === "added"
-                                              ? "tool-call-diff-line tool-call-diff-line--added"
-                                              : "tool-call-diff-line tool-call-diff-line--context"
+                                              ? "tool-c…line tool-c…line--added"
+                                              : "tool-c…line tool-c…line--context"
                                     }
                                 >
                                     <span
@@ -382,41 +348,31 @@ export function ToolCallBlock({
                                               ? "+"
                                               : " "}
                                     </span>
-                                    <span className="tool-call-diff-text">
+                                    <span className="tool-c…text">
                                         {row.text}
                                     </span>
                                 </div>
                             ))}
                         </div>
-                        {diffCollapsible && expandedThis ? (
-                            <CollapsibleHintRow
-                                expandAllGlobal={expandAllToolOutputs}
-                                expanded={true}
-                                onExpandThis={expandThisOutput}
-                                onCollapseThis={collapseThisOutput}
-                            />
-                        ) : null}
+                        <CollapsibleHintRow
+                            expandAllGlobal={expandAllToolOutputs}
+                        />
                     </>
                 )
+
             ) : showOutput ? (
                 outputCollapsible && !expandedThis ? (
                     <div
                         className="tool-call-collapsible-output"
                         role="group"
-                        aria-expanded={expandedThis}
+                        aria-expanded={false}
                         aria-label={collapsibleRegionAriaLabel(
                             item.kind,
-                            expandedThis,
+                            false,
                         )}
                     >
-                        <pre className="tool-call-terminal-pre tool-call-terminal-pre--collapsible">
-                            {displayedOutput}
-                        </pre>
                         <CollapsibleHintRow
                             expandAllGlobal={expandAllToolOutputs}
-                            expanded={false}
-                            onExpandThis={expandThisOutput}
-                            onCollapseThis={collapseThisOutput}
                         />
                     </div>
                 ) : outputCollapsible && expandedThis ? (
@@ -431,9 +387,6 @@ export function ToolCallBlock({
                         </pre>
                         <CollapsibleHintRow
                             expandAllGlobal={expandAllToolOutputs}
-                            expanded={true}
-                            onExpandThis={expandThisOutput}
-                            onCollapseThis={collapseThisOutput}
                         />
                     </div>
                 ) : (

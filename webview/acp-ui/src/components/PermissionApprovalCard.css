@@ -1,0 +1,89 @@
+/* 权限审批卡（T032，稿 03 B②③）。设计稿 `.gw-approval` / `.gw-approval-head` /
+   `.gw-code` / `.gw-approval-actions`，位置是底部输入区整块（composer 的替身），
+   宽度跟着 composer 栈那一列走。 */
+.approval-card {
+    display: grid;
+    gap: var(--gw-space-3);
+    padding: var(--gw-space-3) 0 var(--gw-space-2);
+    border-top: var(--gw-accent-bar) solid var(--gw-state-review);
+    background: var(--gw-surface-overlay);
+    color: var(--gw-text);
+}
+
+.approval-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gw-space-2);
+    font-size: var(--gw-text-sm);
+}
+
+.approval-head strong {
+    color: var(--gw-state-review);
+}
+
+.approval-note {
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-xs);
+    color: var(--gw-text-dim);
+}
+
+/* 排队位次：稿 03 的 `.gw-queue`，`index / total pending`。 */
+.approval-queue {
+    margin-left: auto;
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    color: var(--gw-text-faint);
+}
+
+/* 要授权的那条命令：与 trace 里的代码块同一套口径，长命令换行不截断。 */
+.approval-tool {
+    margin: 0;
+    padding: var(--gw-space-3);
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-sm);
+    background: var(--gw-code-bg);
+    color: var(--gw-code-fg);
+    border: var(--gw-border-w) solid var(--gw-border);
+    border-radius: var(--gw-radius);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.approval-actions {
+    display: flex;
+    gap: var(--gw-space-2);
+    flex-wrap: wrap;
+}
+
+/* daemon 下发的每个 option 一枚按钮（FR-012：UI 不编造选项、不写死数量）。
+   第一枚按稿 03 B② 画成主操作，其余连同本地 Dismiss 走次要样式 ——
+   只按到达次序分主次，不去猜 optionId 的语义（daemon 哪天加 allow_always 也不用改这里）。 */
+.approval-option,
+.approval-dismiss {
+    white-space: nowrap;
+    padding: 4px var(--gw-space-3);
+    font-size: var(--gw-text-sm);
+    font-family: var(--gw-font-mono);
+    border-radius: var(--gw-radius);
+    cursor: pointer;
+    color: var(--gw-text);
+    background: var(--gw-surface-sunken);
+    border: var(--gw-border-w) solid var(--gw-border);
+}
+
+.approval-option:hover,
+.approval-dismiss:hover {
+    background: var(--gw-surface-hover);
+}
+
+.approval-option[data-primary] {
+    color: var(--gw-on-accent);
+    background: var(--gw-accent);
+    border-color: var(--gw-accent);
+}
+
+.approval-option[data-primary]:hover {
+    background: var(--gw-accent-hover);
+    border-color: var(--gw-accent-hover);
+}

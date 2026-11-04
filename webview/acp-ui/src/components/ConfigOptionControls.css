@@ -19,7 +19,7 @@
 .composer-config-label {
     font-size: 9px;
     line-height: 1;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -30,16 +30,19 @@
     width: auto;
     min-width: 0;
     max-width: 7.5rem;
-    padding: 3px 6px;
-    color: var(--vscode-foreground);
-    background-color: var(
-        --vscode-dropdown-background,
-        var(--vscode-editor-background)
-    );
-    border: 1px solid var(--vscode-dropdown-border, var(--vscode-widget-border));
-    border-radius: 3px;
+    padding: 4px 10px;
+    color: var(--gw-text);
+    background-color: var(--gw-surface-dropdown);
+    border: 1px solid var(--gw-border-strong);
+    border-radius: 999px;
     font-family: inherit;
     font-size: 11px;
+}
+
+.composer-config-select:focus,
+.composer-config-select:focus-visible {
+    border-color: var(--gw-accent);
+    outline: 0;
 }
 
 .composer-config-select--model {
@@ -61,9 +64,6 @@
 
 .composer-footer-config::-webkit-scrollbar-thumb,
 .composer-footer-model--stacked::-webkit-scrollbar-thumb {
-    background: var(
-        --vscode-scrollbarSlider-background,
-        var(--vscode-widget-border)
-    );
+    background: var(--gw-scrollbar);
     border-radius: 2px;
 }

@@ -129,10 +129,10 @@ export function applyMarkdownInlineEditorColors(
     const headingMap: ReadonlyArray<
         readonly [MarkdownInlineEditorColorKey, string]
     > = [
-        ["heading1", "--acp-markdown-h1-foreground"],
-        ["heading2", "--acp-markdown-h2-foreground"],
-        ["heading3", "--acp-markdown-h3-foreground"],
-        ["heading4", "--acp-markdown-h4-foreground"],
+        ["heading1", "--gw-theme-md-h1-fg"],
+        ["heading2", "--gw-theme-md-h2-fg"],
+        ["heading3", "--gw-theme-md-h3-fg"],
+        ["heading4", "--gw-theme-md-h4-fg"],
     ];
     for (const [sourceKey, cssVar] of headingMap) {
         const value = colors[sourceKey];
@@ -142,11 +142,11 @@ export function applyMarkdownInlineEditorColors(
     }
     const inlineCode = colors.inlineCode;
     if (inlineCode !== undefined && inlineCode.length > 0) {
-        variables["--acp-markdown-inline-code-foreground"] = inlineCode;
+        variables["--gw-theme-inline-code-fg"] = inlineCode;
     }
     const inlineCodeBorder = colors.inlineCodeBorder;
     if (inlineCodeBorder !== undefined && inlineCodeBorder.length > 0) {
-        variables["--acp-markdown-inline-code-border"] = inlineCodeBorder;
+        variables["--gw-theme-inline-code-border"] = inlineCodeBorder;
     }
 }
 
@@ -188,7 +188,7 @@ export function buildMarkdownThemeCssVariables(
     const variables: Record<string, string> = {};
 
     for (const level of HEADING_LEVELS) {
-        variables[`--acp-markdown-h${level}-foreground`] =
+        variables[`--gw-theme-md-h${level}-fg`] =
             resolveForegroundFromScopeList(
                 headingScopeList(level),
                 rules,
@@ -201,16 +201,16 @@ export function buildMarkdownThemeCssVariables(
         rules,
         colors["textPreformat.foreground"] ?? editorForeground,
     );
-    variables["--acp-markdown-inline-code-foreground"] = inlineCodeForeground;
+    variables["--gw-theme-inline-code-fg"] = inlineCodeForeground;
 
     const textPreformatBorder = colors["textPreformat.border"];
     if (textPreformatBorder !== undefined && textPreformatBorder.length > 0) {
-        variables["--acp-markdown-inline-code-border"] = textPreformatBorder;
+        variables["--gw-theme-inline-code-border"] = textPreformatBorder;
     }
 
     const codeSpanBorder = colors["markdown.extension.editor.codeSpan.border"];
     if (codeSpanBorder !== undefined && codeSpanBorder.length > 0) {
-        variables["--acp-markdown-inline-code-border"] = codeSpanBorder;
+        variables["--gw-theme-inline-code-border"] = codeSpanBorder;
     }
 
     return variables;
@@ -247,7 +247,7 @@ export function buildSyntaxHighlightCssVariables(
             rules,
             semanticColors.numberLiteral ?? "#b5cea8",
         ),
-        "--acp-code-token-comment-foreground": resolveForegroundFromScopeList(
+        "--gw-theme-syntax-com": resolveForegroundFromScopeList(
             ["comment", "punctuation.definition.comment"],
             rules,
             "#6a9955",
@@ -260,25 +260,25 @@ export function buildMarkdownTypographyCssVariables(options: {
     lineHeight: number;
 }): Record<string, string> {
     return {
-        "--acp-markdown-font-size": `${options.fontSizePx}px`,
-        "--acp-markdown-line-height": String(options.lineHeight),
+        "--gw-theme-md-font-size": `${options.fontSizePx}px`,
+        "--gw-theme-md-leading": String(options.lineHeight),
     };
 }
 
 /** CSS variables passed to the webview for agent markdown (init + theme updates). */
 export const WEBVIEW_MARKDOWN_THEME_VARIABLE_NAMES = [
-    "--acp-markdown-font-size",
-    "--acp-markdown-line-height",
-    "--acp-markdown-h1-foreground",
-    "--acp-markdown-h2-foreground",
-    "--acp-markdown-h3-foreground",
-    "--acp-markdown-h4-foreground",
-    "--acp-markdown-inline-code-foreground",
-    "--acp-markdown-inline-code-border",
+    "--gw-theme-md-font-size",
+    "--gw-theme-md-leading",
+    "--gw-theme-md-h1-fg",
+    "--gw-theme-md-h2-fg",
+    "--gw-theme-md-h3-fg",
+    "--gw-theme-md-h4-fg",
+    "--gw-theme-inline-code-fg",
+    "--gw-theme-inline-code-border",
     "--vscode-symbolIcon-keywordForeground",
     "--vscode-stringForeground",
     "--vscode-numberLiteralForeground",
-    "--acp-code-token-comment-foreground",
+    "--gw-theme-syntax-com",
 ] as const;
 
 export function pickWebviewMarkdownThemeVariables(

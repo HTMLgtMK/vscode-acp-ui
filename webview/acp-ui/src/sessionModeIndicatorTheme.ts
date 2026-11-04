@@ -106,7 +106,7 @@ export function resolvePlanModeIndicatorColor(
 
 function applyPlanModeIndicatorColor(): void {
     document.documentElement.style.setProperty(
-        "--acp-composer-plan-foreground",
+        "--gw-theme-role-plan-fg",
         resolvePlanModeIndicatorColor(),
     );
 }
@@ -127,7 +127,7 @@ export function installSessionModeIndicatorThemeColors(): () => void {
     return () => {
         observer.disconnect();
         document.documentElement.style.removeProperty(
-            "--acp-composer-plan-foreground",
+            "--gw-theme-role-plan-fg",
         );
     };
 }

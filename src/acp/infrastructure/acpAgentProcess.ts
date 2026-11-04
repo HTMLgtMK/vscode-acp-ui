@@ -1,16 +1,19 @@
-import { type ChildProcess, spawn } from "node:child_process";
-import { Readable, Transform, Writable } from "node:stream";
 import * as acp from "@agentclientprotocol/sdk";
 import {
     type AcpAgentSpawnConfig,
     isCursorAcpAgent,
     PARAMETERIZED_MODEL_PICKER_META_KEY,
 } from "../domain/agentSpawnConfig";
+import type {
+    AcpAgentTransport,
+    AcpAgentTransportConnection,
+} from "../ports/agentTransport";
 import type { AcpHostFilesystem } from "../ports/hostFilesystem";
 import type {
     AcpRpcNdjsonDirection,
     AcpRpcNdjsonSink,
 } from "../ports/rpcNdjsonSink";
+import { createDefaultAcpAgentTransport } from "./defaultAcpAgentTransport";
 
 /** Node `fs` and VS Code `FileSystemError` both use distinct codes for a missing path. */
 function isFileNotFoundError(error: unknown): boolean {
@@ -28,16 +31,12 @@ function createNdjsonRpcLogTap(
     sink: AcpRpcNdjsonSink,
     direction: AcpRpcNdjsonDirection,
     agentName: string,
-): Transform {
+): TransformStream<Uint8Array, Uint8Array> {
     let buffer = "";
-    return new Transform({
-        transform(
-            chunk: Buffer,
-            chunkEncoding: BufferEncoding,
-            callback,
-        ): void {
-            void chunkEncoding;
-            buffer += chunk.toString("utf8");
+    const decoder = new TextDecoder();
+    return new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller): void {
+            buffer += decoder.decode(chunk, { stream: true });
             const parts = buffer.split("\n");
             buffer = parts.pop() ?? "";
             for (const part of parts) {
@@ -49,50 +48,49 @@ function createNdjsonRpcLogTap(
                     });
                 }
             }
-            callback(null, chunk);
+            controller.enqueue(chunk);
         },
-        flush(callback): void {
+        flush(): void {
             const trimmed = buffer.trim();
             if (trimmed.length > 0) {
                 sink.appendRawNdjsonLine(trimmed, { direction, agentName });
             }
             buffer = "";
-            callback();
         },
     });
 }
 
-function ndJsonStreamTapsForChild(
-    child: ChildProcess,
+/**
+ * Inserts raw NDJSON-RPC log taps between a transport connection and the ACP SDK when
+ * RPC logging is enabled; returns the streams to hand to `acp.ndJsonStream`.
+ */
+function tapAcpAgentTransportForRpcLog(
+    connection: AcpAgentTransportConnection,
     rpcNdjsonSink: AcpRpcNdjsonSink,
     agentName: string,
 ): {
-    stdinWeb: WritableStream;
-    stdoutWeb: ReadableStream<Uint8Array>;
+    toAgent: WritableStream<Uint8Array>;
+    fromAgent: ReadableStream<Uint8Array>;
 } {
     if (!rpcNdjsonSink.isLoggingEnabled) {
-        return {
-            stdinWeb: Writable.toWeb(child.stdin!),
-            stdoutWeb: Readable.toWeb(
-                child.stdout!,
-            ) as ReadableStream<Uint8Array>,
-        };
+        return { toAgent: connection.toAgent, fromAgent: connection.fromAgent };
     }
-    const towardAgent = createNdjsonRpcLogTap(
+    const toAgentTap = createNdjsonRpcLogTap(
         rpcNdjsonSink,
         "toAgent",
         agentName,
     );
-    const fromAgent = createNdjsonRpcLogTap(
+    const fromAgentTap = createNdjsonRpcLogTap(
         rpcNdjsonSink,
         "fromAgent",
         agentName,
     );
-    towardAgent.pipe(child.stdin!);
-    child.stdout!.pipe(fromAgent);
+    // Pipe failures mean the transport dropped; disconnect is reported via `onDisconnected`.
+    void toAgentTap.readable.pipeTo(connection.toAgent).catch(() => {});
+    void connection.fromAgent.pipeTo(fromAgentTap.writable).catch(() => {});
     return {
-        stdinWeb: Writable.toWeb(towardAgent),
-        stdoutWeb: Readable.toWeb(fromAgent) as ReadableStream<Uint8Array>,
+        toAgent: toAgentTap.writable,
+        fromAgent: fromAgentTap.readable,
     };
 }
 
@@ -209,21 +207,35 @@ export type AcpAgentProcessOptions = {
     rpcNdjsonSink: AcpRpcNdjsonSink;
     /** Workspace folder used for spawn `cwd` and `session/new` `cwd` metadata. */
     getWorkspaceRoot: () => string | undefined;
-    /** Called when the agent subprocess exits or stdio closes. */
+    /** Called when the agent connection drops (subprocess exit / socket close). */
     onProcessExit?: () => void;
+    /**
+     * Transport used to reach the agent. Defaults to the unix-socket daemon transport
+     * when `config.socketPath` is configured, otherwise spawning an agent subprocess.
+     */
+    transport?: AcpAgentTransport;
 };
 
 /**
- * Manages the lifecycle of a single ACP agent subprocess: spawn, initialize handshake,
- * session creation, prompting, and teardown.
+ * Manages the lifecycle of a single ACP agent connection: connect, initialize handshake,
+ * session creation, prompting, and teardown. The connection mechanics (spawn vs. socket
+ * daemon) are abstracted behind {@link AcpAgentTransport}.
  */
 export class AcpAgentProcess {
-    private child: ChildProcess | null = null;
     private connection: acp.ClientSideConnection | null = null;
+    private transportConnection: AcpAgentTransportConnection | null = null;
     private initResponse: acp.InitializeResponse | null = null;
     private sessionUpdateHandler: SessionUpdateHandler | null = null;
+    private readonly transport: AcpAgentTransport;
 
-    constructor(private readonly options: AcpAgentProcessOptions) {}
+    constructor(private readonly options: AcpAgentProcessOptions) {
+        this.transport =
+            options.transport ??
+            createDefaultAcpAgentTransport({
+                config: options.config,
+                getWorkspaceRoot: options.getWorkspaceRoot,
+            });
+    }
 
     /** Registers a handler that receives every `session/update` notification. */
     onSessionUpdate(handler: SessionUpdateHandler): void {
@@ -231,58 +243,19 @@ export class AcpAgentProcess {
     }
 
     async start(): Promise<acp.InitializeResponse> {
-        const cwd = this.options.getWorkspaceRoot();
-        const env = { ...process.env, ...this.options.config.env };
-
-        console.info(
-            `[ACP Agent ${this.options.config.name}] spawning command="${this.options.config.command}" args=${JSON.stringify(this.options.config.args)} cwd="${cwd ?? "<undefined>"}"`,
-        );
-
-        this.child = spawn(
-            this.options.config.command,
-            this.options.config.args,
-            {
-                stdio: ["pipe", "pipe", "pipe"],
-                cwd,
-                env,
+        this.transportConnection = await this.transport.connect({
+            agentName: this.options.config.name,
+            onDisconnected: () => {
+                this.connection = null;
+                this.options.onProcessExit?.();
             },
-        );
-
-        this.child.stderr?.on("data", (chunk: Buffer) => {
-            const text = chunk.toString();
-            console.error(
-                `[ACP Agent ${this.options.config.name}] stderr: ${text}`,
-            );
         });
-
-        this.child.on("error", (err) => {
-            const nodeErr = err as NodeJS.ErrnoException;
-            console.error(
-                `[ACP Agent ${this.options.config.name}] process error code=${nodeErr.code ?? "unknown"} message="${nodeErr.message}" command="${this.options.config.command}"`,
-                err,
-            );
-        });
-
-        this.child.on("exit", (code, signal) => {
-            console.error(
-                `[ACP Agent ${this.options.config.name}] exited code=${code ?? "null"} signal=${signal ?? "null"}`,
-            );
-            this.connection = null;
-            this.options.onProcessExit?.();
-        });
-
-        this.child.on("close", (code, signal) => {
-            console.error(
-                `[ACP Agent ${this.options.config.name}] stdio closed code=${code ?? "null"} signal=${signal ?? "null"}`,
-            );
-        });
-
-        const { stdinWeb, stdoutWeb } = ndJsonStreamTapsForChild(
-            this.child,
+        const { toAgent, fromAgent } = tapAcpAgentTransportForRpcLog(
+            this.transportConnection,
             this.options.rpcNdjsonSink,
             this.options.config.name,
         );
-        const stream = acp.ndJsonStream(stdinWeb, stdoutWeb);
+        const stream = acp.ndJsonStream(toAgent, fromAgent);
 
         const client: acp.Client = {
             requestPermission: async (params) =>
@@ -457,9 +430,9 @@ export class AcpAgentProcess {
     }
 
     dispose(): void {
-        if (this.child) {
-            this.child.kill();
-            this.child = null;
+        if (this.transportConnection) {
+            this.transportConnection.dispose();
+            this.transportConnection = null;
         }
         this.connection = null;
         this.initResponse = null;

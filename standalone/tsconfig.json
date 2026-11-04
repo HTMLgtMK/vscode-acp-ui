@@ -16,6 +16,8 @@
         "./src/**/*.tsx",
         "./themes/**/*.json",
         "./vite.config.ts",
-        "./server.ts"
+        "./server.ts",
+        "./panelBridge.ts",
+        "./panelBridge.test.ts"
     ]
 }

@@ -1,14 +1,14 @@
 .agent-plan {
     margin-bottom: 12px;
-    padding: 8px 10px;
-    border: 1px dashed var(--vscode-widget-border);
-    border-radius: 3px;
+    padding: 0 0 2px 0;
+    border: none;
+    border-radius: 0;
 }
 
 .agent-plan-title {
     font-size: 11px;
     font-weight: 600;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
     margin-bottom: 6px;
 }
 
@@ -23,12 +23,12 @@
 
 .agent-plan-status {
     flex-shrink: 0;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
     text-transform: uppercase;
     font-size: 10px;
 }
 
 .agent-plan-content {
-    color: var(--vscode-foreground);
+    color: var(--gw-text);
     word-break: break-word;
 }

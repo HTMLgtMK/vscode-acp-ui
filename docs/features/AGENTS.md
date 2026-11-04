@@ -15,12 +15,9 @@ docs/features/
     permissions.md
     ...
   ui/                       # chat webview and composer surfaces
-    editor-shell.md
-    agents.md
     chat-trace.md
     composer.md
     session-config.md
-    cursor-extensions.md
   maintainer/               # protocol/SDK evolution and dev tools
     platform.md
     standalone.md

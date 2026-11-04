@@ -1,0 +1,569 @@
+/* 控制面板组件层：只读 --gw-*，不出现 --vscode-*、不出现字面量颜色。
+   与稿子 design/design.css 的 .gw-brand / .gw-tree* / .gw-node* /
+   .gw-conn* / .gw-foot* 同一套观感，画法是那份稿子的落地。 */
+
+@import url("../../acp-ui/src/tokens.css");
+/* 内置三套皮肤跟在 tokens 后面：`:root` 与 `[data-skin=…]` 特异度相同，后加载的赢。 */
+@import url("../../acp-ui/src/skins/terminal.css");
+@import url("../../acp-ui/src/skins/vscode.css");
+@import url("../../acp-ui/src/skins/light-paper.css");
+
+/* 行高跟着字号走：基准 12px 时算出来仍是原来的 22 / 34，放大字号才不会裁字。 */
+:root {
+    --gw-row-h: calc(var(--gw-text-sm) * 1.85);
+    --gw-foot-h: calc(var(--gw-text-xs) * 3.1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+/* 挂载节点也要满高：宿主 webview 的 HTML 只有一个裸 <div id="root">，父高是 auto，
+   .gw-shell 的 height:100% 便退化成 auto —— 三树一长就把 connection 和底部顶出可视区，
+   ⚙ 点不到。模板里不能写 inline style（style-src 不放），只能在这补。 */
+#root {
+    height: 100%;
+}
+
+body {
+    font-family: var(--gw-font-ui);
+    font-size: var(--gw-text-md);
+    line-height: var(--gw-leading);
+    color: var(--gw-text);
+    background: var(--gw-surface-raised);
+    -webkit-font-smoothing: antialiased;
+}
+
+.gw-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--gw-surface-raised);
+}
+
+/* ─── 品牌头 ─────────────────────────────────────────────── */
+.gw-brand {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+    padding: var(--gw-space-3) var(--gw-space-3) var(--gw-space-2);
+}
+.gw-brand-mark {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-xs);
+    font-weight: 700;
+    color: var(--gw-on-accent);
+    background: var(--gw-accent);
+    border-radius: var(--gw-radius);
+}
+.gw-brand-name {
+    font-size: var(--gw-text-sm);
+    font-weight: 700;
+    letter-spacing: var(--gw-tracking-meta);
+}
+.gw-brand-ver {
+    margin-left: auto;
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    color: var(--gw-text-faint);
+}
+
+/* ─── 主操作 ─────────────────────────────────────────────── */
+.gw-primary {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gw-space-2);
+    margin: 0 var(--gw-space-3) var(--gw-space-3);
+    padding: var(--gw-space-2) var(--gw-space-3);
+    font-size: var(--gw-text-sm);
+    color: var(--gw-on-accent);
+    background: var(--gw-accent);
+    border: none;
+    border-radius: var(--gw-radius-cta);
+    font-family: inherit;
+    width: calc(100% - var(--gw-space-3) * 2);
+}
+.gw-primary:hover:not(:disabled) {
+    background: var(--gw-accent-hover);
+}
+.gw-primary:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+.gw-primary .gw-key {
+    margin-left: auto;
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    opacity: 0.7;
+}
+
+/* ─── 三棵树 ─────────────────────────────────────────────── */
+.gw-trees {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 var(--gw-space-2);
+    min-height: 0;
+}
+.gw-tree {
+    display: flex;
+    flex-direction: column;
+}
+.gw-tree-head {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+    height: var(--gw-row-h);
+    padding: 0 var(--gw-space-3) 0 var(--gw-space-2);
+    font-size: var(--gw-text-xs);
+    font-weight: 700;
+    letter-spacing: var(--gw-tracking-meta);
+    text-transform: uppercase;
+    color: var(--gw-text-dim);
+    flex: none;
+}
+.gw-tree-head .gw-count {
+    margin-left: auto;
+}
+.gw-tree-head .gw-hicon {
+    width: 14px;
+    flex: none;
+    text-align: center;
+    color: var(--gw-text-faint);
+    font-size: var(--gw-text-2xs);
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+.gw-tree-actions {
+    display: flex;
+    gap: 1px;
+}
+.gw-count {
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    min-width: 16px;
+    text-align: center;
+    padding: 1px var(--gw-space-2);
+    border-radius: 999px;
+    background: var(--gw-surface-sunken);
+    color: var(--gw-text-dim);
+}
+.gw-iconbtn {
+    width: var(--gw-row-h);
+    height: var(--gw-row-h);
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--gw-text-sm);
+    color: var(--gw-text-dim);
+    background: transparent;
+    border: var(--gw-border-w) solid transparent;
+    border-radius: var(--gw-radius);
+    font-family: inherit;
+    padding: 0;
+}
+.gw-iconbtn:hover {
+    background: var(--gw-surface-hover);
+    color: var(--gw-text);
+}
+button {
+    font: inherit;
+    color: inherit;
+}
+.gw-tree-head button,
+.gw-node button {
+    cursor: default;
+}
+
+/* 只给读屏的一份文字：颜色、灯和符号它们拿不到，界面上又不能再多一列。
+   1px + clip 而不是 display:none —— 后者整棵子树都不在无障碍树里，念不到。 */
+.gw-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.gw-node {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+    height: var(--gw-row-h);
+    padding: 0 var(--gw-space-2) 0
+        calc(var(--gw-space-3) + var(--gw-indent, 0) * var(--gw-indent-step));
+    font-size: var(--gw-text-sm);
+    border-left: var(--gw-accent-bar) solid transparent;
+    flex: none;
+}
+.gw-node:hover {
+    background: var(--gw-surface-hover);
+}
+.gw-node[data-sel] {
+    background: var(--gw-selected);
+    color: var(--gw-on-selected);
+    border-left-color: var(--gw-accent);
+}
+.gw-node[data-sel] .gw-node-meta {
+    color: var(--gw-on-selected);
+    opacity: 0.7;
+}
+.gw-node-twist {
+    width: 12px;
+    flex: none;
+    text-align: center;
+    color: var(--gw-text-faint);
+    font-size: var(--gw-text-2xs);
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+.gw-node-icon {
+    width: 14px;
+    flex: none;
+    text-align: center;
+    color: var(--gw-text-dim);
+}
+.gw-node[data-sel] .gw-node-icon {
+    color: var(--gw-on-selected);
+}
+.gw-node-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    font-family: var(--gw-font-item);
+    text-align: left;
+    flex: 1 1 auto;
+}
+.gw-node-meta {
+    margin-left: auto;
+    flex: none;
+    max-width: 46%;
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    color: var(--gw-text-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gw-node-act {
+    display: none;
+    flex: none;
+    gap: 1px;
+}
+/* 键盘焦点环（FR-005）。用 :focus 而不是 :focus-visible —— ↑↓ 与 type-ahead 是我们
+   调 el.focus() 程序化挪焦点的，浏览器不一定把这当成"可见意图"，:focus-visible 会没环。
+   描 inside 一圈，免得被 .gw-node 的左边框和相邻行裁掉。
+   环画在整行上：行自己就是 treeitem 和焦点落点（一棵树一个 Tab 停靠点），
+   不再是里面那个行标。 */
+.gw-node:focus,
+.gw-node-twist:focus,
+.gw-hicon:focus,
+.gw-iconbtn:focus {
+    outline: 1px solid var(--gw-focus);
+    outline-offset: -2px;
+}
+/* 键盘选中一行也要顶出动作钮（SC-006：键盘得覆盖鼠标能做的全部动作项）。
+   没有这条的话动作钮是 display:none。它们自己不吃 Tab（一棵树一个停靠点，Tab 落在整行上），
+   键盘那条路是菜单键 → ↑↓ → Enter 的浮层（T018）。:focus-within 而不是 :focus ——
+   点完动作钮焦点停在钮上，用 :focus 会让这一行的钮当场消失。 */
+.gw-node:hover .gw-node-act,
+.gw-node[data-hover] .gw-node-act,
+.gw-node:focus-within .gw-node-act {
+    display: flex;
+}
+.gw-node:hover .gw-node-meta,
+.gw-node[data-hover] .gw-node-meta,
+.gw-node:focus-within .gw-node-meta {
+    display: none;
+}
+/* 右键浮层（T018 / FR-006）。绝对定位在 .gw-shell 里，位置由 placeMenu 夹过界。
+   配色全走皮肤既有的 overlay 两枚 token，不新造第三套。 */
+.gw-menu {
+    position: absolute;
+    z-index: 20;
+    min-width: 148px;
+    max-width: 268px;
+    padding: var(--gw-space-1) 0;
+    background: var(--gw-surface-overlay);
+    border: var(--gw-border-w) solid var(--gw-border-strong);
+    border-radius: var(--gw-radius);
+    box-shadow: var(--gw-shadow-overlay);
+}
+.gw-menu-item {
+    display: block;
+    width: 100%;
+    padding: var(--gw-space-1) var(--gw-space-3);
+    font: inherit;
+    font-size: var(--gw-text-sm);
+    text-align: left;
+    color: var(--gw-text);
+    background: none;
+    border: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gw-menu-item:hover {
+    background: var(--gw-surface-hover);
+}
+/* 同一条 :focus 口径：↑↓ 是程序化挪焦点，:focus-visible 会没环。 */
+.gw-menu-item:focus {
+    outline: 1px solid var(--gw-focus);
+    outline-offset: -2px;
+    background: var(--gw-surface-hover);
+}
+.gw-node[data-state="running"] .gw-node-icon,
+.gw-node-icon[data-state="running"] {
+    color: var(--gw-state-running);
+}
+.gw-node[data-state="review"] .gw-node-icon,
+.gw-node-icon[data-state="review"] {
+    color: var(--gw-state-review);
+}
+.gw-node[data-state="done"] .gw-node-icon,
+.gw-node-icon[data-state="done"] {
+    color: var(--gw-state-done);
+}
+.gw-node[data-state="failed"] .gw-node-icon,
+.gw-node-icon[data-state="failed"] {
+    color: var(--gw-state-failed);
+}
+.gw-node[data-group] {
+    font-size: var(--gw-text-2xs);
+    letter-spacing: var(--gw-tracking-meta);
+    text-transform: uppercase;
+    color: var(--gw-text-faint);
+    font-family: var(--gw-font-mono);
+}
+
+/* ─── connection 常驻区 ──────────────────────────────────── */
+.gw-conn {
+    flex: none;
+    border-top: var(--gw-border-w) solid var(--gw-border);
+    padding: var(--gw-space-2) var(--gw-space-3) var(--gw-space-3);
+    display: grid;
+    /* 轨道默认是 auto，会被最长那行撑破：不锁成 minmax(0,1fr)，行尾的省略号永远不触发。 */
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gw-space-1);
+}
+.gw-conn-head {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+    font-size: var(--gw-text-2xs);
+    font-weight: 700;
+    letter-spacing: var(--gw-tracking-meta);
+    text-transform: uppercase;
+    color: var(--gw-text-faint);
+    font-family: var(--gw-font-mono);
+    margin-bottom: var(--gw-space-1);
+}
+.gw-conn-row {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-xs);
+    color: var(--gw-text-dim);
+}
+.gw-conn-row .gw-conn-val {
+    margin-left: auto;
+    color: var(--gw-text-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* 缺了这行 flex 项不会收缩到内容宽度以下：断开时那句长错误会把行尾顶出面板。 */
+    min-width: 0;
+}
+/* 连接行的动作：与树行同一套「hover/聚焦时把行尾 meta 换成按钮」的退让。
+   常驻会把 socket 文件名挤掉，而断连时那个文件名正是要看的东西。 */
+.gw-conn-act {
+    display: none;
+    flex: none;
+    gap: 1px;
+    margin-left: auto;
+}
+.gw-conn-row:hover .gw-conn-act,
+.gw-conn-row:focus-within .gw-conn-act {
+    display: flex;
+}
+.gw-conn-row:hover .gw-conn-val,
+.gw-conn-row:focus-within .gw-conn-val {
+    display: none;
+}
+.gw-conn-row button {
+    cursor: default;
+}
+/* 连接行本身不足一个行高，按钮跟着缩，否则两行 connection 能把面板顶高一截。 */
+.gw-conn-row .gw-iconbtn {
+    width: var(--gw-text-lg);
+    height: var(--gw-text-lg);
+    font-size: var(--gw-text-2xs);
+}
+.gw-led {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--gw-state-queued);
+}
+.gw-led[data-on] {
+    background: var(--gw-state-done);
+}
+.gw-led[data-off] {
+    background: var(--gw-state-failed);
+}
+.gw-led[data-spin] {
+    background: var(--gw-state-running);
+}
+
+/* ─── 底部 account + setting ─────────────────────────────── */
+.gw-foot {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+    height: var(--gw-foot-h);
+    padding: 0 var(--gw-space-3);
+    border-top: var(--gw-border-w) solid var(--gw-border);
+    background: var(--gw-surface-sunken);
+}
+.gw-avatar {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    color: var(--gw-text-dim);
+    background: var(--gw-surface-hover);
+    border: var(--gw-border-w) dashed var(--gw-border-strong);
+    border-radius: 50%;
+}
+.gw-foot-name {
+    font-size: var(--gw-text-xs);
+    color: var(--gw-text-faint);
+    font-family: var(--gw-font-mono);
+    /* 字号放大时账号行与其他行一样省略，不折成两行撑破固定行高 */
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.gw-foot .gw-iconbtn {
+    margin-left: auto;
+}
+.gw-foot-account {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+    /* 不写 min-width: 0，这组在字号放大时不会收缩，会把右边的齿轮挤出面板 */
+    min-width: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: default;
+}
+
+/* ─── 空态 / 断连态 ──────────────────────────────────────── */
+.gw-empty {
+    padding: var(--gw-space-6) var(--gw-space-4);
+    display: grid;
+    gap: var(--gw-space-2);
+    justify-items: center;
+    text-align: center;
+    color: var(--gw-text-faint);
+    font-size: var(--gw-text-sm);
+}
+.gw-empty-sub {
+    color: var(--gw-text-faint);
+    font-size: var(--gw-text-xs);
+}
+.gw-offline {
+    margin: var(--gw-space-2);
+    padding: var(--gw-space-3);
+    font-size: var(--gw-text-sm);
+    color: var(--gw-role-error-fg);
+    background: var(--gw-surface-sunken);
+    border: var(--gw-border-w) solid var(--gw-border-strong);
+    border-radius: var(--gw-radius);
+    display: grid;
+    gap: var(--gw-space-2);
+}
+.gw-offline code {
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-xs);
+    color: var(--gw-text-dim);
+    word-break: break-all;
+}
+.gw-offline-actions {
+    display: flex;
+    gap: var(--gw-space-2);
+}
+.gw-btn {
+    white-space: nowrap;
+    padding: 4px var(--gw-space-3);
+    font-size: var(--gw-text-sm);
+    color: var(--gw-on-accent);
+    background: var(--gw-accent);
+    border: none;
+    border-radius: var(--gw-radius);
+    font-family: var(--gw-font-mono);
+    /* 图标与文案由同一个 action 给（glyph + label），并排时留一点间距。 */
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gw-space-2);
+}
+.gw-btn[data-secondary] {
+    color: var(--gw-text);
+    background: var(--gw-surface-sunken);
+    border: var(--gw-border-w) solid var(--gw-border);
+}
+
+/* 会话行 run 在飞的旋转标识（Plan B）：纯边框环 + 旋转动画，随主题色。 */
+.gw-node-icon.gw-node-spin {
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--gw-text-dim, currentColor);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: gw-spin 0.9s linear infinite;
+}
+
+@keyframes gw-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-node-icon.gw-node-spin {
+        animation-duration: 2.4s;
+    }
+}

@@ -1,0 +1,5 @@
+{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"acp-ui-showcase-session","update":{"sessionUpdate":"user_message_chunk","content":{"type":"text","text":"映射层没实现的更新也要能看见。"}}}}
+{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"acp-ui-showcase-session","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"下面两条 `session/update` 是协议里有、我们还没实现 handler 的：`usage_update` 与 `current_mode_update`。"}}}}
+{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"acp-ui-showcase-session","update":{"sessionUpdate":"usage_update","used":18342,"size":200000,"cost":{"amount":4.21,"currency":"USD"}}}}
+{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"acp-ui-showcase-session","update":{"sessionUpdate":"current_mode_update","modeId":"plan","availableModes":[{"id":"ask","name":"Ask"},{"id":"plan","name":"Plan"}]}}}
+{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"acp-ui-showcase-session","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"两条都收在折叠行里，点开就是原文 —— 界面上不会再默默少一块。"}}}}

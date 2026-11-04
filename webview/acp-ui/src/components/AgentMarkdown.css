@@ -1,12 +1,8 @@
 .agent-markdown {
-    font-family:
-        var(--vscode-editor-font-family), ui-sans-serif, system-ui, sans-serif;
-    font-size: var(
-        --acp-markdown-font-size,
-        var(--vscode-editor-font-size, 12px)
-    );
-    line-height: var(--acp-markdown-line-height, 1.5);
-    color: var(--vscode-foreground);
+    font-family: var(--gw-font-mono), ui-sans-serif, system-ui, sans-serif;
+    font-size: var(--gw-md-font-size);
+    line-height: var(--gw-md-leading);
+    color: var(--gw-text);
 }
 
 .agent-markdown p {
@@ -29,32 +25,20 @@
 }
 
 .agent-markdown h1 {
-    font-size: 2em;
-    color: var(
-        --acp-markdown-h1-foreground,
-        var(--vscode-foreground)
-    );
+    font-size: 1.3em;
+    color: var(--gw-md-h1-fg);
 }
 .agent-markdown h2 {
-    font-size: 1.5em;
-    color: var(
-        --acp-markdown-h2-foreground,
-        var(--vscode-foreground)
-    );
+    font-size: 1.18em;
+    color: var(--gw-md-h2-fg);
 }
 .agent-markdown h3 {
-    font-size: 1.25em;
-    color: var(
-        --acp-markdown-h3-foreground,
-        var(--vscode-foreground)
-    );
+    font-size: 1.05em;
+    color: var(--gw-md-h3-fg);
 }
 .agent-markdown h4 {
     font-size: 1em;
-    color: var(
-        --acp-markdown-h4-foreground,
-        var(--vscode-foreground)
-    );
+    color: var(--gw-md-h4-fg);
 }
 .agent-markdown h5 {
     font-size: 0.875em;
@@ -66,15 +50,20 @@
 .agent-markdown ul,
 .agent-markdown ol {
     margin: 0 0 0.65em;
-    padding-left: 1.35em;
+    /* 1.35em 对宽字体太窄，marker 会被裁半（本仓覆盖层里带过来的实测值） */
+    padding-left: 1.7em;
 }
 
 .agent-markdown li {
     margin: 0.2em 0;
 }
 
+.agent-markdown li::marker {
+    color: var(--gw-text-faint);
+}
+
 .agent-markdown a {
-    color: var(--vscode-textLink-foreground);
+    color: var(--gw-text-link);
     text-decoration: none;
 }
 
@@ -83,31 +72,15 @@
 }
 
 .agent-markdown code {
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
+    font-family: var(--gw-font-mono), ui-monospace, monospace;
     font-size: 1em;
     line-height: 1.357em;
-    padding: 0.1em 0.35em;
-    border-radius: 3px;
+    padding: 0;
+    border-radius: 0;
     background-color: transparent;
-    border: 1px solid
-        var(
-            --acp-markdown-inline-code-border,
-            var(
-                --vscode-textPreformat-border,
-                var(
-                    --vscode-markdown-extension-editor-codeSpan-border,
-                    color-mix(
-                        in srgb,
-                        var(--vscode-widget-border) 70%,
-                        transparent
-                    )
-                )
-            )
-        );
-    color: var(
-        --acp-markdown-inline-code-foreground,
-        var(--vscode-textPreformat-foreground, var(--vscode-editor-foreground))
-    );
+    /* 行内代码不画胶囊（稿 03 里就是裸文本）：那颗边框色由用户设置项决定，缺省透明 */
+    border: 1px solid var(--gw-inline-code-border);
+    color: var(--gw-inline-code-fg);
 }
 
 .agent-markdown-code-block {
@@ -119,13 +92,9 @@
     margin: 0;
     padding: 8px 36px 10px 10px;
     overflow: auto;
-    border-radius: 4px;
-    background-color: var(
-        --vscode-textCodeBlock-background,
-        var(--vscode-editor-background)
-    );
-    border: 1px solid
-        color-mix(in srgb, var(--vscode-widget-border) 80%, transparent);
+    border-radius: 0;
+    background-color: color-mix(in srgb, var(--gw-surface-base) 92%, var(--gw-text) 8%);
+    border: none;
 }
 
 .agent-markdown-code-block-copy {
@@ -141,15 +110,8 @@
     padding: 0;
     border: none;
     border-radius: 3px;
-    background: color-mix(
-        in srgb,
-        var(--vscode-editor-background) 55%,
-        transparent
-    );
-    color: var(
-        --vscode-descriptionForeground,
-        var(--vscode-foreground)
-    );
+    background: color-mix(in srgb, var(--gw-surface-base) 55%, transparent);
+    color: var(--gw-text-faint);
     cursor: pointer;
     opacity: 0;
     transition:
@@ -164,16 +126,12 @@
 }
 
 .agent-markdown-code-block-copy:hover {
-    color: var(--vscode-foreground);
-    background-color: color-mix(
-        in srgb,
-        var(--vscode-editor-background) 80%,
-        transparent
-    );
+    color: var(--gw-text);
+    background-color: color-mix(in srgb, var(--gw-surface-base) 80%, transparent);
 }
 
 .agent-markdown-code-block-copy:focus-visible {
-    outline: 1px solid var(--vscode-focusBorder);
+    outline: 1px solid var(--gw-focus);
     outline-offset: 1px;
 }
 
@@ -190,87 +148,75 @@
     border-radius: 0;
     font-size: 0.95em;
     line-height: 1.4;
-    color: var(--vscode-editor-foreground);
+    color: var(--gw-code-fg);
 }
 
 .agent-markdown .code-token-keyword {
-    color: var(--vscode-symbolIcon-keywordForeground, #c586c0);
+    color: var(--gw-syntax-key);
 }
 
 .agent-markdown .code-token-string {
-    color: var(--vscode-stringForeground, #ce9178);
+    color: var(--gw-syntax-str);
 }
 
 .agent-markdown .code-token-number {
-    color: var(--vscode-numberLiteralForeground, #b5cea8);
+    color: var(--gw-syntax-num);
 }
 
 .agent-markdown .code-token-comment {
-    color: var(
-        --acp-code-token-comment-foreground,
-        #6a9955
-    );
+    color: var(--gw-syntax-com);
 }
 
 .agent-markdown blockquote {
     margin: 0.5em 0;
     padding: 0.2em 0 0.2em 0.75em;
-    border-left: 3px solid
-        var(--vscode-textBlockQuote-border, var(--vscode-widget-border));
-    color: var(
-        --vscode-textBlockQuote-foreground,
-        var(--vscode-descriptionForeground)
-    );
+    border-left: 3px solid var(--gw-role-thought-border);
+    color: var(--gw-role-thought-fg);
 }
 
 .agent-markdown table {
     margin: 0.65em 0 0.85em;
     border-collapse: collapse;
     width: 100%;
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
-    font-size: var(--vscode-editor-font-size, 12px);
+    font-family: var(--gw-font-mono), ui-monospace, monospace;
+    font-size: var(--gw-md-font-size);
     line-height: 1.45;
+    /* 首列 nowrap + 其余 width:100% 会把数据列挤成右侧窄条，改成均匀自动列宽 */
+    table-layout: auto;
 }
 
 .agent-markdown th,
 .agent-markdown td {
     border: none;
-    padding: 1px 0;
+    padding: 3px 18px 3px 0;
     text-align: left;
     vertical-align: top;
-    color: var(--vscode-foreground);
+    color: var(--gw-text);
 }
 
 .agent-markdown thead th {
     padding-bottom: 6px;
     font-weight: 400;
-    background-color: var(
-        --vscode-keybindingTable-headerBackground,
-        color-mix(
-            in srgb,
-            var(--vscode-foreground) 6%,
-            var(--vscode-editor-background)
-        )
+    background-color: color-mix(
+        in srgb,
+        var(--gw-text) 6%,
+        var(--gw-surface-base)
     );
 }
 
 /* Match VS Code table/list parity: index 1, 3, 5... (data-parity=odd). */
 .agent-markdown tbody tr:nth-child(even) {
-    background-color: var(
-        --vscode-tree-tableOddRowsBackground,
-        color-mix(in srgb, var(--vscode-foreground) 4%, transparent)
-    );
+    background-color: color-mix(in srgb, var(--gw-text) 4%, transparent);
 }
 
 .agent-markdown th:first-child,
 .agent-markdown td:first-child {
-    padding-right: 28px;
-    white-space: nowrap;
+    padding-right: 18px;
 }
 
 .agent-markdown th:not(:first-child),
 .agent-markdown td:not(:first-child) {
-    width: 100%;
+    width: auto;
 }
 
 /* Tables read like settings key/value rows, not fenced inline-code chips. */
@@ -288,7 +234,7 @@
 .agent-markdown hr {
     margin: 0.75em 0;
     border: none;
-    border-top: 1px solid var(--vscode-widget-border);
+    border-top: 1px solid var(--gw-border-strong);
 }
 
 .agent-markdown-empty {
