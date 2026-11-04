@@ -94,8 +94,10 @@ type ModelEffortCapsuleProps = {
 };
 
 /** Compact ZCode-style model capsule: label + effort in one trigger, provider/model
- * and effort details only in the popover. The chevron is deliberately inset from
- * the capsule's right edge rather than using the browser's native select arrow. */
+ * and effort details only in the popover. The trigger is a single-option <select> so
+ * the indicator is the platform's own select arrow (the same one the workspace pill
+ * gets), with the platform's built-in inset from the capsule's right edge. Its native
+ * picker is suppressed on mousedown and the popover opens instead. */
 function ModelEffortCapsule({
   modelOption,
   modelLabel,
@@ -117,19 +119,39 @@ function ModelEffortCapsule({
     return () => document.removeEventListener("pointerdown", close, true);
   }, [open]);
   const modelValue = modelOption?.currentValue ?? modelChoices[0]?.value ?? "";
+  const triggerLabel = `${capsuleModelLabel(modelLabel)} · ${effortValue}`;
   return (
     <div className="composer-model-capsule" ref={rootRef}>
-      <button
-        type="button"
+      <select
         className="composer-model-capsule__trigger"
-        aria-label={`Model ${capsuleModelLabel(modelLabel)} · ${effortValue}`}
+        aria-label={`Model ${triggerLabel}`}
         aria-expanded={open}
         disabled={disabled}
-        onClick={() => setOpen((value) => !value)}
+        onMouseDown={(event) => {
+          // 原生 picker 在 mousedown 打开：拦掉它，换成弹窗；箭头仍由平台绘制。
+          event.preventDefault();
+          setOpen((value) => !value);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            setOpen(false);
+            return;
+          }
+          if (
+            event.key === "Enter" ||
+            event.key === " " ||
+            event.key === "ArrowDown" ||
+            event.key === "ArrowUp"
+          ) {
+            event.preventDefault();
+            setOpen((value) => !value);
+          }
+        }}
+        onChange={() => setOpen(false)}
       >
-        <span>{capsuleModelLabel(modelLabel)} · {effortValue}</span>
-        <span className="composer-model-capsule__chevron" aria-hidden={true}>⌄</span>
-      </button>
+        <option value={modelValue}>{triggerLabel}</option>
+      </select>
       {open ? (
         <div className="composer-model-capsule__popover" role="dialog" aria-label="Model settings">
           <label>
