@@ -7,7 +7,7 @@
  */
 
 /** 三棵树的种类；折叠状态与计数都按这个键存。 */
-export type ControlPanelTreeKind = "chat" | "worker" | "task";
+export type ControlPanelTreeKind = "chat" | "project" | "worker" | "task";
 
 /** 任务生命周期五档，沿用宿主 `src/views/taskTree.ts` 的收敛结果，不新造词表。 */
 export type ControlPanelNodeState =
@@ -27,6 +27,11 @@ export type ControlPanelNodeAction = {
     tooltip: string;
     /** 正文标签：只给离线块那种文字按钮用，行内图标按钮仍只画 `glyph`。 */
     label?: string;
+    /**
+     * 仅右键菜单（Plan B）：行内 hover 不渲染该动作。会话行的 archive/copy
+     * 走这里 —— hover 保持干净。
+     */
+    menuOnly?: boolean;
 };
 
 export type ControlPanelTreeNode = {
@@ -71,6 +76,8 @@ export type ControlPanelHint = {
 export type ControlPanelSnapshot = {
     brand: { name: string; version: string };
     chats: ControlPanelTreeNode[];
+    /** Projects 树（Plan B）：workspace 分组，与 chats 平行；无 workspace 的会话留 chats。 */
+    projects?: ControlPanelTreeNode[];
     /** 宿主把 worker 的任务 id 展开成子节点后再推，webview 不查表。 */
     workers: ControlPanelTreeNode[];
     tasks: ControlPanelTreeNode[];

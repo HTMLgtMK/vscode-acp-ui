@@ -51,13 +51,15 @@ const STATE_GLYPH: Record<NodeState, string> = {
 
 const TREE_LABEL: Record<TreeKind, string> = {
     chat: "Chat",
+    project: "Projects",
     worker: "Worker",
     task: "Task",
 };
 
 /** kind → 快照里那棵树的字段名（菜单键要从焦点行找回节点时用）。 */
-const TREE_NODES: Record<TreeKind, "chats" | "workers" | "tasks"> = {
+const TREE_NODES: Record<TreeKind, "chats" | "projects" | "workers" | "tasks"> = {
     chat: "chats",
+    project: "projects",
     worker: "workers",
     task: "tasks",
 };
@@ -260,7 +262,7 @@ const NodeRow = memo(
                 ) : null}
                 {node.actions?.length ? (
                     <span className="gw-node-act">
-                        {node.actions.map((action) => (
+                        {node.actions.filter((action) => !action.menuOnly).map((action) => (
                             <button
                                 key={action.id}
                                 type="button"
@@ -883,6 +885,22 @@ export function ControlPanel({
                     groupOpen={groupOpen}
                     onToggleGroup={toggleGroup}
                 />
+                {(snapshot.projects?.length ?? 0) > 0 ? (
+                    <TreeSection
+                        kind="project"
+                        onRowMenu={openMenuAt}
+                        nodes={snapshot.projects ?? []}
+                        collapsed={ui.collapsed.project === true}
+                        selectedId={selectedId}
+                        actions={snapshot.treeActions?.project ?? []}
+                        count={count("project", snapshot.projects ?? [])}
+                        rowsShown={rowsVisible(tier, "project")}
+                        trimMeta={tier !== "full"}
+                        handlers={handlers}
+                        groupOpen={groupOpen}
+                        onToggleGroup={toggleGroup}
+                    />
+                ) : null}
                 <TreeSection
                     kind="worker"
                     onRowMenu={openMenuAt}
