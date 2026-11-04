@@ -46,7 +46,29 @@ export type AcpUiWebviewHtmlOptions = {
     styleUri: string;
     /** Origin allowed to load webview resources (VS Code: `webview.cspSource`). */
     cspSource: string;
+    /**
+     * 皮肤包样式表的 URI，排在 `styleUri` 之后 —— 层叠顺序就是它的优先级，
+     * 皮肤不靠 `!important` 抢。宿主只把校验过的（`--gw-*` 白名单）那份传进来，
+     * 并且要把皮肤目录登记进 `localResourceRoots`；CSP 不放宽。
+     * 每条都带 `data-gw-skin`：换皮肤时页面自己按这个标记增删（见 `setSkin` 下行）。
+     */
+    extraStyleUris?: string[];
+    /**
+     * 写进 `<html data-skin="…">` 的那一档。内置三档由产物自己带色，
+     * 这一格只决定选哪一档；皮肤包还要配 `extraStyleUris` 才有自己的值。
+     * 不给就不写属性，沿用 `:root` 那套跟随宿主的 token。
+     */
+    skin?: string;
 };
+
+/** Attribute values are host-supplied strings; keep them inside the quote. */
+function escapeAttribute(value: string): string {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
 
 /**
  * HTML shell for the ACP UI webview: CSP, asset URIs, and the root mount node.
@@ -62,14 +84,24 @@ export function buildAcpUiWebviewHtml(
         `font-src ${options.cspSource}`,
         `script-src ${options.cspSource}`,
     ].join("; ");
+    const extraStyles = (options.extraStyleUris ?? [])
+        .map(
+            (uri) =>
+                `  <link rel="stylesheet" data-gw-skin href="${escapeAttribute(uri)}" />`,
+        )
+        .join("\n");
+    const skinAttribute =
+        options.skin === undefined || options.skin.length === 0
+            ? ""
+            : ` data-skin="${escapeAttribute(options.skin)}"`;
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en"${skinAttribute}>
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="${contentSecurityPolicy}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="${options.styleUri}" />
-</head>
+${extraStyles.length > 0 ? `${extraStyles}\n` : ""}</head>
 <body>
   <div id="root"></div>
   <script src="${options.scriptUri}"></script>

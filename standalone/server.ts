@@ -8,7 +8,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type * as acp from "@agentclientprotocol/sdk";
 import { WebSocket, WebSocketServer } from "ws";
@@ -41,8 +41,15 @@ import {
     type ExtensionToWebviewMessage,
     tryParseWebviewMessage,
 } from "../src/protocol/extensionHostMessages";
+import {
+    bridgeAddress,
+    parsePanelChannel,
+    serveControlPanelSocket,
+} from "./panelBridge";
 
 const PORT = Number(process.env.ACP_WS_PORT ?? 5174);
+/** 只在启动日志里报"该打开哪个地址"，与 `standalone/vite.config.ts` 读的是同一个环境变量。 */
+const UI_PORT = Number(process.env.ACP_UI_VITE_PORT ?? 5173);
 const STANDALONE_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(STANDALONE_DIR, "..");
 
@@ -67,6 +74,14 @@ const DEMO_REPLAY = !(
     process.env.ACP_UI_DEMO_REPLAY === "0" ||
     process.env.ACP_UI_DEMO_REPLAY === "false"
 );
+// 只读 composer 的调试入口：在浏览器里演任务详情那块面板（T026），不必等 VS Code。
+const COMPOSER_READONLY =
+    process.env.ACP_UI_COMPOSER_READONLY === "1" ||
+    process.env.ACP_UI_COMPOSER_READONLY === "true";
+// 任务详情 header 的调试入口（T028）：演宿主那条 `taskHeader` 下行，字段照设计稿 01-workbench。
+const TASK_HEADER =
+    process.env.ACP_UI_TASK_HEADER === "1" ||
+    process.env.ACP_UI_TASK_HEADER === "true";
 
 const rpcLogEnv = process.env.ACP_RPC_LOG;
 const defaultRpcLogFile = join(STANDALONE_DIR, "acp-rpc.ndjson");
@@ -469,7 +484,47 @@ function vscodeThemeVariablesForInit(): Record<string, string> | undefined {
 
 // ── WebSocket server ──────────────────────────────────────────────────────────
 
+/** 皮肤包根目录：与扩展仓 `src/views/controlPanel/skin.ts` 的 skinsRoot() 同一处。 */
+const SKIN_ROOT = join(resolveUserHomeDir(), ".goworker", "skins");
+const SKIN_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+
+/**
+ * 浏览器端的皮肤包入口：把 `~/.goworker/skins/<id>/` 里那份样式表当 text/css 吐出去，
+ * 等价于宿主侧 `asWebviewUri` 之后那条 `<link>`。
+ * 这里不跑扩展仓那份白名单校验 —— 那是产品加载入口的事；开发页只借这条看一眼
+ * 「皮肤包真盖住了内置档没有」。范围也钉死在这一层目录：id 卡字面、样式表名不许带路径。
+ */
+function standaloneSkinCss(id: string): string | undefined {
+    if (!SKIN_ID.test(id)) {
+        return undefined;
+    }
+    try {
+        const manifest = JSON.parse(
+            readFileSync(join(SKIN_ROOT, id, "skin.json"), "utf8"),
+        ) as { style?: unknown };
+        const style = typeof manifest.style === "string" ? manifest.style : "";
+        if (style.length === 0 || basename(style) !== style) {
+            return undefined;
+        }
+        return readFileSync(join(SKIN_ROOT, id, style), "utf8");
+    } catch {
+        return undefined;
+    }
+}
+
 const httpServer = createServer((req, res) => {
+    const skinRequest = /^\/api\/skins\/([^/]+)\.css$/.exec(req.url ?? "");
+    if (skinRequest !== null && req.method === "GET") {
+        const css = standaloneSkinCss(decodeURIComponent(skinRequest[1]));
+        if (css === undefined) {
+            res.writeHead(404);
+            res.end();
+            return;
+        }
+        res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" });
+        res.end(css);
+        return;
+    }
     if (req.url === "/api/fixtures" && req.method === "GET") {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(listStandaloneFixtures()));
@@ -492,14 +547,56 @@ const httpServer = createServer((req, res) => {
 });
 const wss = new WebSocketServer({ server: httpServer });
 
-wss.on("connection", (ws: WebSocket) => {
+/**
+ * WS 关闭帧的原因文本只装得下 123 字节（协议把整个 payload 限在 125 字节，扣掉那 2 字节状态码）。
+ * 超了 `ws` 会就地抛 RangeError —— 而抛的位置在 upgrade 回调里，没人接得住，整个进程跟着没了。
+ * 所以这里按字节截，且从后往前找切点，半个汉字都不留。
+ */
+function fitCloseReason(text: string): string {
+    const limit = 123;
+    if (Buffer.byteLength(text, "utf8") <= limit) {
+        return text;
+    }
+    let cut = text.slice(0, limit);
+    while (Buffer.byteLength(`${cut}…`, "utf8") > limit) {
+        cut = cut.slice(0, -1);
+    }
+    return `${cut}…`;
+}
+
+wss.on("connection", (ws: WebSocket, req) => {
+    // 控制面板那条连接走的是同一条桥，靠请求行里的 channel 认人：认出之后就完全不再碰 ACP
+    // （不 spawn agent、不 replay chat 夹具），两边各说各的协议。见 standalone/panelBridge.ts。
+    if (parsePanelChannel(req.url) !== null) {
+        serveControlPanelSocket(
+            {
+                send: (text) => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(text);
+                    }
+                },
+                close: (reason) => {
+                    ws.close(1008, fitCloseReason(reason));
+                },
+                onMessage: (handler) => {
+                    ws.on("message", (raw) => handler(raw.toString()));
+                },
+            },
+            {
+                requestUrl: req.url,
+                // 页面看到的那个 host:port 才是它连上的桥（经 vite 代理时是前端端口）。
+                address: bridgeAddress(req.headers.host ?? `127.0.0.1:${PORT}`),
+            },
+        );
+        return;
+    }
     const sessionId = randomUUID();
     console.log(`client connected  session=${sessionId}`);
 
     let bridge: AcpSessionBridge | null = null;
     /** Last model chosen in the UI; applied on the next `connect` (including after `/clear`). */
     let userPreferredModelId: string | null = null;
-    let selectedAgentName = firstAgentConfig.name;
+    const selectedAgentName = firstAgentConfig.name;
     let connectInFlight: Promise<void> | null = null;
     let connectGeneration = 0;
     let bootstrapSent = false;
@@ -693,7 +790,22 @@ wss.on("connection", (ws: WebSocket) => {
                     ? { vscodeThemeVariables }
                     : {}),
                 lockSessionAgent: false,
+                composerReadOnly: COMPOSER_READONLY,
             });
+            if (TASK_HEADER) {
+                // init 会重建整份 chat state，所以 header 只能在它之后发。
+                send({
+                    type: "taskHeader",
+                    header: {
+                        title: "为 dispatcher 增加超时重试",
+                        taskId: "task-4f2a",
+                        kind: "code",
+                        worker: "claude",
+                        branch: "feat/dispatch-retry",
+                        status: "working",
+                    },
+                });
+            }
             if (DEMO_MODE || sessionDemoFixture !== undefined) {
                 void maybeReplayInitFixture();
             }
@@ -722,40 +834,6 @@ wss.on("connection", (ws: WebSocket) => {
 
         if (parsed.type === "permissionResponse") {
             bridge?.handlePermissionResponse(parsed);
-            return;
-        }
-
-        if (parsed.type === "setSessionAgent") {
-            const next = agentConfigs.find((c) => c.name === parsed.agentName);
-            if (next === undefined) {
-                send({
-                    type: "error",
-                    message: `Unknown agent: ${parsed.agentName}`,
-                });
-                return;
-            }
-            selectedAgentName = next.name;
-            disposeBridge();
-            send({ type: "sessionReset" });
-            send({
-                type: "acpAgentSelection",
-                currentAgentName: next.name,
-                availableAgentNames: agentConfigs.map((c) => c.name),
-            });
-            const resetSeed = composerSeedForInit();
-            if (resetSeed.configOptions !== null) {
-                send({
-                    type: "sessionConfigOptions",
-                    options: resetSeed.configOptions,
-                });
-            } else if (resetSeed.modelSelection !== null) {
-                send({ type: "sessionModels", ...resetSeed.modelSelection });
-            } else {
-                send({ type: "sessionConfigOptionsLoading" });
-            }
-            if (!DEMO_MODE) {
-                void connectAgent();
-            }
             return;
         }
 
@@ -864,8 +942,12 @@ httpServer.listen(PORT, () => {
         const argLine = c.args.length > 0 ? ` ${c.args.join(" ")}` : "";
         console.log(`Agent "${c.name}": ${c.command}${argLine}`);
     }
+    // 页面在 vite 那一侧；写 localhost 而不是 127.0.0.1 —— vite 默认只绑 ::1，
+    // 照这条开 127.0.0.1 会连不上。端口跟着 ACP_UI_VITE_PORT 走，别再写死 5173。
+    console.log(`Open http://localhost:${UI_PORT}`);
+    console.log(`Fixture gallery: http://localhost:${UI_PORT}/fixtures`);
     console.log(
-        `Open http://localhost:5173 after starting the Vite dev server`,
+        `Control panel over the bridge: http://localhost:${UI_PORT}/?panel=ws` +
+            "&panelFixture=progressive&panelReplay=1",
     );
-    console.log(`Fixture gallery: http://localhost:5173/fixtures`);
 });

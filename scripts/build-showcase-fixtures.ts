@@ -95,15 +95,16 @@ Headings pick up theme-aware colors from the active VS Code theme.
 
 ### Inline code and lists
 
-Use \`ib-acp-ui.agents\` in settings, then:
+Give the host one spawn config per agent (\`name\`, \`command\`, optional \`args\`, \`env\`), then:
 
-- Open **ACP UI** from the activity bar
-- Start a chat from the **Chats** sidebar
-- Inspect RPC traffic in the **ACP UI RPC** output channel
+- Open a task's chat panel from the workbench sidebar
+- Send a prompt and watch the trace stream in
+- Inspect RPC traffic in the ACP UI RPC output channel
 
 #### fenced code blocks
 
 \`\`\`typescript
+// mountChatView 是 webview 的唯一入口
 export function mountChatView(
   root: HTMLElement,
   init: InitPayload,
@@ -119,6 +120,14 @@ export function mountChatView(
   "args": ["acp"]
 }
 \`\`\`
+
+### Table
+
+| 皮肤 | 底色 | 强调色 |
+| --- | --- | --- |
+| vscode | 跟随宿主 | 跟随宿主 |
+| terminal | \`#141414\` | \`#35a854\` |
+| light-paper | \`#fbfaf7\` | \`#9c5522\` |
 `;
 
 const readFileContent = `import { window } from "vscode";
@@ -342,13 +351,14 @@ const opusModelSeed = {
 };
 
 mkdirSync(fixturesDir, { recursive: true });
+// 缩进 4：仓库里 biome 对 json 用的就是 4 格，写成 2 会让 `npm run build:fixtures` 一跑完 lint 就红。
 writeFileSync(
     join(fixturesDir, "cursor-model-seed.json"),
-    `${JSON.stringify(cursorModelSeed, null, 2)}\n`,
+    `${JSON.stringify(cursorModelSeed, null, 4)}\n`,
 );
 writeFileSync(
     join(fixturesDir, "opus-model-seed.json"),
-    `${JSON.stringify(opusModelSeed, null, 2)}\n`,
+    `${JSON.stringify(opusModelSeed, null, 4)}\n`,
 );
 
 console.log(`Wrote fixtures under ${chatsDir}`);

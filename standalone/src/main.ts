@@ -1,3 +1,4 @@
+import { CONTROL_PANEL_SKINS } from "../../src/protocol/controlPanelMessages";
 import type {
     ExtensionToWebviewMessage,
     WebviewToExtensionMessage,
@@ -213,15 +214,6 @@ async function bootstrap(): Promise<void> {
                 (payload) => {
                     host.post({ type: "permissionResponse", ...payload });
                 },
-                (payload) => {
-                    host.post({
-                        type: "cursorAskQuestionResponse",
-                        ...payload,
-                    });
-                },
-                (payload) => {
-                    host.post({ type: "cursorCreatePlanResponse", ...payload });
-                },
                 undefined,
                 undefined,
                 (path, options) => {
@@ -243,4 +235,27 @@ async function bootstrap(): Promise<void> {
     mountStandaloneDevNav();
 }
 
+applySkinFromUrl();
 void bootstrap();
+
+/**
+ * `?skin=`：一整页一份文档，聊天 / trace 与左侧的侧栏演示吃同一个 `data-skin`。
+ * 内置三档的色都在产物里，改属性就够；皮肤包（`~/.goworker/skins/<id>`）在浏览器里
+ * 退化成一条普通 `<link>`，由 dev server 直接吐那份 CSS —— 这边没有 CSP 与
+ * localResourceRoots 那套登记，宿主侧的对应实现在扩展仓
+ * `goworker-vscode-extension/src/views/controlPanel/skin.ts`。
+ */
+function applySkinFromUrl(): void {
+    const skin = new URLSearchParams(location.search).get("skin");
+    if (skin === null || skin.length === 0) {
+        return;
+    }
+    document.documentElement.dataset.skin = skin;
+    if ((CONTROL_PANEL_SKINS as readonly string[]).includes(skin)) {
+        return;
+    }
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `/api/skins/${encodeURIComponent(skin)}.css`;
+    document.head.append(link);
+}

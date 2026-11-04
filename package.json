@@ -9,6 +9,7 @@
         "screenshots": "npm run build:fixtures && tsx scripts/capture-readme-screenshots.ts",
         "build": "npm run build:webview && node esbuild.mjs",
         "build:sdk": "npm run build:webview && node esbuild.sdk.mjs && tsc -p tsconfig.sdk.json && node scripts/emit-sdk-package.mjs",
+        "pack:sdk": "ACP_SDK_SNAPSHOT=1 npm run build:sdk && mkdir -p dist-tgz && cd dist-sdk && npm pack --pack-destination ../dist-tgz",
         "watch": "node esbuild.mjs --watch",
         "package": "npm run build:webview && node esbuild.mjs --production",
         "check": "tsc --noEmit && tsc --noEmit -p webview/acp-ui/tsconfig.json && tsc --noEmit -p webview/control-panel/tsconfig.json && tsc --noEmit -p standalone/tsconfig.json",
