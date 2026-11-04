@@ -16,19 +16,19 @@ ACP UI will spawn an interactive login subprocess when that metadata is present.
 
 ### Agent-type authenticate
 
-After `initialize`, [ensureAuthenticated](../../../src/acp/session/acpSessionBridge.ts#L880-L898) runs.
+After `initialize`, [ensureAuthenticated](../../../src/acp/session/acpSessionBridge.ts#L720-L738) runs.
 It calls [resolveAuthMethodId](../../../src/acp/domain/agentSpawnConfig.ts#L42-L68) on advertised `authMethods`.
-When a method id is resolved, [authenticate](../../../src/acp/infrastructure/acpAgentProcess.ts#L230-L235) runs on the SDK connection.
+When a method id is resolved, [authenticate](../../../src/acp/infrastructure/acpAgentProcess.ts#L298-L303) runs on the SDK connection.
 
 [resolveAuthMethodId](../../../src/acp/domain/agentSpawnConfig.ts#L42-L68) prefers a configured `authMethodId` when it matches an agent-type method.
 Otherwise it picks the first agent-type method.
 Env-var and terminal auth methods are rejected with an explicit error.
 
-[newSessionWithAuthRetry](../../../src/acp/session/acpSessionBridge.ts#L900-L912) retries session setup after auth errors.
-[loadSessionWithAuthRetry](../../../src/acp/session/acpSessionBridge.ts#L914-L927) does the same for load.
+[newSessionWithAuthRetry](../../../src/acp/session/acpSessionBridge.ts#L740-L752) retries session setup after auth errors.
+[loadSessionWithAuthRetry](../../../src/acp/session/acpSessionBridge.ts#L754-L767) does the same for load.
 
-On dispose, [logoutBestEffort](../../../src/acp/session/acpSessionBridge.ts#L929) runs.
-It calls [logout](../../../src/acp/infrastructure/acpAgentProcess.ts#L241-L246) when logout is supported.
+On dispose, [logoutBestEffort](../../../src/acp/session/acpSessionBridge.ts#L769-L781) runs.
+It calls [logout](../../../src/acp/infrastructure/acpAgentProcess.ts#L309-L314) when logout is supported.
 
 Protocol: [authentication](../../acp/protocol/v1/authentication.mdx).
 
