@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import "./ChatComposer.css";
 import {
@@ -34,6 +35,9 @@ import { buildComposerAutocompleteState, wrapIndex } from "./composerAutocomplet
 import { ConfigOptionControls, ComposerConfigLoading } from "./ConfigOptionControls";
 import { SessionModeIndicator } from "./SessionModeIndicator";
 
+/** 只读面板写进输入区的那句话：光置灰不说明原因，用户只会以为界面坏了。 */
+const READ_ONLY_PLACEHOLDER = "当前面板为只读观察；reply / resume 尚未开放";
+
 export type ChatComposerProps = {
   activityLabel: string | null;
   /** Shown in the activity slot when nothing is in flight (e.g. workspace cwd). */
@@ -46,8 +50,8 @@ export type ChatComposerProps = {
   /** Hides model/config dropdowns in the composer footer. */
   hideComposerModelControls: boolean;
   promptInFlight: boolean;
-  /** When set, blocks the textarea (e.g. pending permission dialog). */
-  inputBlocked: boolean;
+  /** 只读观察（任务详情）：输入区功能级禁用，并写明 reply / resume 尚未开放。 */
+  readOnly: boolean;
   slashCommands: AcpUiSlashCommand[];
   workspaceFiles: string[];
   suggestionIndex: number;
@@ -70,6 +74,119 @@ export type ChatComposerProps = {
 /**
  * Activity hint, optional model picker, message input, and send/cancel actions.
  */
+type SelectOption = Extract<AcpUiSessionConfigOption, { type: "select" }>;
+
+function capsuleModelLabel(label: string): string {
+  const first = label.split("(", 1)[0]?.trim() ?? "";
+  if (first.length === 0) return "Model";
+  return first.charAt(0).toUpperCase() + first.slice(1);
+}
+
+type ModelEffortCapsuleProps = {
+  modelOption: SelectOption | undefined;
+  modelLabel: string;
+  modelChoices: Array<{ value: string; name: string }>;
+  effortValue: string;
+  effortChoices: string[];
+  disabled: boolean;
+  onModelPick: (value: string) => void;
+  onEffortPick: (value: string) => void;
+};
+
+/** Compact ZCode-style model capsule: label + effort in one trigger, provider/model
+ * and effort details only in the popover. The chevron is deliberately inset from
+ * the capsule's right edge rather than using the browser's native select arrow. */
+function ModelEffortCapsule({
+  modelOption,
+  modelLabel,
+  modelChoices,
+  effortValue,
+  effortChoices,
+  disabled,
+  onModelPick,
+  onEffortPick,
+}: ModelEffortCapsuleProps): ReactElement {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (event: PointerEvent): void => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close, true);
+    return () => document.removeEventListener("pointerdown", close, true);
+  }, [open]);
+  const modelValue = modelOption?.currentValue ?? modelChoices[0]?.value ?? "";
+  return (
+    <div className="composer-model-capsule" ref={rootRef}>
+      <button
+        type="button"
+        className="composer-model-capsule__trigger"
+        aria-label={`Model ${capsuleModelLabel(modelLabel)} · ${effortValue}`}
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span>{capsuleModelLabel(modelLabel)} · {effortValue}</span>
+        <span className="composer-model-capsule__chevron" aria-hidden={true}>⌄</span>
+      </button>
+      {open ? (
+        <div className="composer-model-capsule__popover" role="dialog" aria-label="Model settings">
+          <label>
+            Provider / Model
+            <select
+              value={modelValue}
+              disabled={disabled || modelChoices.length === 0}
+              onChange={(event) => onModelPick(event.target.value)}
+            >
+              {modelChoices.map((choice) => (
+                <option key={choice.value} value={choice.value}>{choice.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Effort
+            <select
+              value={effortValue}
+              disabled={disabled}
+              onChange={(event) => onEffortPick(event.target.value)}
+            >
+              {effortChoices.map((choice) => (
+                <option key={choice} value={choice}>{choice}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function WorkspacePill({
+  option,
+  disabled,
+  onPick,
+}: {
+  option: SelectOption | undefined;
+  disabled: boolean;
+  onPick: (value: string) => void;
+}): ReactElement | null {
+  if (option === undefined) return null;
+  return (
+    <select
+      className="composer-workspace-pill"
+      aria-label="Workspace"
+      value={option.currentValue}
+      disabled={disabled}
+      onChange={(event) => onPick(event.target.value)}
+    >
+      {option.options.map((choice) => (
+        <option key={choice.value} value={choice.value}>{choice.name}</option>
+      ))}
+    </select>
+  );
+}
+
 export function ChatComposer({
   activityLabel,
   workspacePathHint,
@@ -79,7 +196,7 @@ export function ChatComposer({
   modelPickerLocked,
   hideComposerModelControls,
   promptInFlight,
-  inputBlocked,
+  readOnly,
   slashCommands,
   workspaceFiles,
   suggestionIndex,
@@ -93,8 +210,10 @@ export function ChatComposer({
   onKeyDown,
   composerInputRef,
 }: ChatComposerProps): ReactElement {
-  const textareaDisabled = inputBlocked;
   const autocomplete = useMemo(() => {
+    if (readOnly) {
+      return null;
+    }
     const caret = draft.length;
     return buildComposerAutocompleteState({
       draft,
@@ -102,7 +221,7 @@ export function ChatComposer({
       slashCommands,
       workspaceFiles,
     });
-  }, [draft, slashCommands, workspaceFiles]);
+  }, [draft, slashCommands, workspaceFiles, readOnly]);
   const activeIndex =
     autocomplete !== null
       ? wrapIndex(suggestionIndex, autocomplete.items.length)
@@ -165,7 +284,7 @@ export function ChatComposer({
     useConfigModelPicker ||
     (modelSel !== null && modelSel.availableModels.length > 0);
   const modelSelectDisabled =
-    modelPickerLocked || textareaDisabled || !modelReady;
+    modelPickerLocked || readOnly || !modelReady;
   const modelPickerState = useMemo(() => {
     if (useConfigModelPicker || !modelReady || modelSel === null) {
       return null;
@@ -195,6 +314,62 @@ export function ChatComposer({
           configModelOption?.currentValue ?? "",
         )
       : (modelPickerState?.currentGroupLabel ?? "");
+
+  const toolbarWorkspaceOption =
+    toolbarConfigOptions?.find((option) => option.configId === "workspace") as
+      | SelectOption
+      | undefined;
+  const toolbarModelOption =
+    toolbarConfigOptions?.find((option) => option.category === "model" || option.configId === "model") as
+      | SelectOption
+      | undefined;
+  const toolbarOtherOptions = toolbarConfigOptions?.filter(
+    (option) =>
+      option !== toolbarWorkspaceOption &&
+      option !== toolbarModelOption &&
+      option.category !== "effort" &&
+      option.configId !== "effort",
+  ) ?? [];
+  const effortOption = sessionConfigOptions?.find(
+    (option) => option.category === "effort" || option.configId === "effort",
+  ) as SelectOption | undefined;
+  const [effortValue, setEffortValue] = useState(
+    effortOption?.currentValue ?? "auto",
+  );
+  useEffect(() => {
+    if (effortOption?.currentValue !== undefined) {
+      setEffortValue(effortOption.currentValue);
+    }
+  }, [effortOption?.currentValue]);
+  const capsuleModelChoices = toolbarModelOption !== undefined
+    ? toolbarModelOption.options.map((choice) => ({ value: choice.value, name: choice.name }))
+    : modelSel?.availableModels.map((model) => ({ value: model.modelId, name: model.name })) ?? [];
+  const effortChoices = effortOption?.options.map((choice) => choice.value) ?? ["auto", "low", "medium", "high"];
+
+  const handleCapsuleEffortPick = (value: string): void => {
+    setEffortValue(value);
+    onPickSessionConfigOption(effortOption?.configId ?? "effort", value);
+  };
+
+  const handleCapsuleModelPick = (value: string): void => {
+    if (toolbarModelOption !== undefined) {
+      onPickSessionConfigOption(toolbarModelOption.configId, value);
+    } else {
+      onPickSessionModel(value);
+    }
+  };
+
+  const handleWorkspacePick = (value: string): void => {
+    onPickSessionConfigOption("workspace", value);
+  };
+
+  // 胶囊显示只取模型名（不含 workspace/effort 的 summary）＋effort，详情进弹窗。
+  const capsuleModelName = toolbarModelOption !== undefined
+    ? toolbarModelOption.options.find(
+        (choice) => choice.value === toolbarModelOption.currentValue,
+      )?.name ?? toolbarModelOption.currentValue
+    : modelLabel.replace(/^Model\s*:\s*/i, "");
+  const capsuleLabel = capsuleModelLabel(capsuleModelName);
 
   const handleModelParamPick = (
     configId: string,
@@ -243,7 +418,11 @@ export function ChatComposer({
         >
           {activityDisplay}
         </div>
-        <span className="composer-top-bar-hint">/ commands · @ files</span>
+        {readOnly ? (
+          <span className="composer-readonly-hint">read-only</span>
+        ) : (
+          <span className="composer-top-bar-hint">/ commands · @ files</span>
+        )}
       </div>
       <div className="composer-input-wrap">
         {autocomplete !== null && !autocompleteDismissed ? (
@@ -314,13 +493,19 @@ export function ChatComposer({
         ) : null}
         <textarea
           ref={composerInputRef}
-          className="composer-input"
-          placeholder={composerPlaceholder}
-          aria-label="Agent input"
-          title="Enter to send. Shift+Enter for newline. Shift+Tab to cycle mode. Arrow up and down for prompt history."
+          className={
+            readOnly ? "composer-input composer-input--readonly" : "composer-input"
+          }
+          placeholder={readOnly ? READ_ONLY_PLACEHOLDER : composerPlaceholder}
+          aria-label={readOnly ? "Read-only trace" : "Agent input"}
+          title={
+            readOnly
+              ? READ_ONLY_PLACEHOLDER
+              : "Enter to send. Shift+Enter for newline. Shift+Tab to cycle mode. Arrow up and down for prompt history."
+          }
           rows={2}
           value={draft}
-          disabled={textareaDisabled}
+          disabled={readOnly}
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={onKeyDown}
         />
@@ -347,13 +532,33 @@ export function ChatComposer({
               {modelLabel.length > 0 ? modelLabel : "\u2014"}
             </span>
           ) : showConfigLoading ? (
-            <ComposerConfigLoading />
+            <ComposerConfigLoading layout={agentOrderedLayout ? "inline" : "stacked"} />
           ) : agentOrderedLayout && toolbarConfigOptions !== null ? (
-            <ConfigOptionControls
-              options={toolbarConfigOptions}
-              disabled={modelSelectDisabled}
-              onPick={onPickSessionConfigOption}
-            />
+            <div className="composer-agent-toolbar">
+              <WorkspacePill
+                option={toolbarWorkspaceOption}
+                disabled={modelSelectDisabled}
+                onPick={handleWorkspacePick}
+              />
+              <ModelEffortCapsule
+                modelOption={toolbarModelOption}
+                modelLabel={capsuleLabel}
+                modelChoices={capsuleModelChoices}
+                effortValue={effortValue}
+                effortChoices={effortChoices}
+                disabled={modelSelectDisabled}
+                onModelPick={handleCapsuleModelPick}
+                onEffortPick={handleCapsuleEffortPick}
+              />
+              {toolbarOtherOptions.length > 0 ? (
+                <ConfigOptionControls
+                  options={toolbarOtherOptions}
+                  disabled={modelSelectDisabled}
+                  layout="inline"
+                  onPick={onPickSessionConfigOption}
+                />
+              ) : null}
+            </div>
           ) : (
             <>
               {useConfigModelPicker && configModelOption !== undefined ? (
@@ -462,7 +667,7 @@ export function ChatComposer({
         <button
           type="button"
           className="composer-send"
-          disabled={textareaDisabled}
+          disabled={readOnly}
           onClick={() => onSubmit()}
         >
           Send
