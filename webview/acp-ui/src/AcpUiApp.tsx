@@ -45,10 +45,18 @@ import {
   shouldCycleSessionModeOnShiftTab,
   shouldOpenNewChatOnCtrlT,
 } from "./components/composerKeybindings";
-import { CursorAskQuestionDialog } from "./components/CursorAskQuestionDialog";
-import { CursorCreatePlanDialog } from "./components/CursorCreatePlanDialog";
-import { PermissionDialog } from "./components/PermissionDialog";
+import { PermissionApprovalCard } from "./components/PermissionApprovalCard";
+import { TaskDetailHeader } from "./components/TaskDetailHeader";
 import { TraceList } from "./components/TraceList";
+import { TraceFilters } from "./components/TraceFilters";
+import {
+  TRACE_FILTER_KINDS,
+  countsAsTraceEvent,
+  countByKind,
+  filterItems,
+  isNearBottom,
+  type TraceFilterKind,
+} from "./traceView";
 import { SessionHistoryLoader } from "./components/SessionHistoryLoader";
 import {
   appendFileMentionsToDraft,
@@ -79,23 +87,6 @@ export type AcpUiAppProps = {
       | { requestId: string; selectedOptionId: string }
       | { requestId: string; cancelled: true },
   ) => void;
-  postCursorAskQuestionResponse: (payload: {
-    requestId: string;
-    outcome:
-      | {
-          outcome: "answered";
-          answers: Array<{ questionId: string; selectedOptionIds: string[] }>;
-        }
-      | { outcome: "skipped"; reason?: string }
-      | { outcome: "cancelled" };
-  }) => void;
-  postCursorCreatePlanResponse: (payload: {
-    requestId: string;
-    outcome:
-      | { outcome: "accepted"; planUri?: string }
-      | { outcome: "rejected"; reason?: string }
-      | { outcome: "cancelled" };
-  }) => void;
   extensionDispatchRef: RefObject<
     ((message: ExtensionMessageAfterInit) => void) | null
   >;
@@ -118,8 +109,6 @@ export function AcpUiApp({
   postOpenNewChat,
   postOpenWorkspacePath,
   postPermissionResponse,
-  postCursorAskQuestionResponse,
-  postCursorCreatePlanResponse,
   extensionDispatchRef,
   onExtensionDispatchReady,
 }: AcpUiAppProps): ReactElement {
@@ -145,7 +134,12 @@ export function AcpUiApp({
   );
   const traceRef = useRef<HTMLElement | null>(null);
   const traceContentRef = useRef<HTMLDivElement | null>(null);
-  const stickToBottomRef = useRef(true);
+  /** 跟不跟最新那条事件。人上滚就断，点"↓ N 条新事件"或 live 那颗才接上。 */
+  const [followLive, setFollowLive] = useState(true);
+  const [pendingEvents, setPendingEvents] = useState(0);
+  const [shownKinds, setShownKinds] = useState<ReadonlySet<TraceFilterKind>>(
+    () => new Set(TRACE_FILTER_KINDS),
+  );
   const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [fileDragActive, setFileDragActive] = useState(false);
   const [composerSuggestionIndex, setComposerSuggestionIndex] = useState(0);
@@ -154,18 +148,36 @@ export function AcpUiApp({
 
   const scrollTraceToBottomIfPinned = useCallback((): void => {
     const el = traceRef.current;
-    if (el !== null && stickToBottomRef.current) {
+    if (el !== null && followLive) {
       el.scrollTop = el.scrollHeight;
     }
-  }, []);
+  }, [followLive]);
 
   const onTraceScroll = useCallback((): void => {
     const el = traceRef.current;
     if (el === null) {
       return;
     }
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    stickToBottomRef.current = distanceFromBottom <= 48;
+    const nearBottom = isNearBottom(
+      el.scrollHeight,
+      el.scrollTop,
+      el.clientHeight,
+    );
+    // 同一个值重复 setState 不会重渲染，所以这里不用自己判等。
+    setFollowLive(nearBottom);
+    if (nearBottom) {
+      // 人自己滚回最新了，那颗"↓ N 条新事件"就没东西可提示了。
+      setPendingEvents(0);
+    }
+  }, []);
+
+  const resumeLive = useCallback((): void => {
+    setFollowLive(true);
+    setPendingEvents(0);
+    const el = traceRef.current;
+    if (el !== null) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, []);
 
   extensionDispatchRef.current = (message: ExtensionMessageAfterInit) => {
@@ -180,6 +192,12 @@ export function AcpUiApp({
     if (message.type === "contentWidthRatio") {
       setContentWidthRatio(message.ratio);
       return;
+    }
+    if (message.type === "sessionReset") {
+      setPendingEvents(0);
+    } else if (!followLive && countsAsTraceEvent(message)) {
+      // 人正在往回看：数着条数，别把他拽下去。
+      setPendingEvents((count) => count + 1);
     }
     dispatch(message as ChatAction);
   };
@@ -246,10 +264,9 @@ export function AcpUiApp({
   }, [postOpenNewChat]);
 
   const dropFilesDisabled =
+    state.composerReadOnly ||
     state.promptInFlight ||
-    state.permissionPrompt !== null ||
-    state.askQuestionPrompt !== null ||
-    state.createPlanPrompt !== null;
+    state.permissionQueue.length > 0;
 
   useEffect(() => {
     if (!fileDragActive) {
@@ -322,7 +339,11 @@ export function AcpUiApp({
   }, []);
 
   const submit = (): void => {
-    if (state.permissionPrompt !== null) {
+    // 只读面板（任务详情）唯一的发送出口：这里不放行，宿主就收不到 send。
+    if (state.composerReadOnly) {
+      return;
+    }
+    if (state.permissionQueue.length > 0) {
       return;
     }
     const body = draft;
@@ -333,7 +354,7 @@ export function AcpUiApp({
     if (asCommand === "/clear" || asCommand === "/new") {
       setDraft("");
       setHistoryBrowse(null);
-      stickToBottomRef.current = true;
+      resumeLive();
       dispatch({ type: "sessionReset" });
       postResetSession();
       return;
@@ -375,7 +396,7 @@ export function AcpUiApp({
       postSaveHistory(next);
       return next;
     });
-    stickToBottomRef.current = true;
+    resumeLive();
     dispatch({ type: "submit", body });
     postSend(body);
   };
@@ -550,9 +571,69 @@ export function AcpUiApp({
     }
   };
 
-  const permission = state.permissionPrompt;
-  const askQuestion = state.askQuestionPrompt;
-  const createPlan = state.createPlanPrompt;
+  // 队首那条就是当前审批卡；后面的只排队、不上屏（稿 03 B③）。
+  const permission = state.permissionQueue[0] ?? null;
+  const approvalActive = permission !== null;
+
+  // 裁决一条：选了 option 就回 daemon 给的那一项；Dismiss / Esc 是纯本地动作 ——
+  // 什么都不发，卡片收起，到 daemon 自己的截止时间判拒（稿 03 B② 的口径）。
+  const decidePermission = (
+    requestId: string,
+    optionId: string | undefined,
+  ): void => {
+    if (optionId !== undefined) {
+      postPermissionResponse({ requestId, selectedOptionId: optionId });
+    }
+    dispatch({ type: "resolvePermission", requestId });
+  };
+
+  // composer 与审批卡共用底部那一格：审批期间 textarea 整块不渲染。光标位置平时就顺着
+  // 用户动作抄一份（不等卸载时再读 —— 那时元素可能已经从树上摘了）。
+  const composerCaretRef = useRef<{ start: number; end: number } | null>(null);
+  useLayoutEffect(() => {
+    const el = composerTextareaRef.current;
+    if (el === null || approvalActive) {
+      return;
+    }
+    const record = (): void => {
+      if (document.activeElement === el) {
+        composerCaretRef.current = {
+          start: el.selectionStart,
+          end: el.selectionEnd,
+        };
+      }
+    };
+    // 光标会动的路子就这几样：打字、点击定位、方向键、拖选。
+    const events = ["keyup", "click", "input", "select"] as const;
+    for (const name of events) {
+      el.addEventListener(name, record);
+    }
+    return (): void => {
+      for (const name of events) {
+        el.removeEventListener(name, record);
+      }
+    };
+  }, [approvalActive]);
+
+  // 审批卡收掉、composer 重新挂回来：把抄下的光标位置交还给输入框。草稿本身存在这一层
+  // 的 state 里，textarea 卸载再挂不丢，所以只补光标（和焦点）。只在被审批卡换下的那
+  // 一次恢复（ref 平时是 null），不抢别的场景的焦点。
+  useLayoutEffect(() => {
+    if (approvalActive) {
+      return;
+    }
+    const saved = composerCaretRef.current;
+    if (saved === null) {
+      return;
+    }
+    composerCaretRef.current = null;
+    const el = composerTextareaRef.current;
+    if (el === null) {
+      return;
+    }
+    el.focus();
+    el.setSelectionRange(saved.start, saved.end);
+  }, [approvalActive]);
 
   const onShellDragEnterCapture = (event: DragEvent<HTMLDivElement>): void => {
     if (dropFilesDisabled || !dataTransferLooksLikePathDrop(event.dataTransfer)) {
@@ -620,7 +701,7 @@ export function AcpUiApp({
         }
         style={
           {
-            "--acp-ui-content-width-ratio": contentWidthRatio,
+            "--gw-content-width-ratio": contentWidthRatio,
           } as React.CSSProperties
         }
         onDragEnterCapture={onShellDragEnterCapture}
@@ -628,6 +709,27 @@ export function AcpUiApp({
         onDragOver={onShellDragOver}
         onDrop={onShellDrop}
       >
+        <TaskDetailHeader header={state.taskHeader} />
+        <TraceFilters
+          counts={countByKind(state.trace)}
+          shown={shownKinds}
+          live={followLive}
+          onToggle={(kind) => {
+            setShownKinds((prev) => {
+              const next = new Set(prev);
+              if (next.has(kind)) {
+                next.delete(kind);
+              } else {
+                next.add(kind);
+              }
+              return next;
+            });
+          }}
+          onShowAll={() => {
+            setShownKinds(new Set(TRACE_FILTER_KINDS));
+          }}
+          onResumeLive={resumeLive}
+        />
         <main
           ref={traceRef}
           className="agent-trace"
@@ -640,7 +742,8 @@ export function AcpUiApp({
               <SessionHistoryLoader />
             ) : null}
             <TraceList
-              items={state.trace}
+              items={filterItems(state.trace, shownKinds)}
+              completed={state.traceCompleted}
               showThoughts={showThinkingBlocks}
               expandAllToolOutputs={expandAllToolOutputs}
               toolCallVerbosity={toolCallVerbosity}
@@ -653,107 +756,63 @@ export function AcpUiApp({
               <SessionHistoryLoader inline />
             ) : null}
           </div>
+          {!followLive && pendingEvents > 0 ? (
+            <button
+              type="button"
+              className="trace-jump"
+              data-testid="trace-jump"
+              onClick={resumeLive}
+            >
+              {`↓ ${pendingEvents} 条新事件`}
+            </button>
+          ) : null}
         </main>
         <div className="acp-ui-composer-stack">
           <div className="acp-ui-content-column">
           {permission !== null ? (
-            <PermissionDialog
-              toolTitle={permission.toolTitle}
-              options={permission.options}
-              onSelect={(optionId) => {
-                postPermissionResponse({
-                  requestId: permission.requestId,
-                  selectedOptionId: optionId,
-                });
-                dispatch({ type: "clearPermissionPrompt" });
+            // 审批卡整块替换底部输入区：composer 连同 textarea 一起不渲（稿 03 B②）。
+            <PermissionApprovalCard
+              prompt={permission}
+              queueLength={state.permissionQueue.length}
+              total={state.permissionTotal}
+              onOption={(optionId) => {
+                decidePermission(permission.requestId, optionId);
               }}
               onDismiss={() => {
-                postPermissionResponse({
-                  requestId: permission.requestId,
-                  cancelled: true,
-                });
-                dispatch({ type: "clearPermissionPrompt" });
+                decidePermission(permission.requestId, undefined);
               }}
             />
-          ) : null}
-          {askQuestion !== null ? (
-            <CursorAskQuestionDialog
-              request={askQuestion}
-              onSubmit={(answers) => {
-                postCursorAskQuestionResponse({
-                  requestId: askQuestion.requestId,
-                  outcome: { outcome: "answered", answers },
-                });
-                dispatch({ type: "clearAskQuestionPrompt" });
+          ) : (
+            <ChatComposer
+              activityLabel={activityLabel}
+              workspacePathHint={workspaceText}
+              modelSelection={state.modelSelection}
+              sessionConfigOptions={state.sessionConfigOptions}
+              sessionConfigLoading={state.sessionConfigLoading}
+              modelPickerLocked={state.composerPicksLocked}
+              hideComposerModelControls={state.hideComposerModelControls}
+              promptInFlight={state.promptInFlight}
+              readOnly={state.composerReadOnly}
+              slashCommands={mergedSlashCommands}
+              workspaceFiles={init.workspaceFiles ?? []}
+              suggestionIndex={composerSuggestionIndex}
+              autocompleteDismissed={composerAutocompleteDismissed}
+              draft={draft}
+              onDraftChange={onDraftChange}
+              onPickSessionModel={(modelId) => {
+                dispatch({ type: "pickSessionModel", modelId });
+                postSetSessionModel(modelId);
               }}
-              onCancel={() => {
-                postCursorAskQuestionResponse({
-                  requestId: askQuestion.requestId,
-                  outcome: { outcome: "cancelled" },
-                });
-                dispatch({ type: "clearAskQuestionPrompt" });
+              onPickSessionConfigOption={(configId, value) => {
+                dispatch({ type: "pickSessionConfigOption", configId, value });
+                postSetSessionConfigOption(configId, value);
               }}
+              onSubmit={submit}
+              onCancel={postCancel}
+              onKeyDown={onComposerKeyDown}
+              composerInputRef={composerTextareaRef}
             />
-          ) : null}
-          {createPlan !== null ? (
-            <CursorCreatePlanDialog
-              request={createPlan}
-              onAccept={() => {
-                postCursorCreatePlanResponse({
-                  requestId: createPlan.requestId,
-                  outcome: { outcome: "accepted" },
-                });
-                dispatch({ type: "clearCreatePlanPrompt" });
-              }}
-              onReject={() => {
-                postCursorCreatePlanResponse({
-                  requestId: createPlan.requestId,
-                  outcome: { outcome: "rejected" },
-                });
-                dispatch({ type: "clearCreatePlanPrompt" });
-              }}
-              onCancel={() => {
-                postCursorCreatePlanResponse({
-                  requestId: createPlan.requestId,
-                  outcome: { outcome: "cancelled" },
-                });
-                dispatch({ type: "clearCreatePlanPrompt" });
-              }}
-            />
-          ) : null}
-          <ChatComposer
-            activityLabel={activityLabel}
-            workspacePathHint={workspaceText}
-            modelSelection={state.modelSelection}
-            sessionConfigOptions={state.sessionConfigOptions}
-            sessionConfigLoading={state.sessionConfigLoading}
-            modelPickerLocked={state.composerPicksLocked}
-            hideComposerModelControls={state.hideComposerModelControls}
-            promptInFlight={state.promptInFlight}
-            inputBlocked={
-              state.permissionPrompt !== null ||
-              state.askQuestionPrompt !== null ||
-              state.createPlanPrompt !== null
-            }
-            slashCommands={mergedSlashCommands}
-            workspaceFiles={init.workspaceFiles ?? []}
-            suggestionIndex={composerSuggestionIndex}
-            autocompleteDismissed={composerAutocompleteDismissed}
-            draft={draft}
-            onDraftChange={onDraftChange}
-            onPickSessionModel={(modelId) => {
-              dispatch({ type: "pickSessionModel", modelId });
-              postSetSessionModel(modelId);
-            }}
-            onPickSessionConfigOption={(configId, value) => {
-              dispatch({ type: "pickSessionConfigOption", configId, value });
-              postSetSessionConfigOption(configId, value);
-            }}
-            onSubmit={submit}
-            onCancel={postCancel}
-            onKeyDown={onComposerKeyDown}
-            composerInputRef={composerTextareaRef}
-          />
+          )}
           </div>
         </div>
       </div>

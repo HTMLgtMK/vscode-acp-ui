@@ -31,6 +31,25 @@ function clipToolDisplayText(text: string): string {
     return `${text.slice(0, maxToolDisplayChars)}\n\n... (truncated for display)`;
 }
 
+/** 未知 update 的类型标签；连 `sessionUpdate` 都没有时也要有一行能指认的名字。 */
+function unknownSessionUpdateLabel(update: unknown): string {
+    const tag = (update as { sessionUpdate?: unknown } | null)?.sessionUpdate;
+    return typeof tag === "string" && tag.length > 0
+        ? tag
+        : "(无 sessionUpdate)";
+}
+
+/**
+ * 未知 update 的原文。JSON 打不出来的值（BigInt、循环引用）不能让一条没人认识的更新把 trace 打断。
+ */
+function unknownSessionUpdateRawJson(update: unknown): string {
+    try {
+        return JSON.stringify(update, null, 2) ?? String(update);
+    } catch {
+        return String(update);
+    }
+}
+
 function formatContentBlockForTool(
     block: acp.ContentBlock,
 ): string | undefined {
@@ -958,7 +977,19 @@ export function sessionUpdateToWebviewMessages(
                 },
             ];
         }
-        default:
-            return [];
+        default: {
+            // 上面把认得的类型分完了，走到这里说明 agent 发了协议里还没有（或还没实现）的东西。
+            // 以前这里 `return []`，界面上的表现是"什么都没发生"——现在带原文下去折叠展示（FR-011）。
+            const raw = update as unknown;
+            return [
+                {
+                    type: "appendUnknownSessionUpdate",
+                    sessionUpdate: unknownSessionUpdateLabel(raw),
+                    rawJson: clipToolDisplayText(
+                        unknownSessionUpdateRawJson(raw),
+                    ),
+                },
+            ];
+        }
     }
 }

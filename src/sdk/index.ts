@@ -106,6 +106,8 @@ export { MockAcpNdjsonDaemon } from "../acp/testing/mockAcpNdjsonDaemon";
 // The self-drawn sidebar panel. Types live in the protocol layer so the host and the
 // panel bundle share one definition; the uplink parser is the untrusted-input gate.
 export type {
+    ControlPanelDevKeyMessage,
+    ControlPanelDevProbeMessage,
     ControlPanelDownMessage,
     ControlPanelHint,
     ControlPanelLinkState,
@@ -130,6 +132,7 @@ export type {
     AcpUiSlashCommand,
     ExtensionToWebviewMessage,
     PlanEntry,
+    TaskHeaderInfo,
     TodoEntry,
     ToolCallDiffRow,
     ToolCallStatus,

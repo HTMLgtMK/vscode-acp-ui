@@ -1,0 +1,76 @@
+/* 任务详情 header（T028）。设计稿 `.gw-panel-header` / `.gw-title` / `.gw-badge` / `.gw-meta`，
+   落在 trace 外面、和筛选条同一套宽度口径（`--gw-content-width-ratio`）。 */
+.task-header {
+    flex: none;
+    display: grid;
+    gap: var(--gw-space-2);
+    width: calc(var(--gw-content-width-ratio, 1) * 100%);
+    margin-inline: auto;
+    box-sizing: border-box;
+    padding: var(--gw-space-4) var(--gw-space-5) var(--gw-space-3);
+    border-bottom: var(--gw-border-w) solid var(--gw-border);
+}
+
+.task-header-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--gw-space-3);
+    font-size: var(--gw-text-lg);
+    font-weight: 600;
+    color: var(--gw-text);
+}
+
+.task-header-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 只描边不上底色，跟设计稿的徽章一致；颜色按 data-state 走侧栏那四档词。 */
+.task-header-badge {
+    flex: none;
+    padding: 1px var(--gw-space-2);
+    border: var(--gw-border-w) solid currentColor;
+    border-radius: var(--gw-radius);
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-2xs);
+    letter-spacing: var(--gw-tracking-meta);
+    white-space: nowrap;
+}
+
+.task-header-badge[data-state="running"] {
+    color: var(--gw-state-running);
+}
+.task-header-badge[data-state="queued"] {
+    color: var(--gw-state-queued);
+}
+.task-header-badge[data-state="review"] {
+    color: var(--gw-state-review);
+}
+.task-header-badge[data-state="done"] {
+    color: var(--gw-state-done);
+}
+.task-header-badge[data-state="failed"] {
+    color: var(--gw-state-failed);
+}
+
+.task-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--gw-space-2) var(--gw-space-3);
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-xs);
+    color: var(--gw-text-dim);
+}
+
+.task-header-kv b {
+    color: var(--gw-text);
+    font-weight: 500;
+}
+
+.task-header-id {
+    color: var(--gw-text-faint);
+}

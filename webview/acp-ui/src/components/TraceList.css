@@ -1,19 +1,22 @@
 .user-prompt-bar {
     flex-shrink: 0;
-    padding: 8px 10px;
-    margin-bottom: 12px;
-    color: var(--vscode-foreground);
-    background-color: color-mix(
-        in srgb,
-        var(--vscode-editor-inactiveSelectionBackground) 65%,
-        var(--vscode-editor-background)
-    );
-    border: 1px solid var(--vscode-widget-border);
-    border-radius: 2px;
+    padding: 0 0 2px 0;
+    margin-bottom: 10px;
+    color: var(--gw-text);
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
     font-size: 12px;
     line-height: 1.4;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+/* 用户那句话靠行首的 ❯ 认，不靠气泡底 —— 与 terminal 那套「回归文本流」一致 */
+.user-prompt-bar::before {
+    content: var(--gw-glyph-user) " ";
+    color: var(--gw-syntax-str);
+    font-weight: 600;
 }
 
 .agent-response-stream {
@@ -33,4 +36,14 @@
 
 .agent-response-markdown {
     min-width: 0;
+}
+
+/* 任务 trace 走完的那一行。设计稿 `.gw-end`，吃 `--gw-*` 所以跟皮肤一起换。 */
+.trace-completed {
+    margin: 14px 0 0;
+    text-align: center;
+    font-family: var(--gw-font-mono);
+    font-size: var(--gw-text-xs);
+    letter-spacing: var(--gw-tracking-meta);
+    color: var(--gw-text-faint);
 }

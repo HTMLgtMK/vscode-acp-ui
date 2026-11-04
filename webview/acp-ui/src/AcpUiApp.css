@@ -7,12 +7,12 @@
 }
 
 .acp-ui-content-column {
-    width: calc(var(--acp-ui-content-width-ratio, 1) * 100%);
+    width: calc(var(--gw-content-width-ratio, 1) * 100%);
     margin-inline: auto;
 }
 
 .acp-ui-shell.acp-ui-shell--file-drag {
-    outline: 2px dashed var(--vscode-focusBorder, var(--vscode-textLink-foreground));
+    outline: 2px dashed var(--gw-focus);
     outline-offset: 2px;
     border-radius: 4px;
 }
@@ -21,14 +21,13 @@
     flex-shrink: 0;
     margin-bottom: 8px;
     padding: 8px 10px;
-    color: var(--vscode-errorForeground);
+    color: var(--gw-state-failed);
     background-color: color-mix(
         in srgb,
-        var(--vscode-inputValidation-errorBackground) 90%,
+        var(--gw-state-failed-bg) 90%,
         transparent
     );
-    border: 1px solid
-        var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+    border: 1px solid var(--gw-danger-border);
     border-radius: 3px;
     font-size: 12px;
     line-height: 1.4;
@@ -39,7 +38,7 @@
     min-height: 0;
     overflow: auto;
     width: 100%;
-    color: var(--vscode-foreground);
+    color: var(--gw-text);
     scrollbar-gutter: stable;
 }
 

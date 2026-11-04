@@ -22,6 +22,54 @@ describe("tryParseControlPanelUpMessage", () => {
                 type: "controlPanel.openSettings",
             }),
         ).toEqual({ type: "controlPanel.openSettings" });
+        // devFocus 是开发宿主的证据通道：焦点不在行上时 id 缺省，这条不能被丢掉。
+        expect(
+            tryParseControlPanelUpMessage({
+                type: "controlPanel.devFocus",
+                id: "worker:claude",
+            }),
+        ).toEqual({ type: "controlPanel.devFocus", id: "worker:claude" });
+        expect(
+            tryParseControlPanelUpMessage({ type: "controlPanel.devFocus" }),
+        ).toEqual({ type: "controlPanel.devFocus" });
+        expect(
+            tryParseControlPanelUpMessage({
+                type: "controlPanel.devFocus",
+                id: "",
+            }),
+        ).toEqual({ type: "controlPanel.devFocus" });
+        // devProbe 的报告原样落盘、宿主不执行：结构不猜，只挡两样 ——
+        // 对不上是哪一发的（没有 probeId），和能灌爆日志的（超大 / 不是对象）。
+        expect(
+            tryParseControlPanelUpMessage({
+                type: "controlPanel.devProbe",
+                probeId: "p-skin",
+                facts: { dataSkin: "midnight", rows: 12 },
+            }),
+        ).toEqual({
+            type: "controlPanel.devProbe",
+            probeId: "p-skin",
+            facts: { dataSkin: "midnight", rows: 12 },
+        });
+        expect(
+            tryParseControlPanelUpMessage({
+                type: "controlPanel.devProbe",
+                facts: { a: 1 },
+            }),
+        ).toBeNull();
+        for (const junk of [
+            "不是对象",
+            ["数组不是报告"],
+            { blob: "x".repeat(40_000) },
+        ]) {
+            expect(
+                tryParseControlPanelUpMessage({
+                    type: "controlPanel.devProbe",
+                    probeId: "p-skin",
+                    facts: junk,
+                }),
+            ).toEqual({ type: "controlPanel.devProbe", probeId: "p-skin" });
+        }
         // Reconnect / daemon 日志走 controlPanel.action（命令 id 在组件里），不是独立上行类型。
         expect(
             tryParseControlPanelUpMessage({ type: "controlPanel.reconnect" }),

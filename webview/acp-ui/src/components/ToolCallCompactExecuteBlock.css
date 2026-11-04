@@ -1,6 +1,6 @@
 .tool-call-compact-execute {
     margin: 0 0 8px;
-    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
+    font-family: var(--gw-font-mono), ui-monospace, monospace;
     font-size: 11px;
     line-height: 1.4;
     min-width: 0;
@@ -11,25 +11,18 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0 4px;
-    color: var(--vscode-foreground);
+    color: var(--gw-text);
     word-break: break-word;
 }
 
 .tool-call-compact-execute[data-status="in_progress"]
     .tool-call-compact-execute-command {
-    color: color-mix(
-        in srgb,
-        var(--vscode-foreground) 88%,
-        var(--vscode-descriptionForeground)
-    );
+    color: color-mix(in srgb, var(--gw-text) 88%, var(--gw-text-faint));
 }
 
 .tool-call-compact-execute-prompt {
     flex-shrink: 0;
-    color: var(
-        --vscode-descriptionForeground,
-        var(--vscode-list-deemphasizedForeground)
-    );
+    color: var(--gw-text-faint);
     font-weight: 600;
     user-select: none;
 }
@@ -47,7 +40,7 @@
     line-height: inherit;
     white-space: pre-wrap;
     word-break: break-word;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
 }
 
 .tool-call-compact-execute-hidden {
@@ -59,16 +52,16 @@
     background: none;
     font: inherit;
     text-align: left;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
     cursor: pointer;
 }
 
 .tool-call-compact-execute-hidden:hover {
-    color: var(--vscode-foreground);
+    color: var(--gw-text);
 }
 
 .tool-call-compact-execute-running {
     margin-top: 2px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
     font-style: italic;
 }

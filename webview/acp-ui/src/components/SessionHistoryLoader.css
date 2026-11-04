@@ -5,7 +5,7 @@
     justify-content: center;
     gap: 10px;
     padding: 24px 16px;
-    color: var(--vscode-descriptionForeground);
+    color: var(--gw-text-faint);
     font-size: 12px;
 }
 
@@ -19,8 +19,8 @@
     width: 18px;
     height: 18px;
     border: 2px solid
-        color-mix(in srgb, var(--vscode-descriptionForeground) 25%, transparent);
-    border-top-color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
+        color-mix(in srgb, var(--gw-text-faint) 25%, transparent);
+    border-top-color: var(--gw-progress);
     border-radius: 50%;
     animation: session-history-loader-spin 0.75s linear infinite;
     flex-shrink: 0;

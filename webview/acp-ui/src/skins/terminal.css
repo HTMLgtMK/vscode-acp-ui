@@ -1,0 +1,61 @@
+/* ------------------------------------------------------------
+ * 内置皮肤 1 / terminal —— 现产品基调：黑底、去圆角、等宽、ANSI 着色
+ * ------------------------------------------------------------ */
+[data-skin="terminal"] {
+    --gw-radius: 0px;
+    --gw-radius-lg: 0px;
+    --gw-radius-cta: 6px;
+    --gw-surface-base: #141414;
+    --gw-surface-raised: #1a1a1a;
+    --gw-surface-sunken: #1f1f1f;
+    --gw-surface-overlay: #1c1c1c;
+    --gw-surface-hover: #242424;
+    --gw-border: #2e2e2e;
+    --gw-border-strong: #3a3f4b;
+    --gw-text: #d6d6d6;
+    /* 三档灰都要过 4.5:1（对最亮的那层表面 #1f1f1f 算）：12.7 / 6.8 / 4.8。 */
+    --gw-text-dim: #a6a6a6;
+    --gw-text-faint: #8a8a8a;
+    --gw-accent: #35a854;
+    --gw-accent-hover: #43c165;
+    --gw-on-accent: #0c0c0c;
+    --gw-selected: #21301f;
+    --gw-on-selected: #d6d6d6;
+    --gw-focus: #35a854;
+    --gw-state-running: #4daafc;
+    --gw-state-review: #e5c07b;
+    --gw-state-done: #35a854;
+    /* queued 档压在自有底色上（`queued` 徽标用），不能跟着宿主主题的 descriptionForeground 走。 */
+    --gw-state-queued: #8a8a8a;
+    --gw-state-failed: #e06c75;
+    --gw-state-failed-bg: #33130f;
+    --gw-danger-border: #e06c75;
+    --gw-diff-add-fg: #d6d6d6;
+    --gw-diff-add-bg: #1d3d2a;
+    --gw-diff-remove-fg: #d6d6d6;
+    --gw-diff-remove-bg: #4a1a17;
+    --gw-surface-input: #101010;
+    --gw-secondary: #242424;
+    --gw-secondary-hover: #2e2e2e;
+    --gw-on-secondary: #d6d6d6;
+    --gw-progress: #4daafc;
+    --gw-inline-code-fg: #e5c07b;
+    --gw-inline-code-border: #3a3f4b;
+    --gw-md-h1-fg: #d6d6d6;
+    --gw-md-h2-fg: #d6d6d6;
+    --gw-md-h3-fg: #d6d6d6;
+    --gw-md-h4-fg: #d6d6d6;
+    --gw-role-user-bg: transparent;
+    --gw-role-tool-bg: #191919;
+    --gw-role-thought-border: #2e2e2e;
+    --gw-role-plan-fg: #e5c07b;
+    --gw-syntax-warn: #e5c07b;
+    --gw-shadow-key: rgba(0, 0, 0, 0.6);
+    --gw-scrollbar: rgba(214, 214, 214, 0.22);
+    --gw-scrollbar-hover: rgba(214, 214, 214, 0.36);
+    --gw-scrollbar-active: rgba(214, 214, 214, 0.5);
+    --gw-code-bg: #0f0f0f;
+    --gw-surface-dropdown: #1f1f1f;
+    --gw-text-placeholder: #8a8a8a;
+    --gw-glyph-user: "❯";
+}

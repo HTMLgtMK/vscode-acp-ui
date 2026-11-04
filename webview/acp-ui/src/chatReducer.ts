@@ -15,6 +15,7 @@ import type {
     ExtensionToWebviewMessage,
     AcpUiSlashCommand,
     PlanEntry,
+    TaskHeaderInfo,
     TodoEntry,
     ToolCallDiffRow,
     ToolCallStatus,
@@ -40,6 +41,15 @@ export type TraceToolItem = {
     detailVisible: boolean;
 };
 
+/** 映射层认不出的 `session/update`：一条折叠原文，不是一次静默丢弃（FR-011）。 */
+export type TraceUnknownItem = {
+    type: "unknown";
+    /** 协议里那个没人认识的 `sessionUpdate` 值。 */
+    sessionUpdate: string;
+    /** 整条 update 的 JSON 原文，点开才看。 */
+    rawJson: string;
+};
+
 export type TraceItem =
     | { type: "user"; text: string }
     | {
@@ -51,28 +61,24 @@ export type TraceItem =
       }
     | { type: "agent"; text: string }
     | TraceToolItem
-    | { type: "plan"; entries: PlanEntry[] };
+    | { type: "plan"; entries: PlanEntry[] }
+    | TraceUnknownItem;
 
+/** 这条会话绑定的 agent（模型/配置缓存的键），来自宿主 init。 */
 type AcpAgentSelectionState = {
     currentName: string;
-    availableNames: string[];
 };
 
-type PermissionPromptState = {
+export type PermissionPromptState = {
     requestId: string;
     toolTitle: string;
     options: { optionId: string; name: string }[];
+    /**
+     * 本轮第几条到达（1 起）。审批卡角标渲 `index / total pending`，
+     * 裁决掉的那条不退回位：第二条顶上来时仍是 2 / 2，不是 1 / 1（稿 03 B③）。
+     */
+    index: number;
 };
-
-export type AskQuestionPromptState = Extract<
-    ExtensionToWebviewMessage,
-    { type: "cursorAskQuestionRequest" }
->;
-
-export type CreatePlanPromptState = Extract<
-    ExtensionToWebviewMessage,
-    { type: "cursorCreatePlanRequest" }
->;
 
 export type ChatState = {
     trace: TraceItem[];
@@ -88,19 +94,35 @@ export type ChatState = {
     sessionHistoryLoading: boolean;
     acpAgentSelection: AcpAgentSelectionState | null;
     slashCommands: AcpUiSlashCommand[];
-    permissionPrompt: PermissionPromptState | null;
-    askQuestionPrompt: AskQuestionPromptState | null;
-    createPlanPrompt: CreatePlanPromptState | null;
+    /**
+     * 挂起的权限请求，队首那条就是当前审批卡。daemon 对同一任务的请求是串行的，
+     * 后来的排队、不顶掉用户正在看的卡（稿 03 B③）。
+     */
+    permissionQueue: PermissionPromptState[];
+    /** 本轮到达条数（审批卡角标的分母）；队列排空归零，下一轮从 1 重新数。 */
+    permissionTotal: number;
     /**
      * From host init: agent was fixed when the chat was created (VS Code sidebar flow).
      */
     lockSessionAgent: boolean;
+    /**
+     * From host init: 这块面板只读观察（任务详情）。输入区禁输入、Send 走不通，
+     * 原因写在输入区里。缺省 false，Agent Chat 不受影响。
+     */
+    composerReadOnly: boolean;
     /**
      * After the first real user message, model + agent pickers are read-only (standalone pre-flight).
      */
     composerPicksLocked: boolean;
     /** When true, hide model/config controls in the composer footer. */
     hideComposerModelControls: boolean;
+    /** 宿主报过 `taskTraceCompleted`：这条任务的 trace 到底了，尾部补一行结束标记。 */
+    traceCompleted: boolean;
+    /**
+     * 任务详情面板 header 的那几栏（T028）。缺省 null：Agent Chat 不发这条，那块就不渲。
+     * 换任务时宿主连着发 `sessionReset` + 这条，所以 reset 不清它，避免留一份旧任务的字段。
+     */
+    taskHeader: TaskHeaderInfo | null;
 };
 
 export type ChatAction =
@@ -112,9 +134,7 @@ export type ChatAction =
           configId: string;
           value: string | boolean;
       }
-    | { type: "clearPermissionPrompt" }
-    | { type: "clearAskQuestionPrompt" }
-    | { type: "clearCreatePlanPrompt" };
+    | { type: "resolvePermission"; requestId: string };
 
 const EDIT_TOOL_DISPLAY_TITLE = "Write File";
 
@@ -200,12 +220,14 @@ export function createInitialChatState(): ChatState {
         sessionHistoryLoading: false,
         acpAgentSelection: null,
         slashCommands: [],
-        permissionPrompt: null,
-        askQuestionPrompt: null,
-        createPlanPrompt: null,
+        permissionQueue: [],
+        permissionTotal: 0,
         lockSessionAgent: false,
+        composerReadOnly: false,
         composerPicksLocked: false,
         hideComposerModelControls: false,
+        traceCompleted: false,
+        taskHeader: null,
     };
 }
 
@@ -217,6 +239,7 @@ export function createChatStateFromInit(payload: InitPayload): ChatState {
         ...createInitialChatState(),
         acpAgentSelection: buildAcpAgentSelectionFromInit(payload),
         lockSessionAgent: payload.lockSessionAgent === true,
+        composerReadOnly: payload.composerReadOnly === true,
         composerPicksLocked: false,
         hideComposerModelControls: payload.hideComposerModelControls === true,
     };
@@ -250,10 +273,10 @@ function buildAcpAgentSelectionFromInit(
             named !== undefined && named.length > 0 && listed.includes(named)
                 ? named
                 : listed[0]!;
-        return { currentName: current, availableNames: listed };
+        return { currentName: current };
     }
     if (named !== undefined && named.length > 0) {
-        return { currentName: named, availableNames: [named] };
+        return { currentName: named };
     }
     return null;
 }
@@ -539,18 +562,58 @@ function applySessionReset(state: ChatState): ChatState {
     return {
         ...state,
         trace: [],
+        traceCompleted: false,
         openStreamIndex: null,
         toolIndexById: new Map(),
         promptInFlight: false,
         errorText: null,
-        permissionPrompt: null,
-        askQuestionPrompt: null,
-        createPlanPrompt: null,
+        permissionQueue: [],
+        permissionTotal: 0,
         sessionConfigOptions: null,
         modelSelection: null,
         sessionConfigLoading: true,
         sessionHistoryLoading: false,
         composerPicksLocked: false,
+    };
+}
+
+/**
+ * 一条权限请求到达：排在队首那条后面。daemon 对同一任务的请求是串行的，
+ * 所以后来的只是排队，不会顶掉用户正在看的卡（稿 03 B③）。
+ */
+function enqueuePermission(
+    state: ChatState,
+    prompt: Omit<PermissionPromptState, "index">,
+): ChatState {
+    if (
+        state.permissionQueue.some((item) => item.requestId === prompt.requestId)
+    ) {
+        // 同一个 requestId 重发（宿主补投 / 调试注入）：不重复上屏。
+        return state;
+    }
+    const total = state.permissionTotal + 1;
+    return {
+        ...state,
+        permissionTotal: total,
+        permissionQueue: [...state.permissionQueue, { ...prompt, index: total }],
+    };
+}
+
+/**
+ * 摘掉一条挂起的请求：用户裁决完，或宿主报它已失效（150s 兜底 / 换任务）。
+ * 分母只在整批排空时归零 —— 第二条顶上来时仍显示 2 / 2，裁决掉的那条不退回位。
+ */
+function dropPermission(state: ChatState, requestId: string): ChatState {
+    const queue = state.permissionQueue.filter(
+        (item) => item.requestId !== requestId,
+    );
+    if (queue.length === state.permissionQueue.length) {
+        return state;
+    }
+    return {
+        ...state,
+        permissionQueue: queue,
+        permissionTotal: queue.length === 0 ? 0 : state.permissionTotal,
     };
 }
 
@@ -569,6 +632,11 @@ function todoStatusEmoji(status: TodoEntry["status"]): string {
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     if (action.type === "submit") {
+        // 只读面板的门禁之一：就算有人绕过禁用的控件派发了一条 submit，
+        // 轨迹里也不会多出一条用户消息（另外两道在 AcpUiApp 的 submit() 和 composer 本身）。
+        if (state.composerReadOnly) {
+            return state;
+        }
         state = closeOpenThought(state);
         return {
             ...state,
@@ -666,18 +734,15 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         });
         return applySessionConfigOptions(state, nextOptions);
     }
-    if (action.type === "clearPermissionPrompt") {
-        return { ...state, permissionPrompt: null };
-    }
-    if (action.type === "clearAskQuestionPrompt") {
-        return { ...state, askQuestionPrompt: null };
-    }
-    if (action.type === "clearCreatePlanPrompt") {
-        return { ...state, createPlanPrompt: null };
+    if (action.type === "resolvePermission") {
+        return dropPermission(state, action.requestId);
     }
     switch (action.type) {
         case "sessionReset":
             return applySessionReset(state);
+        case "taskHeader":
+            // header 的字段整个换一份：宿主换任务时是 `sessionReset` + 这条连着发。
+            return { ...state, taskHeader: action.header };
         case "sessionModels": {
             const modelSelection = {
                 currentModelId: action.currentModelId,
@@ -699,14 +764,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             return applySessionConfigOptionsLoading(state);
         case "sessionHistoryLoading":
             return { ...state, sessionHistoryLoading: action.loading };
-        case "acpAgentSelection":
-            return {
-                ...state,
-                acpAgentSelection: {
-                    currentName: action.currentAgentName,
-                    availableNames: action.availableAgentNames,
-                },
-            };
         case "appendAgentText":
             return appendAgentText(state, action.text);
         case "appendUserText":
@@ -735,18 +792,14 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         case "slashCommands":
             return { ...state, slashCommands: action.commands };
         case "permissionRequest":
-            return {
-                ...state,
-                permissionPrompt: {
-                    requestId: action.requestId,
-                    toolTitle: action.toolTitle,
-                    options: action.options,
-                },
-            };
-        case "cursorAskQuestionRequest":
-            return { ...state, askQuestionPrompt: action };
-        case "cursorCreatePlanRequest":
-            return { ...state, createPlanPrompt: action };
+            return enqueuePermission(state, {
+                requestId: action.requestId,
+                toolTitle: action.toolTitle,
+                options: action.options,
+            });
+        case "permissionDismiss":
+            // 宿主报这条已失效（150s 兜底 / 换任务）：卡收掉，队首空了就轮到下一条。
+            return dropPermission(state, action.requestId);
         case "cursorUpdateTodos": {
             const trace = [
                 ...state.trace,
@@ -784,6 +837,18 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 openStreamIndex: null,
             };
         }
+        case "appendUnknownSessionUpdate": {
+            const closed = closeOpenThought(state);
+            const trace = [
+                ...closed.trace,
+                {
+                    type: "unknown" as const,
+                    sessionUpdate: action.sessionUpdate,
+                    rawJson: action.rawJson,
+                },
+            ];
+            return { ...closed, trace, openStreamIndex: null };
+        }
         case "commandFeedback": {
             const trace = [...state.trace, { type: "agent" as const, text: action.message }];
             return {
@@ -799,6 +864,14 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 ...closeOpenThought(state),
                 openStreamIndex: null,
                 promptInFlight: false,
+            };
+        case "taskTraceCompleted":
+            // 整条任务观察到底了：收尾那段流、把结束标记立起来。后面的行不再自动展开。
+            return {
+                ...closeOpenThought(state),
+                openStreamIndex: null,
+                promptInFlight: false,
+                traceCompleted: true,
             };
         case "error":
             return {
@@ -822,8 +895,11 @@ export function replayChatState(
     >,
 ): ChatState {
     let state = createChatStateFromInit(init);
+    // 只读挡的是"此刻按发送"，不是"历史里那些发过的话"：回放时先把门禁卸下，折完再装回去。
+    const readOnly = state.composerReadOnly;
+    state = { ...state, composerReadOnly: false };
     for (const event of events) {
         state = chatReducer(state, event as ChatAction);
     }
-    return state;
+    return { ...state, composerReadOnly: readOnly };
 }
