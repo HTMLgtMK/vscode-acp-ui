@@ -24,6 +24,7 @@ function renderComposer(overrides: Partial<ChatComposerProps> = {}): HTMLDivElem
         activityLabel: null,
         workspacePathHint: "~/work/demo",
         modelSelection: null,
+        providerCatalog: null,
         sessionConfigOptions: null,
         sessionConfigLoading: false,
         modelPickerLocked: false,
@@ -106,5 +107,50 @@ describe("只读 composer", () => {
             send?.click();
         });
         expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("Send/Stop 合并", () => {
+    it("空闲态只有 Send，没有独立 Cancel", () => {
+        const el = renderComposer({ hideComposerModelControls: true });
+        expect(el.querySelector(".composer-cancel")).toBeNull();
+        const send = el.querySelector<HTMLButtonElement>(".composer-send");
+        expect(send?.textContent).toBe("Send");
+        expect(send?.getAttribute("aria-label")).toBe("Send");
+    });
+
+    it("运行中 Send 变 Stop，点击走 onCancel 不走 onSubmit", () => {
+        const onSubmit = vi.fn();
+        const onCancel = vi.fn();
+        const el = renderComposer({
+            hideComposerModelControls: true,
+            promptInFlight: true,
+            onSubmit,
+            onCancel,
+        });
+        const stop = el.querySelector<HTMLButtonElement>(".composer-send--stop");
+        expect(stop?.textContent).toBe("Stop");
+        expect(stop?.getAttribute("aria-label")).toBe("Stop");
+        act(() => {
+            stop?.click();
+        });
+        expect(onCancel).toHaveBeenCalledTimes(1);
+        expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    it("空闲态点击走 onSubmit", () => {
+        const onSubmit = vi.fn();
+        const onCancel = vi.fn();
+        const el = renderComposer({
+            hideComposerModelControls: true,
+            onSubmit,
+            onCancel,
+        });
+        const send = el.querySelector<HTMLButtonElement>(".composer-send");
+        act(() => {
+            send?.click();
+        });
+        expect(onSubmit).toHaveBeenCalledTimes(1);
+        expect(onCancel).not.toHaveBeenCalled();
     });
 });

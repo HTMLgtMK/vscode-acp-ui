@@ -567,3 +567,67 @@ describe("chatReducer 权限审批队列", () => {
         expect(state.permissionTotal).toBe(0);
     });
 });
+
+describe("chatReducer provider 模型目录", () => {
+    const catalog = {
+        currentProviderId: "zhipu",
+        currentModel: "glm-4.7",
+        currentEffort: "high",
+        providers: [
+            { id: "zhipu", name: "zhipu", type: "openai", models: ["glm-4.7", "glm-4.6"] },
+        ],
+    };
+
+    it("providerCatalog 快照落 state（幂等覆盖）", () => {
+        let state = createInitialChatState();
+        state = chatReducer(state, { type: "providerCatalog", ...catalog });
+        expect(state.providerCatalog).toEqual(catalog);
+        state = chatReducer(state, {
+            type: "providerCatalog",
+            ...catalog,
+            currentModel: "glm-4.6",
+        });
+        expect(state.providerCatalog?.currentModel).toBe("glm-4.6");
+    });
+
+    it("pickModelSelection 就地更新快照的当前选择", () => {
+        let state = createInitialChatState();
+        state = chatReducer(state, { type: "providerCatalog", ...catalog });
+        state = chatReducer(state, {
+            type: "pickModelSelection",
+            provider: "zhipu",
+            model: "glm-4.6",
+        });
+        expect(state.providerCatalog?.currentProviderId).toBe("zhipu");
+        expect(state.providerCatalog?.currentModel).toBe("glm-4.6");
+    });
+
+    it("无快照 / 锁选择期间 pickModelSelection 不动", () => {
+        const untouched = createInitialChatState();
+        expect(
+            chatReducer(untouched, {
+                type: "pickModelSelection",
+                provider: "zhipu",
+                model: "glm-4.6",
+            }),
+        ).toBe(untouched);
+        let state = createInitialChatState();
+        state = chatReducer(state, { type: "providerCatalog", ...catalog });
+        state = chatReducer(state, { type: "submit", body: "hi" });
+        expect(state.composerPicksLocked).toBe(true);
+        expect(
+            chatReducer(state, {
+                type: "pickModelSelection",
+                provider: "deepseek",
+                model: "deepseek-v3",
+            }).providerCatalog?.currentProviderId,
+        ).toBe("zhipu");
+    });
+
+    it("sessionReset 不清 providerCatalog（daemon 全局面）", () => {
+        let state = createInitialChatState();
+        state = chatReducer(state, { type: "providerCatalog", ...catalog });
+        state = chatReducer(state, { type: "sessionReset" });
+        expect(state.providerCatalog).toEqual(catalog);
+    });
+});

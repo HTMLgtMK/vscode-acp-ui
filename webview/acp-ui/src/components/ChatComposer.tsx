@@ -29,9 +29,13 @@ import {
 } from "../../../../src/acp/session/sessionConfigOptions";
 import type { AcpUiSessionConfigOption } from "../../../../src/acp/session/sessionConfigOptions";
 import { isSessionModeConfigOption, resolveComposerPlaceholder } from "../../../../src/acp/session/sessionModeIndicator";
-import type { AcpUiSlashCommand } from "../../../../src/protocol/extensionHostMessages";
+import type {
+  AcpUiProviderCatalog,
+  AcpUiSlashCommand,
+} from "../../../../src/protocol/extensionHostMessages";
 import { buildComposerAutocompleteState, wrapIndex } from "./composerAutocomplete";
 import { ConfigOptionControls, ComposerConfigLoading } from "./ConfigOptionControls";
+import { ModelSettingsDialog } from "./ModelSettingsDialog";
 import { SessionModeIndicator } from "./SessionModeIndicator";
 
 /** 只读面板写进输入区的那句话：光置灰不说明原因，用户只会以为界面坏了。 */
@@ -44,6 +48,8 @@ export type ChatComposerProps = {
   modelSelection: AcpUiSessionModelSelection | null;
   sessionConfigOptions: AcpUiSessionConfigOption[] | null;
   sessionConfigLoading: boolean;
+  /** Provider 模型目录快照（Model·Effort 弹框树数据源；null = 平铺回退）。 */
+  providerCatalog: AcpUiProviderCatalog | null;
   /** When true, model is shown as a label (standalone: after the first message). */
   modelPickerLocked: boolean;
   /** Hides model/config dropdowns in the composer footer. */
@@ -59,6 +65,10 @@ export type ChatComposerProps = {
   draft: string;
   onDraftChange: (value: string) => void;
   onPickSessionModel: (modelId: string) => void;
+  /** 弹框树叶子选中（provider + model）。缺省 = 宿主未接（弹框叶子不可选）。 */
+  onPickModelSelection?: (provider: string, model: string) => void;
+  /** 弹框 MANAGE PROVIDER：打开 daemon provider 配置文件。缺省 = 不渲染按钮。 */
+  onOpenProviderConfig?: () => void;
   onPickSessionConfigOption: (
     configId: string,
     value: string | boolean,
@@ -82,30 +92,40 @@ function capsuleModelLabel(label: string): string {
 }
 
 type ModelEffortCapsuleProps = {
-  modelOption: SelectOption | undefined;
+  /** 胶囊摘要里的模型名（catalog 有 currentModel 用之，否则平铺派生）。 */
   modelLabel: string;
-  modelChoices: Array<{ value: string; name: string }>;
+  /** Provider 模型目录快照；null = 平铺回退（老 daemon）。 */
+  providerCatalog: AcpUiProviderCatalog | null;
+  /** 平铺回退数据源（合成 model config option / sessionModels）。 */
+  flatChoices: Array<{ value: string; name: string }>;
+  /** 平铺回退的生效 provider（option currentValue / sessionModels 当前值）。 */
+  flatCurrentProvider: string;
   effortValue: string;
   effortChoices: string[];
   disabled: boolean;
-  onModelPick: (value: string) => void;
+  onModelLeafPick: (provider: string, model: string) => void;
+  onProviderPick: (providerId: string) => void;
   onEffortPick: (value: string) => void;
+  onManage?: () => void;
 };
 
 /** Compact ZCode-style model capsule: label + effort in one trigger, provider/model
- * and effort details only in the popover. The trigger is a single-option <select> so
+ * tree and effort slider only in the dialog. The trigger is a single-option <select> so
  * the indicator is the platform's own select arrow (the same one the workspace pill
  * gets), with the platform's built-in inset from the capsule's right edge. Its native
- * picker is suppressed on mousedown and the popover opens instead. */
+ * picker is suppressed on mousedown and the dialog opens instead. */
 function ModelEffortCapsule({
-  modelOption,
   modelLabel,
-  modelChoices,
+  providerCatalog,
+  flatChoices,
+  flatCurrentProvider,
   effortValue,
   effortChoices,
   disabled,
-  onModelPick,
+  onModelLeafPick,
+  onProviderPick,
   onEffortPick,
+  onManage,
 }: ModelEffortCapsuleProps): ReactElement {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -117,8 +137,11 @@ function ModelEffortCapsule({
     document.addEventListener("pointerdown", close, true);
     return () => document.removeEventListener("pointerdown", close, true);
   }, [open]);
-  const modelValue = modelOption?.currentValue ?? modelChoices[0]?.value ?? "";
-  const triggerLabel = `${capsuleModelLabel(modelLabel)} · ${effortValue}`;
+  const modelValue =
+    providerCatalog?.currentProviderId ?? flatCurrentProvider ?? "";
+  // 弹框的生效 provider：catalog 快照（含本地树选择就地更新），平铺回退取 option 当前值。
+  const dialogCurrentProvider = providerCatalog?.currentProviderId ?? flatCurrentProvider;
+  const triggerLabel = `${modelLabel} · ${effortValue}`;
   return (
     <div className="composer-model-capsule" ref={rootRef}>
       <select
@@ -152,32 +175,20 @@ function ModelEffortCapsule({
         <option value={modelValue}>{triggerLabel}</option>
       </select>
       {open ? (
-        <div className="composer-model-capsule__popover" role="dialog" aria-label="Model settings">
-          <label>
-            Provider / Model
-            <select
-              value={modelValue}
-              disabled={disabled || modelChoices.length === 0}
-              onChange={(event) => onModelPick(event.target.value)}
-            >
-              {modelChoices.map((choice) => (
-                <option key={choice.value} value={choice.value}>{choice.name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Effort
-            <select
-              value={effortValue}
-              disabled={disabled}
-              onChange={(event) => onEffortPick(event.target.value)}
-            >
-              {effortChoices.map((choice) => (
-                <option key={choice} value={choice}>{choice}</option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <ModelSettingsDialog
+          catalog={providerCatalog}
+          currentProviderId={dialogCurrentProvider}
+          currentModel={providerCatalog?.currentModel ?? ""}
+          flatChoices={flatChoices}
+          effortValue={effortValue}
+          effortChoices={effortChoices}
+          disabled={disabled}
+          onClose={() => setOpen(false)}
+          onModelLeafPick={onModelLeafPick}
+          onProviderPick={onProviderPick}
+          onEffortPick={onEffortPick}
+          onManage={onManage}
+        />
       ) : null}
     </div>
   );
@@ -212,6 +223,7 @@ export function ChatComposer({
   activityLabel,
   workspacePathHint,
   modelSelection,
+  providerCatalog,
   sessionConfigOptions,
   sessionConfigLoading,
   modelPickerLocked,
@@ -225,6 +237,8 @@ export function ChatComposer({
   draft,
   onDraftChange,
   onPickSessionModel,
+  onPickModelSelection,
+  onOpenProviderConfig,
   onPickSessionConfigOption,
   onSubmit,
   onCancel,
@@ -358,23 +372,29 @@ export function ChatComposer({
   const effortOption = sessionConfigOptions?.find(
     (option) => option.category === "effort" || option.configId === "effort",
   ) as SelectOption | undefined;
-  const [effortValue, setEffortValue] = useState(
-    effortOption?.currentValue ?? "auto",
-  );
+  const [effortValue, setEffortValue] = useState(() => {
+    if (effortOption?.currentValue !== undefined) {
+      return effortOption.currentValue;
+    }
+    // daemon 快照里的当前 effort（旧 daemon / anthropic 为空串 → medium 档位）。
+    const seeded = providerCatalog?.currentEffort ?? "";
+    return seeded.length > 0 ? seeded : "medium";
+  });
   useEffect(() => {
     if (effortOption?.currentValue !== undefined) {
       setEffortValue(effortOption.currentValue);
+      return;
     }
-  }, [effortOption?.currentValue]);
+    const seeded = providerCatalog?.currentEffort ?? "";
+    if (seeded.length > 0) {
+      setEffortValue(seeded);
+    }
+  }, [effortOption?.currentValue, providerCatalog?.currentEffort]);
   const capsuleModelChoices = toolbarModelOption !== undefined
     ? toolbarModelOption.options.map((choice) => ({ value: choice.value, name: choice.name }))
     : modelSel?.availableModels.map((model) => ({ value: model.modelId, name: model.name })) ?? [];
-  const effortChoices = effortOption?.options.map((choice) => choice.value) ?? ["auto", "low", "medium", "high"];
-
-  const handleCapsuleEffortPick = (value: string): void => {
-    setEffortValue(value);
-    onPickSessionConfigOption(effortOption?.configId ?? "effort", value);
-  };
+  // effort 四档（low/medium/high/max）；daemon 显式下发 effort 选项时以它为准。
+  const effortChoices = effortOption?.options.map((choice) => choice.value) ?? ["low", "medium", "high", "max"];
 
   const handleCapsuleModelPick = (value: string): void => {
     if (toolbarModelOption !== undefined) {
@@ -384,17 +404,39 @@ export function ChatComposer({
     }
   };
 
+  const handleCapsuleEffortPick = (value: string): void => {
+    setEffortValue(value);
+    onPickSessionConfigOption(effortOption?.configId ?? "effort", value);
+  };
+
+  // 弹框树叶子选中：provider + model 一起上行（draft 宿主落 setDraftModel(provider)
+  // + setDraftModelName(model)，发送时 /model use + /model set model= 应用）。
+  const handleModelLeafPick = (provider: string, model: string): void => {
+    if (onPickModelSelection !== undefined) {
+      onPickModelSelection(provider, model);
+      return;
+    }
+    // 宿主未接新上行（旧宿主/standalone）：退回 provider 级选择。
+    handleCapsuleModelPick(provider);
+  };
+
   const handleWorkspacePick = (value: string): void => {
     onPickSessionConfigOption("workspace", value);
   };
 
   // 胶囊显示只取模型名（不含 workspace/effort 的 summary）＋effort，详情进弹窗。
+  // catalog 有 currentModel（daemon 快照 / 本地树选择落过 reducer）时直接用模型 id，
+  // 不走 provider 名的括号截断与大写化。
+  const catalogModelName = providerCatalog?.currentModel ?? "";
   const capsuleModelName = toolbarModelOption !== undefined
     ? toolbarModelOption.options.find(
         (choice) => choice.value === toolbarModelOption.currentValue,
       )?.name ?? toolbarModelOption.currentValue
     : modelLabel.replace(/^Model\s*:\s*/i, "");
-  const capsuleLabel = capsuleModelLabel(capsuleModelName);
+  const capsuleLabel =
+    catalogModelName.length > 0
+      ? catalogModelName
+      : capsuleModelLabel(capsuleModelName);
 
   const handleModelParamPick = (
     configId: string,
@@ -566,14 +608,19 @@ export function ChatComposer({
                 onPick={handleWorkspacePick}
               />
               <ModelEffortCapsule
-                modelOption={toolbarModelOption}
                 modelLabel={capsuleLabel}
-                modelChoices={capsuleModelChoices}
+                providerCatalog={providerCatalog}
+                flatChoices={capsuleModelChoices}
+                flatCurrentProvider={
+                  toolbarModelOption?.currentValue ?? modelSel?.currentModelId ?? ""
+                }
                 effortValue={effortValue}
                 effortChoices={effortChoices}
                 disabled={modelSelectDisabled}
-                onModelPick={handleCapsuleModelPick}
+                onModelLeafPick={handleModelLeafPick}
+                onProviderPick={handleCapsuleModelPick}
                 onEffortPick={handleCapsuleEffortPick}
+                onManage={onOpenProviderConfig}
               />
               {toolbarOtherOptions.length > 0 ? (
                 <ConfigOptionControls
@@ -623,14 +670,17 @@ export function ChatComposer({
           ) : (
             <div className="composer-agent-toolbar">
               <ModelEffortCapsule
-                modelOption={undefined}
                 modelLabel={capsuleLabel}
-                modelChoices={capsuleModelChoices}
+                providerCatalog={providerCatalog}
+                flatChoices={capsuleModelChoices}
+                flatCurrentProvider={modelSel?.currentModelId ?? ""}
                 effortValue={effortValue}
                 effortChoices={effortChoices}
                 disabled={modelSelectDisabled}
-                onModelPick={handleCapsuleModelPick}
+                onModelLeafPick={handleModelLeafPick}
+                onProviderPick={handleCapsuleModelPick}
                 onEffortPick={handleCapsuleEffortPick}
+                onManage={onOpenProviderConfig}
               />
             </div>
           )}
@@ -646,21 +696,20 @@ export function ChatComposer({
         <div className="composer-mode-slot">
           <SessionModeIndicator modeOption={modeOption} />
         </div>
+        {/* 运行中 send 即 stop：独立的 Cancel 按钮已并入（草稿/空闲态不再占位）。 */}
         <button
           type="button"
-          className="composer-cancel"
-          disabled={!promptInFlight}
-          onClick={() => onCancel()}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="composer-send"
+          className={
+            promptInFlight
+              ? "composer-send composer-send--stop"
+              : "composer-send"
+          }
           disabled={readOnly}
-          onClick={() => onSubmit()}
+          aria-label={promptInFlight ? "Stop" : "Send"}
+          title={promptInFlight ? "Stop the running turn" : "Send"}
+          onClick={() => (promptInFlight ? onCancel() : onSubmit())}
         >
-          Send
+          {promptInFlight ? "Stop" : "Send"}
         </button>
       </div>
     </footer>

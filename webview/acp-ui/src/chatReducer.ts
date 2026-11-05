@@ -13,6 +13,7 @@ import {
 } from "../../../src/acp/session/sessionConfigOptionsCache";
 import type {
     ExtensionToWebviewMessage,
+    AcpUiProviderCatalog,
     AcpUiSlashCommand,
     PlanEntry,
     TaskHeaderInfo,
@@ -88,6 +89,13 @@ export type ChatState = {
     errorText: string | null;
     modelSelection: AcpUiSessionModelSelection | null;
     sessionConfigOptions: AcpUiSessionConfigOption[] | null;
+    /**
+     * Provider 模型目录快照（宿主 `providerCatalog`，daemon `x-goworker/providers`
+     * 直译）：Model·Effort 弹框的树数据源 + 当前 provider/model/effort。本地树选择
+     * 就地更新 currentProviderId/currentModel（宿主不会因选择重推快照）。
+     * daemon 全局面，不随 sessionReset 清空。
+     */
+    providerCatalog: AcpUiProviderCatalog | null;
     /** True while waiting for agent model/config options (uncached reconnect). */
     sessionConfigLoading: boolean;
     /** True while ACP `session/load` is replaying conversation history. */
@@ -129,6 +137,7 @@ export type ChatAction =
     | ExtensionMessageAfterInit
     | { type: "submit"; body: string }
     | { type: "pickSessionModel"; modelId: string }
+    | { type: "pickModelSelection"; provider: string; model: string }
     | {
           type: "pickSessionConfigOption";
           configId: string;
@@ -215,6 +224,7 @@ export function createInitialChatState(): ChatState {
         promptInFlight: false,
         errorText: null,
         modelSelection: null,
+        providerCatalog: null,
         sessionConfigOptions: null,
         sessionConfigLoading: true,
         sessionHistoryLoading: false,
@@ -683,6 +693,21 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             },
         };
     }
+    if (action.type === "pickModelSelection") {
+        // Model·Effort 弹框的树叶子选中：就地更新目录快照的当前选择（宿主不会
+        // 因本地选择重推 providerCatalog，快照即本地唯一事实源）。锁选择期间不动。
+        if (state.composerPicksLocked || state.providerCatalog === null) {
+            return state;
+        }
+        return {
+            ...state,
+            providerCatalog: {
+                ...state.providerCatalog,
+                currentProviderId: action.provider,
+                currentModel: action.model,
+            },
+        };
+    }
     if (action.type === "pickSessionConfigOption") {
         if (state.composerPicksLocked || state.sessionConfigOptions === null) {
             return state;
@@ -758,6 +783,17 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 sessionConfigLoading: false,
             };
         }
+        case "providerCatalog":
+            // 快照覆盖（幂等全量）；本地未落盘的选择以宿主最新快照为准。
+            return {
+                ...state,
+                providerCatalog: {
+                    currentProviderId: action.currentProviderId,
+                    currentModel: action.currentModel,
+                    currentEffort: action.currentEffort,
+                    providers: action.providers,
+                },
+            };
         case "sessionConfigOptions":
             return applySessionConfigOptions(state, action.options);
         case "sessionConfigOptionsLoading":

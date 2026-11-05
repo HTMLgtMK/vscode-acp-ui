@@ -18,6 +18,8 @@ export type AcpUiHistoryReplayEvent =
           | { type: "historyReplay" }
           // 控制面板快照是"当前状态"不是"发生过什么"，不进聊天回放流。
           | { type: "controlPanel" }
+          // provider 模型目录同样是"当前状态"快照，经宿主 ready 重放通道补投。
+          | { type: "providerCatalog" }
       >;
 
 /** Plan entry forwarded from an ACP agent plan update. */
@@ -54,6 +56,26 @@ export type AcpUiSlashCommand = {
     source?: string;
 };
 
+/** One provider entry of the `providerCatalog` snapshot (`x-goworker/providers`). */
+export type AcpUiProviderCatalogEntry = {
+    /** Provider id — the `/model use <provider>` addressing face. */
+    id: string;
+    name: string;
+    /** Provider protocol adapter (`openai` / `anthropic`), display only. */
+    type?: string;
+    /** Model catalog of this provider (`Models` config, falling back to `[Model]`). */
+    models: string[];
+};
+
+/** Provider model catalog snapshot for the Model·Effort dialog. Empty strings
+ * mean the daemon did not report the field (older daemon or no LLM config). */
+export type AcpUiProviderCatalog = {
+    currentProviderId: string;
+    currentModel: string;
+    currentEffort: string;
+    providers: AcpUiProviderCatalogEntry[];
+};
+
 /** How a compact tool path link should open in the workbench. */
 export type WorkspacePathOpenTarget = "file" | "auto";
 
@@ -76,6 +98,10 @@ export type WebviewToExtensionMessage =
     /** Dispose the current agent session and start a fresh one (same editor / WS connection). */
     | { type: "resetSession" }
     | { type: "setSessionModel"; modelId: string }
+    /** Pick a model leaf in the Model·Effort dialog tree (provider + model). */
+    | { type: "setSessionModelSelection"; provider: string; model: string }
+    /** Open the daemon provider config file (Model·Effort dialog MANAGE action). */
+    | { type: "openProviderConfig" }
     | {
           type: "setSessionConfigOption";
           configId: string;
@@ -174,6 +200,14 @@ export type ExtensionToWebviewMessage =
           type: "sessionModels";
           currentModelId: string;
           availableModels: AcpUiSessionModelSelection["availableModels"];
+      }
+    | {
+          /** Provider model catalog snapshot (Model·Effort dialog tree data). */
+          type: "providerCatalog";
+          currentProviderId: string;
+          currentModel: string;
+          currentEffort: string;
+          providers: AcpUiProviderCatalogEntry[];
       }
     | {
           type: "sessionConfigOptions";
@@ -342,6 +376,22 @@ export function tryParseWebviewMessage(
         record.modelId.length > 0
     ) {
         return { type: "setSessionModel", modelId: record.modelId };
+    }
+    if (
+        messageType === "setSessionModelSelection" &&
+        typeof record.provider === "string" &&
+        record.provider.length > 0 &&
+        typeof record.model === "string" &&
+        record.model.length > 0
+    ) {
+        return {
+            type: "setSessionModelSelection",
+            provider: record.provider,
+            model: record.model,
+        };
+    }
+    if (messageType === "openProviderConfig") {
+        return { type: "openProviderConfig" };
     }
     if (
         messageType === "setSessionConfigOption" &&

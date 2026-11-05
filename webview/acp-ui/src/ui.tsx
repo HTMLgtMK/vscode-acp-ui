@@ -38,6 +38,8 @@ export function mountChatView(
         path: string,
         options?: { target?: WorkspacePathOpenTarget },
     ) => void,
+    postSetSessionModelSelection?: (provider: string, model: string) => void,
+    postOpenProviderConfig?: () => void,
 ): ChatView {
     root.replaceChildren();
     root.className = "root agent-root";
@@ -71,6 +73,8 @@ export function mountChatView(
             postSaveHistory={postSaveHistory}
             postOpenNewChat={postOpenNewChat}
             postOpenWorkspacePath={postOpenWorkspacePath}
+            postSetSessionModelSelection={postSetSessionModelSelection}
+            postOpenProviderConfig={postOpenProviderConfig}
             postPermissionResponse={postPermissionResponse}
             extensionDispatchRef={extensionDispatchRef}
             onExtensionDispatchReady={flushPendingExtensionMessages}

@@ -82,6 +82,8 @@ export type AcpUiAppProps = {
     path: string,
     options?: { target?: WorkspacePathOpenTarget },
   ) => void;
+  postSetSessionModelSelection?: (provider: string, model: string) => void;
+  postOpenProviderConfig?: () => void;
   postPermissionResponse: (
     payload:
       | { requestId: string; selectedOptionId: string }
@@ -108,6 +110,8 @@ export function AcpUiApp({
   postSaveHistory,
   postOpenNewChat,
   postOpenWorkspacePath,
+  postSetSessionModelSelection,
+  postOpenProviderConfig,
   postPermissionResponse,
   extensionDispatchRef,
   onExtensionDispatchReady,
@@ -787,6 +791,7 @@ export function AcpUiApp({
               activityLabel={activityLabel}
               workspacePathHint={workspaceText}
               modelSelection={state.modelSelection}
+              providerCatalog={state.providerCatalog}
               sessionConfigOptions={state.sessionConfigOptions}
               sessionConfigLoading={state.sessionConfigLoading}
               modelPickerLocked={state.composerPicksLocked}
@@ -803,6 +808,15 @@ export function AcpUiApp({
                 dispatch({ type: "pickSessionModel", modelId });
                 postSetSessionModel(modelId);
               }}
+              onPickModelSelection={
+                postSetSessionModelSelection === undefined
+                  ? undefined
+                  : (provider, model) => {
+                      dispatch({ type: "pickModelSelection", provider, model });
+                      postSetSessionModelSelection(provider, model);
+                    }
+              }
+              onOpenProviderConfig={postOpenProviderConfig}
               onPickSessionConfigOption={(configId, value) => {
                 dispatch({ type: "pickSessionConfigOption", configId, value });
                 postSetSessionConfigOption(configId, value);

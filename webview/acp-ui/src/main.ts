@@ -109,6 +109,12 @@ function tryMountView(): void {
                 ...(options?.target === "auto" ? { target: "auto" } : {}),
             });
         },
+        (provider, model) => {
+            host.post({ type: "setSessionModelSelection", provider, model });
+        },
+        () => {
+            host.post({ type: "openProviderConfig" });
+        },
     );
 }
 
