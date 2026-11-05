@@ -6,8 +6,15 @@
  * 上行消息按不可信输入处理：一律过 `tryParseControlPanelUpMessage` 白名单。
  */
 
-/** 三棵树的种类；折叠状态与计数都按这个键存。 */
-export type ControlPanelTreeKind = "chat" | "project" | "worker" | "task";
+/**
+ * 四棵树的种类；折叠状态与计数都按这个键存。
+ * 词表只这一份：类型与上行守卫（isControlPanelTreeKind）都从它派生 ——
+ * 守卫此前手抄了一份字面量且漏了 `project`，PROJECTS 的 toggleTree/select
+ * 上行全被白名单丢掉（树头成死按钮），而类型侧一切正常，编译期看不出来。
+ */
+const CONTROL_PANEL_TREE_KINDS = ["chat", "project", "worker", "task"] as const;
+
+export type ControlPanelTreeKind = (typeof CONTROL_PANEL_TREE_KINDS)[number];
 
 /** 任务生命周期五档，沿用宿主 `src/views/taskTree.ts` 的收敛结果，不新造词表。 */
 export type ControlPanelNodeState =
@@ -236,7 +243,10 @@ function smallFacts(raw: unknown): Record<string, unknown> | undefined {
 export function isControlPanelTreeKind(
     raw: unknown,
 ): raw is ControlPanelTreeKind {
-    return raw === "chat" || raw === "worker" || raw === "task";
+    return (
+        typeof raw === "string" &&
+        (CONTROL_PANEL_TREE_KINDS as readonly string[]).includes(raw)
+    );
 }
 
 /**

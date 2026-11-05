@@ -131,7 +131,7 @@ describe("tryParseControlPanelUpMessage", () => {
         ).toBeNull();
     });
 
-    it("rejects a tree kind outside the three trees", () => {
+    it("rejects a tree kind outside the four trees", () => {
         expect(
             tryParseControlPanelUpMessage({
                 type: "controlPanel.toggleTree",
@@ -145,6 +145,19 @@ describe("tryParseControlPanelUpMessage", () => {
                 kind: 42,
             }),
         ).toBeNull();
+    });
+
+    it("keeps every declared tree kind, project included", () => {
+        // project 曾只写在类型里、没写进守卫：PROJECTS 的 toggleTree/select 上行
+        // 整条被丢（树头成死按钮），而宿主与 webview 两侧编译都照过。
+        for (const kind of ["chat", "project", "worker", "task"] as const) {
+            expect(
+                tryParseControlPanelUpMessage({
+                    type: "controlPanel.toggleTree",
+                    kind,
+                }),
+            ).toEqual({ type: "controlPanel.toggleTree", kind });
+        }
     });
 
     it("rejects empty or oversized string fields", () => {
@@ -172,8 +185,9 @@ describe("tryParseControlPanelUpMessage", () => {
 });
 
 describe("isControlPanelTreeKind", () => {
-    it("narrows the three kinds only", () => {
+    it("narrows the four kinds only", () => {
         expect(isControlPanelTreeKind("chat")).toBe(true);
+        expect(isControlPanelTreeKind("project")).toBe(true);
         expect(isControlPanelTreeKind("worker")).toBe(true);
         expect(isControlPanelTreeKind("task")).toBe(true);
         expect(isControlPanelTreeKind("chats")).toBe(false);
