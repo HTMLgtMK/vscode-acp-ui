@@ -338,7 +338,39 @@ export class AcpSessionBridge {
             bootstrap = created;
             this.acpSessionId = created.sessionId;
         }
-        const preferredModelId = options?.preferredModelId;
+        await this.applyBootstrap(bootstrap, options?.preferredModelId);
+    }
+
+    /**
+     * 同连接二次 `session/new`（暖会话 → 真实会话）：传输与 initialize 复用，只换
+     * 会话。草稿面板首发时用——面板打开时已建了一条 cwd='' 的暖会话（daemon tmp
+     * 执行域、不落记录），用户选定工作区后在这里以显式 cwd 重建；旧暖会话随绑定
+     * 转移由 daemon 生命周期收口注销。cwd 是会话属性、声明后不可迁移（SetSession
+     * 是 daemon 侧零调用方的残留面），因此「换工作区」只能是重建，没有改声明通路。
+     */
+    async reopenSession(options?: { cwd?: string }): Promise<void> {
+        const init = this.initResponse;
+        if (init === null) {
+            throw new Error("Agent not started");
+        }
+        // 会话级残留不得跨会话存活：权限等待者当场判撤，读文件相关 FIFO 清零。
+        this.cancelPendingPermissions();
+        this.readToolCallQueue = [];
+        this.toolCallKindTracking = createToolCallKindTracking();
+        const created = await this.newSessionWithAuthRetry(init, options?.cwd);
+        this.acpSessionId = created.sessionId;
+        await this.applyBootstrap(created);
+    }
+
+    /**
+     * Bootstrap 结果落 bridge 状态并下发 UI：configOptions 直接应用；只有 modes
+     * 的 agent 走 sessionModels 通路；preferredModelId 在会话广告的模型面里就近
+     * 应用（connect 与 reopenSession 共用）。
+     */
+    private async applyBootstrap(
+        bootstrap: acp.NewSessionResponse | acp.LoadSessionResponse,
+        preferredModelId?: string,
+    ): Promise<void> {
         if (
             bootstrap.configOptions !== undefined &&
             bootstrap.configOptions !== null
@@ -766,15 +798,16 @@ export class AcpSessionBridge {
 
     private async newSessionWithAuthRetry(
         init: acp.InitializeResponse,
+        cwdOverride?: string,
     ): Promise<acp.NewSessionResponse> {
         try {
-            return await this.agentProcess.newSession();
+            return await this.agentProcess.newSession(cwdOverride);
         } catch (err: unknown) {
             if (!isAuthRequiredError(err)) {
                 throw err;
             }
             await this.ensureAuthenticated(init);
-            return await this.agentProcess.newSession();
+            return await this.agentProcess.newSession(cwdOverride);
         }
     }
 

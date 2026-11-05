@@ -363,6 +363,17 @@ export class AcpAgentProcess {
         return sessions;
     }
 
+    /**
+     * session/new|load 的 cwd 声明：宿主没给工作区就是**未声明**（空串），不能拿
+     * `process.cwd()` 顶上——GUI 起的扩展宿主里那个值是 `/`，daemon 会照记进
+     * workspace 记录，「没选工作区」于是在清单里变成一个 basename 为空的工作区分组。
+     * 空串在 daemon 侧有确定语义：new 注入缺省执行域（tmp 每会话目录、不落记录），
+     * load 不动既有声明（见 daemon agent 插件的 declareSessionCWD / LoadBoundSession）。
+     */
+    private sessionCwd(): string {
+        return this.options.getWorkspaceRoot() ?? "";
+    }
+
     async loadSession(sessionId: string): Promise<acp.LoadSessionResponse> {
         if (!this.connection) {
             throw new Error("Agent not started");
@@ -370,7 +381,7 @@ export class AcpAgentProcess {
         if (!this.supportsLoadSession()) {
             throw new Error("Agent does not support session/load");
         }
-        const cwd = this.options.getWorkspaceRoot() ?? process.cwd();
+        const cwd = this.sessionCwd();
         return this.connection.loadSession({
             sessionId,
             cwd,
@@ -388,11 +399,16 @@ export class AcpAgentProcess {
         await this.connection.deleteSession({ sessionId });
     }
 
-    async newSession(): Promise<acp.NewSessionResponse> {
+    /**
+     * `cwdOverride` 是同连接二次 `session/new` 的显式 cwd（暖会话 → 真实会话的
+     * 切换面）：cwd 是会话属性、声明后不可迁移，选了工作区只能重建会话。未指定时
+     * 沿用宿主声明（空串语义见 {@link sessionCwd}）。
+     */
+    async newSession(cwdOverride?: string): Promise<acp.NewSessionResponse> {
         if (!this.connection) {
             throw new Error("Agent not started");
         }
-        const cwd = this.options.getWorkspaceRoot() ?? process.cwd();
+        const cwd = cwdOverride ?? this.sessionCwd();
         return this.connection.newSession({ cwd, mcpServers: [] });
     }
 

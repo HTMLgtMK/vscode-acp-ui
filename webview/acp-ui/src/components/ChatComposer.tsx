@@ -13,7 +13,6 @@ import {
   buildModelPickerState,
   formatModelDisplayName,
   parseModelIdBracketParams,
-  pickVariantForGroup,
 } from "../../../../src/acp/session/modelVariantPicker";
 import type { AcpUiSessionModelSelection } from "../../../../src/acp/session/sessionModels";
 import {
@@ -299,6 +298,10 @@ export function ChatComposer({
   const useLegacyModelPath = configModelOption === undefined;
   const useConfigModelPicker =
     configModelOption !== undefined && !agentOrderedLayout;
+  // 旧通路（无 config options，纯 sessionModels）：与 agent 胶囊布局**同位**渲染——
+  // model 数据源回退 modelSel（capsuleModelChoices/handleCapsuleModelPick 已兜底）。
+  // 带括号参数的 config 模型面（需要分组 select）不走这里，保持 stacked。
+  const legacyCapsuleLayout = !agentOrderedLayout && !useConfigModelPicker;
   const modelSel = modelSelection;
   const showConfigLoading = !modelPickerLocked && sessionConfigLoading;
   const modelReady =
@@ -536,7 +539,7 @@ export function ChatComposer({
         {hideComposerModelControls ? null : (
         <div
           className={
-            agentOrderedLayout
+            agentOrderedLayout || legacyCapsuleLayout
               ? "composer-footer-model composer-footer-config"
               : "composer-footer-model composer-footer-model--stacked"
           }
@@ -554,7 +557,7 @@ export function ChatComposer({
               {modelLabel.length > 0 ? modelLabel : "\u2014"}
             </span>
           ) : showConfigLoading ? (
-            <ComposerConfigLoading layout={agentOrderedLayout ? "inline" : "stacked"} />
+            <ComposerConfigLoading layout={agentOrderedLayout || legacyCapsuleLayout ? "inline" : "stacked"} />
           ) : agentOrderedLayout && toolbarConfigOptions !== null ? (
             <div className="composer-agent-toolbar">
               <WorkspacePill
@@ -581,98 +584,63 @@ export function ChatComposer({
                 />
               ) : null}
             </div>
+          ) : useConfigModelPicker && configModelOption !== undefined ? (
+            <div className="composer-config-field">
+              <label
+                className="composer-config-label"
+                htmlFor="acp-ui-model-select"
+              >
+                Model
+              </label>
+              <select
+                id="acp-ui-model-select"
+                className="composer-config-select composer-config-select--model"
+                aria-label="Model"
+                value={configCurrentGroupName}
+                disabled={modelSelectDisabled}
+                onChange={(e) => {
+                  const preferredParams = parseModelIdBracketParams(
+                    configModelOption.currentValue,
+                  ).params;
+                  const nextModelId = pickModelOptionForFamily(
+                    configModelOption,
+                    e.target.value,
+                    preferredParams,
+                  );
+                  onPickSessionConfigOption(
+                    configModelOption.configId,
+                    nextModelId,
+                  );
+                }}
+              >
+                {configModelGroups.map((group) => (
+                  <option key={group.name} value={group.name}>
+                    {group.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           ) : (
-            <>
-              {useConfigModelPicker && configModelOption !== undefined ? (
-                <div className="composer-config-field">
-                  <label
-                    className="composer-config-label"
-                    htmlFor="acp-ui-model-select"
-                  >
-                    Model
-                  </label>
-                  <select
-                    id="acp-ui-model-select"
-                    className="composer-config-select composer-config-select--model"
-                    aria-label="Model"
-                    value={configCurrentGroupName}
-                    disabled={modelSelectDisabled}
-                    onChange={(e) => {
-                      const preferredParams = parseModelIdBracketParams(
-                        configModelOption.currentValue,
-                      ).params;
-                      const nextModelId = pickModelOptionForFamily(
-                        configModelOption,
-                        e.target.value,
-                        preferredParams,
-                      );
-                      onPickSessionConfigOption(
-                        configModelOption.configId,
-                        nextModelId,
-                      );
-                    }}
-                  >
-                    {configModelGroups.map((group) => (
-                      <option key={group.name} value={group.name}>
-                        {group.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div className="composer-config-field">
-                  <label
-                    className="composer-config-label"
-                    htmlFor="acp-ui-model-select"
-                  >
-                    Model
-                  </label>
-                  <select
-                    id="acp-ui-model-select"
-                    className="composer-config-select composer-config-select--model"
-                    aria-label="Model"
-                    value={modelPickerState?.currentGroupName ?? ""}
-                    disabled={modelSelectDisabled}
-                    onChange={(e) => {
-                      if (modelSel === null || modelPickerState === null) {
-                        return;
-                      }
-                      const group = modelPickerState.groups.find(
-                        (entry) => entry.name === e.target.value,
-                      );
-                      if (group === undefined || group.variants.length === 0) {
-                        return;
-                      }
-                      const preferredParams = parseModelIdBracketParams(
-                        modelSel.currentModelId,
-                      ).params;
-                      const variants = group.variants.map((variant) => ({
-                        modelId: variant.modelId,
-                        params: parseModelIdBracketParams(variant.modelId)
-                          .params,
-                      }));
-                      onPickSessionModel(
-                        pickVariantForGroup(variants, preferredParams),
-                      );
-                    }}
-                  >
-                    {modelPickerState?.groups.map((group) => (
-                      <option key={group.name} value={group.name}>
-                        {group.label}
-                      </option>
-                    )) ?? null}
-                  </select>
-                </div>
-              )}
-              {configParamOptions.length > 0 ? (
-                <ConfigOptionControls
-                  options={configParamOptions}
-                  disabled={modelSelectDisabled}
-                  onPick={handleModelParamPick}
-                />
-              ) : null}
-            </>
+            <div className="composer-agent-toolbar">
+              <ModelEffortCapsule
+                modelOption={undefined}
+                modelLabel={capsuleLabel}
+                modelChoices={capsuleModelChoices}
+                effortValue={effortValue}
+                effortChoices={effortChoices}
+                disabled={modelSelectDisabled}
+                onModelPick={handleCapsuleModelPick}
+                onEffortPick={handleCapsuleEffortPick}
+              />
+            </div>
           )}
+          {configParamOptions.length > 0 ? (
+            <ConfigOptionControls
+              options={configParamOptions}
+              disabled={modelSelectDisabled}
+              onPick={handleModelParamPick}
+            />
+          ) : null}
         </div>
         )}
         <div className="composer-mode-slot">
