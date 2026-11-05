@@ -40,6 +40,19 @@ export function mountChatView(
     ) => void,
     postSetSessionModelSelection?: (provider: string, model: string) => void,
     postOpenProviderConfig?: () => void,
+    postProviderDetailRequest?: (id: string) => void,
+    postProviderUpsert?: (req: {
+        id?: string;
+        name: string;
+        providerType: string;
+        endpoint: string;
+        apiKey?: string;
+        models: string[];
+        contextWindow?: number;
+        maxTokens?: number;
+        authType?: string;
+    }) => void,
+    postProviderRemove?: (id: string) => void,
 ): ChatView {
     root.replaceChildren();
     root.className = "root agent-root";
@@ -75,6 +88,9 @@ export function mountChatView(
             postOpenWorkspacePath={postOpenWorkspacePath}
             postSetSessionModelSelection={postSetSessionModelSelection}
             postOpenProviderConfig={postOpenProviderConfig}
+            postProviderDetailRequest={postProviderDetailRequest}
+            postProviderUpsert={postProviderUpsert}
+            postProviderRemove={postProviderRemove}
             postPermissionResponse={postPermissionResponse}
             extensionDispatchRef={extensionDispatchRef}
             onExtensionDispatchReady={flushPendingExtensionMessages}

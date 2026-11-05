@@ -20,6 +20,9 @@ export type AcpUiHistoryReplayEvent =
           | { type: "controlPanel" }
           // provider 模型目录同样是"当前状态"快照，经宿主 ready 重放通道补投。
           | { type: "providerCatalog" }
+          // 管理页的请求面（detail 回包 / 操作结果）是瞬态应答，不进回放流。
+          | { type: "providerDetail" }
+          | { type: "providerManageResult" }
       >;
 
 /** Plan entry forwarded from an ACP agent plan update. */
@@ -76,6 +79,24 @@ export type AcpUiProviderCatalog = {
     providers: AcpUiProviderCatalogEntry[];
 };
 
+/** Full config of one provider for the manage page form. The API key never
+ * crosses the wire — only the `apiKeySet` boolean (empty-string uplink key =
+ * "keep existing"). */
+export type AcpUiProviderDetail = {
+    id: string;
+    name: string;
+    type: string;
+    endpoint: string;
+    apiKeySet: boolean;
+    models: string[];
+    contextWindow?: number;
+    maxTokens?: number;
+    authType?: string;
+    requestMode?: string;
+    effort?: string;
+    isDefault: boolean;
+};
+
 /** How a compact tool path link should open in the workbench. */
 export type WorkspacePathOpenTarget = "file" | "auto";
 
@@ -100,8 +121,27 @@ export type WebviewToExtensionMessage =
     | { type: "setSessionModel"; modelId: string }
     /** Pick a model leaf in the Model·Effort dialog tree (provider + model). */
     | { type: "setSessionModelSelection"; provider: string; model: string }
-    /** Open the daemon provider config file (Model·Effort dialog MANAGE action). */
+    /** Open the daemon provider config file (manager page header link). */
     | { type: "openProviderConfig" }
+    /** Provider manager page: load one provider's full config (key never returns). */
+    | { type: "providerDetailRequest"; id: string }
+    /** Provider manager page: create (no id) or merge-update a provider. */
+    | {
+          type: "providerUpsert";
+          id?: string;
+          name: string;
+          /** Provider protocol adapter (`openai` | `anthropic`）— daemon 侧字段名 type。 */
+          providerType: string;
+          endpoint: string;
+          /** Empty/omitted = keep the stored key ("leave blank to keep"). */
+          apiKey?: string;
+          models: string[];
+          contextWindow?: number;
+          maxTokens?: number;
+          authType?: string;
+      }
+    /** Provider manager page: delete a provider (default/last is refused). */
+    | { type: "providerRemove"; id: string }
     | {
           type: "setSessionConfigOption";
           configId: string;
@@ -208,6 +248,19 @@ export type ExtensionToWebviewMessage =
           currentModel: string;
           currentEffort: string;
           providers: AcpUiProviderCatalogEntry[];
+      }
+    | {
+          /** Full config of the requested provider (null = not found / failed). */
+          type: "providerDetail";
+          detail: AcpUiProviderDetail | null;
+          error?: string;
+      }
+    | {
+          /** Outcome of a manage-page save/delete; ok re-pushes providerCatalog. */
+          type: "providerManageResult";
+          ok: boolean;
+          message: string;
+          removedId?: string;
       }
     | {
           type: "sessionConfigOptions";
@@ -392,6 +445,47 @@ export function tryParseWebviewMessage(
     }
     if (messageType === "openProviderConfig") {
         return { type: "openProviderConfig" };
+    }
+    if (
+        messageType === "providerDetailRequest" &&
+        typeof record.id === "string" &&
+        record.id.length > 0
+    ) {
+        return { type: "providerDetailRequest", id: record.id };
+    }
+    if (messageType === "providerUpsert" && typeof record.name === "string") {
+        const upsert: Extract<WebviewToExtensionMessage, { type: "providerUpsert" }> = {
+            type: "providerUpsert",
+            name: record.name,
+            providerType: typeof record.providerType === "string" ? record.providerType : "",
+            endpoint: typeof record.endpoint === "string" ? record.endpoint : "",
+            models: Array.isArray(record.models)
+                ? record.models.filter((m): m is string => typeof m === "string")
+                : [],
+        };
+        if (typeof record.id === "string" && record.id.length > 0) {
+            upsert.id = record.id;
+        }
+        if (typeof record.apiKey === "string" && record.apiKey.length > 0) {
+            upsert.apiKey = record.apiKey;
+        }
+        if (typeof record.contextWindow === "number" && record.contextWindow > 0) {
+            upsert.contextWindow = record.contextWindow;
+        }
+        if (typeof record.maxTokens === "number" && record.maxTokens > 0) {
+            upsert.maxTokens = record.maxTokens;
+        }
+        if (typeof record.authType === "string" && record.authType.length > 0) {
+            upsert.authType = record.authType;
+        }
+        return upsert;
+    }
+    if (
+        messageType === "providerRemove" &&
+        typeof record.id === "string" &&
+        record.id.length > 0
+    ) {
+        return { type: "providerRemove", id: record.id };
     }
     if (
         messageType === "setSessionConfigOption" &&

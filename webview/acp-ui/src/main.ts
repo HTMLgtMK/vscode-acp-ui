@@ -115,6 +115,15 @@ function tryMountView(): void {
         () => {
             host.post({ type: "openProviderConfig" });
         },
+        (id) => {
+            host.post({ type: "providerDetailRequest", id });
+        },
+        (req) => {
+            host.post({ type: "providerUpsert", ...req });
+        },
+        (id) => {
+            host.post({ type: "providerRemove", id });
+        },
     );
 }
 

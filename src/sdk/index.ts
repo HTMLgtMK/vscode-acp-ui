@@ -130,6 +130,9 @@ export {
 export type {
     AcpUiHistoryReplayEvent,
     AcpUiSlashCommand,
+    AcpUiProviderCatalog,
+    AcpUiProviderCatalogEntry,
+    AcpUiProviderDetail,
     ExtensionToWebviewMessage,
     PlanEntry,
     TaskHeaderInfo,

@@ -16,6 +16,7 @@ import {
 } from "react";
 import { cycleSessionModePick } from "../../../src/acp/session/sessionConfigOptions";
 import type {
+  AcpUiProviderDetail,
   AcpUiSlashCommand,
   ToolCallVerbosity,
   WorkspacePathOpenTarget,
@@ -30,6 +31,7 @@ import {
   type TraceItem,
 } from "./chatReducer";
 import { ChatComposer } from "./components/ChatComposer";
+import { ProviderManagerPage } from "./components/ProviderManagerPage";
 import { installSessionModeIndicatorThemeColors } from "./sessionModeIndicatorTheme";
 import {
     installAgentMarkdownThemeColors,
@@ -84,6 +86,19 @@ export type AcpUiAppProps = {
   ) => void;
   postSetSessionModelSelection?: (provider: string, model: string) => void;
   postOpenProviderConfig?: () => void;
+  postProviderDetailRequest?: (id: string) => void;
+  postProviderUpsert?: (req: {
+    id?: string;
+    name: string;
+    providerType: string;
+    endpoint: string;
+    apiKey?: string;
+    models: string[];
+    contextWindow?: number;
+    maxTokens?: number;
+    authType?: string;
+  }) => void;
+  postProviderRemove?: (id: string) => void;
   postPermissionResponse: (
     payload:
       | { requestId: string; selectedOptionId: string }
@@ -112,6 +127,9 @@ export function AcpUiApp({
   postOpenWorkspacePath,
   postSetSessionModelSelection,
   postOpenProviderConfig,
+  postProviderDetailRequest,
+  postProviderUpsert,
+  postProviderRemove,
   postPermissionResponse,
   extensionDispatchRef,
   onExtensionDispatchReady,
@@ -149,6 +167,16 @@ export function AcpUiApp({
   const [composerSuggestionIndex, setComposerSuggestionIndex] = useState(0);
   const [composerAutocompleteDismissed, setComposerAutocompleteDismissed] =
     useState(false);
+  // Provider 管理页（图2 全面板 overlay）：开关 + 请求面应答走本地 state
+  // （extensionDispatchRef 拦截，不进 chatReducer——与 theme/verbosity 同型）。
+  const [providerManagerOpen, setProviderManagerOpen] = useState(false);
+  const [providerDetail, setProviderDetail] = useState<AcpUiProviderDetail | null>(null);
+  const [providerDetailError, setProviderDetailError] = useState<string | null>(null);
+  const providerManageResultRef = useRef<((result: {
+    ok: boolean;
+    message: string;
+    removedId?: string;
+  }) => void) | null>(null);
 
   const scrollTraceToBottomIfPinned = useCallback((): void => {
     const el = traceRef.current;
@@ -187,6 +215,20 @@ export function AcpUiApp({
   extensionDispatchRef.current = (message: ExtensionMessageAfterInit) => {
     if (message.type === "vscodeThemeVariables") {
       updateAgentMarkdownThemeColors(message.variables);
+      return;
+    }
+    if (message.type === "providerDetail") {
+      // 管理页请求面应答：本地 state 消费，不进 reducer（瞬态、页面私有）。
+      setProviderDetail(message.detail);
+      setProviderDetailError(message.error ?? null);
+      return;
+    }
+    if (message.type === "providerManageResult") {
+      providerManageResultRef.current?.({
+        ok: message.ok,
+        message: message.message,
+        ...(message.removedId !== undefined ? { removedId: message.removedId } : {}),
+      });
       return;
     }
     if (message.type === "toolCallVerbosity") {
@@ -713,6 +755,21 @@ export function AcpUiApp({
         onDragOver={onShellDragOver}
         onDrop={onShellDrop}
       >
+        {providerManagerOpen ? (
+          <ProviderManagerPage
+            catalog={state.providerCatalog}
+            detail={providerDetail}
+            detailError={providerDetailError}
+            onDetailRequest={postProviderDetailRequest}
+            onUpsert={postProviderUpsert}
+            onRemove={postProviderRemove}
+            onOpenConfig={postOpenProviderConfig}
+            onManageResult={(handler) => {
+              providerManageResultRef.current = handler;
+            }}
+            onClose={() => setProviderManagerOpen(false)}
+          />
+        ) : null}
         <TaskDetailHeader header={state.taskHeader} />
         <TraceFilters
           counts={countByKind(state.trace)}

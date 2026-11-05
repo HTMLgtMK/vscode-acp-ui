@@ -162,6 +162,12 @@
     box-shadow: 0 12px 32px color-mix(in srgb, var(--gw-shadow-key) 45%, transparent);
 }
 
+/* 双栏形态（图1）：左 = Models + Effort slider；右 = Providers + 沉底 Manage。 */
+.composer-model-dialog--twopane {
+    width: min(560px, calc(100vw - 32px));
+    max-height: min(460px, calc(100vh - 48px));
+}
+
 .composer-model-dialog__header {
     display: flex;
     align-items: center;
@@ -195,10 +201,137 @@
     overflow-y: auto;
 }
 
+.composer-model-dialog__body--twopane {
+    display: flex;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.composer-model-dialog__left {
+    flex: 1 1 58%;
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    padding: 2px 14px 12px;
+    overflow-y: auto;
+}
+
+.composer-model-dialog__right {
+    flex: 1 1 42%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid var(--gw-border);
+    padding: 2px 0 0;
+}
+
 .composer-model-dialog__label {
     margin-top: 4px;
     color: var(--gw-text-faint);
     font-size: 10px;
+}
+
+.composer-model-dialog__label--pane {
+    padding: 2px 12px 4px;
+}
+
+.provider-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 2px;
+}
+
+.provider-head__name {
+    min-width: 0;
+    color: var(--gw-text);
+    font-size: 12px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.provider-avatar {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.provider-badge {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    color: var(--gw-text-dim);
+    background: var(--gw-surface-sunken);
+    border: 1px solid var(--gw-border);
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+.provider-row,
+.model-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    color: var(--gw-text);
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.composer-model-dialog__providers .provider-row {
+    margin: 0 8px;
+    width: calc(100% - 16px);
+}
+
+.provider-row:hover:not(:disabled),
+.model-row:hover:not(:disabled) {
+    background: var(--gw-surface-hover);
+}
+
+.provider-row--current .provider-row__name,
+.model-row--current .model-row__name {
+    font-weight: 600;
+}
+
+.provider-row:disabled,
+.model-row:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.provider-row__name,
+.model-row__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.provider-row__check {
+    flex-shrink: 0;
+    color: var(--gw-accent);
+    font-weight: 700;
 }
 
 .composer-model-tree {
@@ -208,53 +341,28 @@
     overflow-y: auto;
 }
 
-.composer-model-tree__provider {
-    padding: 4px 6px 2px;
+.composer-model-dialog__left .composer-model-tree {
+    max-height: 180px;
+}
+
+.composer-model-tree__empty {
+    padding: 6px 10px;
     color: var(--gw-text-faint);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.composer-model-tree__leaf {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
-    padding: 5px 8px;
-    color: var(--gw-text);
-    background: transparent;
-    border: none;
-    border-radius: 5px;
-    font-family: inherit;
     font-size: 11px;
-    text-align: left;
-    cursor: pointer;
 }
 
-.composer-model-tree__leaf:hover:not(:disabled) {
-    background: var(--gw-surface-hover);
+.composer-effort-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 6px;
 }
 
-.composer-model-tree__leaf--current {
-    color: var(--gw-accent);
-}
-
-.composer-model-tree__leaf:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
-
-.composer-model-tree__model {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.composer-model-tree__check {
-    flex-shrink: 0;
+.composer-effort-head__value {
+    color: var(--gw-text);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
 }
 
 .composer-effort-slider {
@@ -263,16 +371,46 @@
     padding: 2px 4px 0;
 }
 
+/* 渐变 slider（图1）：填充段绿→蓝随档位，大号白圆 thumb。 */
 .composer-effort-slider input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
+    height: 22px;
     margin: 0;
-    accent-color: var(--gw-accent);
+    background: transparent;
     cursor: pointer;
 }
 
 .composer-effort-slider input[type="range"]:disabled {
     opacity: 0.5;
     cursor: default;
+}
+
+.composer-effort-slider input[type="range"]::-webkit-slider-runnable-track {
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid var(--gw-border);
+    background:
+        linear-gradient(90deg, var(--gw-state-done), var(--gw-state-running))
+            0 0 / var(--slider-fill, 0%) 100% no-repeat,
+        var(--gw-surface-input);
+}
+
+.composer-effort-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    margin-top: -4px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--gw-shadow-key) 60%, transparent);
+}
+
+.composer-effort-slider input[type="range"]:focus-visible {
+    outline: 2px solid var(--gw-focus);
+    outline-offset: 2px;
 }
 
 .composer-effort-slider__ticks {
@@ -291,22 +429,29 @@
     font-weight: 600;
 }
 
-.composer-model-dialog__footer {
-    display: flex;
-    justify-content: flex-end;
-    padding: 8px 12px 10px;
+/* Manage Provider 沉底分区（图1 "Manage models"）：右栏底部 / 单栏底部。 */
+.composer-model-dialog__manage-section {
+    margin-top: auto;
+    padding: 8px 8px;
     border-top: 1px solid var(--gw-border);
 }
 
+.composer-model-dialog__body .composer-model-dialog__manage-section {
+    margin-top: 6px;
+    padding: 8px 0 0;
+}
+
 .composer-model-dialog__manage {
-    padding: 4px 10px;
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
     color: var(--gw-text);
     background: transparent;
-    border: 1px solid var(--gw-border-strong);
-    border-radius: 5px;
+    border: none;
+    border-radius: 6px;
     font-family: inherit;
-    font-size: 10px;
-    letter-spacing: 0.04em;
+    font-size: 12px;
+    text-align: left;
     cursor: pointer;
 }
 
