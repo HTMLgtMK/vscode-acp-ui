@@ -67,8 +67,8 @@ export type ChatComposerProps = {
   onPickSessionModel: (modelId: string) => void;
   /** 弹框树叶子选中（provider + model）。缺省 = 宿主未接（弹框叶子不可选）。 */
   onPickModelSelection?: (provider: string, model: string) => void;
-  /** 弹框 MANAGE PROVIDER：打开 daemon provider 配置文件。缺省 = 不渲染按钮。 */
-  onOpenProviderConfig?: () => void;
+  /** 弹框 MANAGE Provider 行：打开 provider 管理页。缺省 = 不渲染该行。 */
+  onOpenProviderManager?: () => void;
   onPickSessionConfigOption: (
     configId: string,
     value: string | boolean,
@@ -238,7 +238,7 @@ export function ChatComposer({
   onDraftChange,
   onPickSessionModel,
   onPickModelSelection,
-  onOpenProviderConfig,
+  onOpenProviderManager,
   onPickSessionConfigOption,
   onSubmit,
   onCancel,
@@ -418,6 +418,19 @@ export function ChatComposer({
     }
     // 宿主未接新上行（旧宿主/standalone）：退回 provider 级选择。
     handleCapsuleModelPick(provider);
+  };
+
+  // 弹框 hover 浮层里切 provider：一键提交——配对该 provider 当前的 model
+  //（daemon catalog 的 entry.model，缺目录时取 models 头）；无 model 可提交的
+  // provider（老数据）退回 provider 级选择。
+  const handleProviderPick = (providerId: string): void => {
+    const entry = providerCatalog?.providers.find((item) => item.id === providerId);
+    const model = entry?.model ?? entry?.models[0];
+    if (onPickModelSelection !== undefined && model !== undefined && model.length > 0) {
+      onPickModelSelection(providerId, model);
+      return;
+    }
+    handleCapsuleModelPick(providerId);
   };
 
   const handleWorkspacePick = (value: string): void => {
@@ -618,9 +631,9 @@ export function ChatComposer({
                 effortChoices={effortChoices}
                 disabled={modelSelectDisabled}
                 onModelLeafPick={handleModelLeafPick}
-                onProviderPick={handleCapsuleModelPick}
+                onProviderPick={handleProviderPick}
                 onEffortPick={handleCapsuleEffortPick}
-                onManage={onOpenProviderConfig}
+                onManage={onOpenProviderManager}
               />
               {toolbarOtherOptions.length > 0 ? (
                 <ConfigOptionControls
@@ -678,9 +691,9 @@ export function ChatComposer({
                 effortChoices={effortChoices}
                 disabled={modelSelectDisabled}
                 onModelLeafPick={handleModelLeafPick}
-                onProviderPick={handleCapsuleModelPick}
+                onProviderPick={handleProviderPick}
                 onEffortPick={handleCapsuleEffortPick}
-                onManage={onOpenProviderConfig}
+                onManage={onOpenProviderManager}
               />
             </div>
           )}

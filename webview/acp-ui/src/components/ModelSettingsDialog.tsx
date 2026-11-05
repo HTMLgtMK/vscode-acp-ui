@@ -2,16 +2,18 @@ import { type CSSProperties, type ReactElement, useEffect, useState } from "reac
 import type { AcpUiProviderCatalogEntry } from "../../../../src/protocol/extensionHostMessages";
 
 /**
- * Model·Effort 弹框（图1 双栏样式，宿主 `providerCatalog` 快照为数据源）：
- *   - 左栏：当前/预览 provider 头（monogram 头像 + 名称 + type 徽标）→ Models
- *     列表（当前 model 打勾，目录外的当前 model 并入显示）→ Effort 行 + 渐变
- *     slider（绿→蓝，填充比例随档位）+ 四档刻度；
- *   - 右栏：Providers 列表（monogram 头像 + 名称 + type 徽标 + 当前✓），点击 =
- *     预览切换（左栏跟着切）；底部边框分隔的 Manage Provider 沉底行（打开管理页）。
- * 点 model 叶子 = 提交 (provider, model)；Esc / backdrop / × 关闭。
+ * Model·Effort 弹框（单栏设置项 + hover 浮出 provider 列表）：
+ *   - Provider 设置行（monogram 头像 + 名称 + type 徽标）：hover / 点击 → 右侧
+ *     浮出 provider 列表，点击条目即切 provider（宿主配对该 provider 当前
+ *     model 一起提交）；
+ *   - Models 列表（当前 provider，当前 model 打勾，目录外的当前 model 并入），
+ *     点叶子 = 提交 (provider, model)；
+ *   - Effort 行 + 渐变 slider（绿→蓝，填充比例随档位）+ 四档刻度；
+ *   - 底部 Manage Provider 行（打开管理页）。
+ * Esc / backdrop / × 关闭。
  */
 export type ModelSettingsDialogProps = {
-  /** 宿主快照；null = 老 daemon 无目录能力，退单栏平铺 provider 行。 */
+  /** 宿主快照；null = 老 daemon 无目录能力，head 行数据退平铺。 */
   catalog: {
     currentProviderId: string;
     currentModel: string;
@@ -29,7 +31,7 @@ export type ModelSettingsDialogProps = {
   onClose: () => void;
   /** 树叶子选中（provider + model）。 */
   onModelLeafPick: (provider: string, model: string) => void;
-  /** 平铺回退的 provider 行选中。 */
+  /** 切 provider（宿主配对该 provider 当前 model 提交；平铺回退 = 直接选中）。 */
   onProviderPick: (providerId: string) => void;
   onEffortPick: (value: string) => void;
   /** Manage Provider 行（缺省不渲染）。 */
@@ -76,8 +78,7 @@ function TypeBadge({ type }: { type: string | undefined }): ReactElement | null 
   return <span className="provider-badge">{type}</span>;
 }
 
-/** 当前 provider 的展示目录：配置目录 + 目录外的当前 model 并入（仅当前
- * provider —— 其他 provider 的目录与本次选择无关）。 */
+/** 当前 provider 的展示目录：配置目录 + 目录外的当前 model 并入。 */
 function providerModelsWithCurrent(
   provider: AcpUiProviderCatalogEntry,
   currentProviderId: string,
@@ -107,7 +108,7 @@ export function ModelSettingsDialog({
   onEffortPick,
   onManage,
 }: ModelSettingsDialogProps): ReactElement {
-  const [previewProvider, setPreviewProvider] = useState<string | null>(null);
+  const [flyoutOpen, setFlyoutOpen] = useState(false);
   useEffect(() => {
     const close = (event: globalThis.KeyboardEvent): void => {
       if (event.key === "Escape") {
@@ -126,85 +127,38 @@ export function ModelSettingsDialog({
       ? (effortIndex / (effortChoices.length - 1)) * 100
       : 100;
 
-  if (!hasCatalog) {
-    // 平铺回退（老 daemon）：单栏 provider 行 + effort slider。
-    return (
-      <div
-        className="composer-model-dialog-backdrop"
-        onPointerDown={() => onClose()}
-      >
-        <section
-          className="composer-model-dialog"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Model settings"
-          onPointerDown={(event) => event.stopPropagation()}
-        >
-          <header className="composer-model-dialog__header">
-            <span>Model settings</span>
-            <button
-              type="button"
-              className="composer-model-dialog__close"
-              aria-label="Close"
-              onClick={onClose}
-            >
-              ×
-            </button>
-          </header>
-          <div className="composer-model-dialog__body">
-            <div className="composer-model-dialog__label">Providers</div>
-            <div className="composer-model-tree" role="listbox" aria-label="Providers">
-              {flatChoices.map((choice) => {
-                const isCurrent = choice.value === currentProviderId;
-                return (
-                  <button
-                    key={choice.value}
-                    type="button"
-                    role="option"
-                    aria-selected={isCurrent}
-                    disabled={disabled}
-                    className={
-                      isCurrent
-                        ? "provider-row provider-row--current"
-                        : "provider-row"
-                    }
-                    onClick={() => onProviderPick(choice.value)}
-                  >
-                    <ProviderAvatar name={choice.name} />
-                    <span className="provider-row__name">{choice.name}</span>
-                    {isCurrent ? (
-                      <span className="provider-row__check" aria-hidden="true">
-                        ✓
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="composer-model-dialog__label">Effort</div>
-            <EffortSlider
-              effortValue={effortValue}
-              effortChoices={effortChoices}
-              effortIndex={effortIndex}
-              fillPercent={fillPercent}
-              disabled={disabled}
-              onEffortPick={onEffortPick}
-            />
-            {onManage !== undefined ? <ManageRow onManage={onManage} /> : null}
-          </div>
-        </section>
-      </div>
-    );
-  }
-
-  const previewed =
-    catalog.providers.find((provider) => provider.id === previewProvider) ??
-    catalog.providers.find((provider) => provider.id === currentProviderId) ??
-    catalog.providers[0]!;
-  const previewedIsCurrent = previewed.id === currentProviderId;
-  const models = previewedIsCurrent
-    ? providerModelsWithCurrent(previewed, currentProviderId, currentModel)
-    : previewed.models;
+  // head 行 + 浮层的条目源：catalog 模式用 providers，平铺回退用 flatChoices。
+  const providerEntries: Array<{
+    id: string;
+    name: string;
+    type?: string;
+  }> =
+    hasCatalog
+      ? catalog.providers.map((provider) => ({
+          id: provider.id,
+          name: provider.name,
+          ...(provider.type !== undefined ? { type: provider.type } : {}),
+        }))
+      : flatChoices.map((choice) => ({ id: choice.value, name: choice.name }));
+  const currentName =
+    providerEntries.find((entry) => entry.id === currentProviderId)?.name ??
+    currentProviderId;
+  const currentType = hasCatalog
+    ? catalog.providers.find((provider) => provider.id === currentProviderId)
+        ?.type
+    : undefined;
+  const models =
+    hasCatalog && catalog !== null
+      ? (() => {
+          const provider = catalog.providers.find(
+            (entry) => entry.id === currentProviderId,
+          );
+          if (provider === undefined) {
+            return [];
+          }
+          return providerModelsWithCurrent(provider, currentProviderId, currentModel);
+        })()
+      : [];
 
   return (
     <div
@@ -212,7 +166,7 @@ export function ModelSettingsDialog({
       onPointerDown={() => onClose()}
     >
       <section
-        className="composer-model-dialog composer-model-dialog--twopane"
+        className="composer-model-dialog"
         role="dialog"
         aria-modal="true"
         aria-label="Model settings"
@@ -229,71 +183,38 @@ export function ModelSettingsDialog({
             ×
           </button>
         </header>
-        <div className="composer-model-dialog__body composer-model-dialog__body--twopane">
-          <div className="composer-model-dialog__left">
-            <div className="provider-head">
-              <ProviderAvatar name={previewed.name} />
-              <span className="provider-head__name">{previewed.name}</span>
-              <TypeBadge type={previewed.type} />
-            </div>
-            <div className="composer-model-dialog__label">Models</div>
-            <div className="composer-model-tree" role="listbox" aria-label="Models">
-              {models.map((model) => {
-                const isCurrent = previewedIsCurrent && model === currentModel;
-                return (
-                  <button
-                    key={model}
-                    type="button"
-                    role="option"
-                    aria-selected={isCurrent}
-                    disabled={disabled}
-                    className={
-                      isCurrent
-                        ? "model-row model-row--current"
-                        : "model-row"
-                    }
-                    onClick={() => onModelLeafPick(previewed.id, model)}
-                  >
-                    <span className="model-row__name">{model}</span>
-                    {isCurrent ? (
-                      <span className="provider-row__check" aria-hidden="true">
-                        ✓
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-              {models.length === 0 ? (
-                <div className="composer-model-tree__empty">（无模型）</div>
-              ) : null}
-            </div>
-            <div className="composer-effort-head">
-              <span className="composer-model-dialog__label">Effort</span>
-              <span className="composer-effort-head__value">{effortValue}</span>
-            </div>
-            <EffortSlider
-              effortValue={effortValue}
-              effortChoices={effortChoices}
-              effortIndex={effortIndex}
-              fillPercent={fillPercent}
-              disabled={disabled}
-              onEffortPick={onEffortPick}
-            />
-          </div>
-          <div className="composer-model-dialog__right">
-            <div className="composer-model-dialog__label composer-model-dialog__label--pane">
-              Providers
-            </div>
+        {/* Provider 设置行：hover / 点击 → 右侧浮出 provider 列表切 provider。 */}
+        <div
+          className="provider-head-row"
+          onMouseEnter={() => setFlyoutOpen(true)}
+          onMouseLeave={() => setFlyoutOpen(false)}
+        >
+          <button
+            type="button"
+            className="provider-head"
+            aria-expanded={flyoutOpen}
+            aria-haspopup="listbox"
+            disabled={disabled}
+            onClick={() => setFlyoutOpen((value) => !value)}
+          >
+            <ProviderAvatar name={currentName} />
+            <span className="provider-head__name">{currentName}</span>
+            <TypeBadge type={currentType} />
+            <span className="provider-head__chevron" aria-hidden="true">
+              ›
+            </span>
+          </button>
+          {flyoutOpen ? (
             <div
-              className="composer-model-dialog__providers"
+              className="provider-flyout"
               role="listbox"
               aria-label="Providers"
             >
-              {catalog.providers.map((provider) => {
-                const isCurrent = provider.id === currentProviderId;
+              {providerEntries.map((entry) => {
+                const isCurrent = entry.id === currentProviderId;
                 return (
                   <button
-                    key={provider.id}
+                    key={entry.id}
                     type="button"
                     role="option"
                     aria-selected={isCurrent}
@@ -303,11 +224,14 @@ export function ModelSettingsDialog({
                         ? "provider-row provider-row--current"
                         : "provider-row"
                     }
-                    onClick={() => setPreviewProvider(provider.id)}
+                    onClick={() => {
+                      onProviderPick(entry.id);
+                      setFlyoutOpen(false);
+                    }}
                   >
-                    <ProviderAvatar name={provider.name} />
-                    <span className="provider-row__name">{provider.name}</span>
-                    <TypeBadge type={provider.type} />
+                    <ProviderAvatar name={entry.name} />
+                    <span className="provider-row__name">{entry.name}</span>
+                    <TypeBadge type={entry.type} />
                     {isCurrent ? (
                       <span className="provider-row__check" aria-hidden="true">
                         ✓
@@ -317,9 +241,54 @@ export function ModelSettingsDialog({
                 );
               })}
             </div>
-            {onManage !== undefined ? <ManageRow onManage={onManage} /> : null}
-          </div>
+          ) : null}
         </div>
+        <div className="composer-model-dialog__scroll">
+          {hasCatalog ? (
+            <>
+              <div className="composer-model-dialog__label">Models</div>
+              <div className="composer-model-tree" role="listbox" aria-label="Models">
+                {models.map((model) => {
+                  const isCurrent = model === currentModel;
+                  return (
+                    <button
+                      key={model}
+                      type="button"
+                      role="option"
+                      aria-selected={isCurrent}
+                      disabled={disabled}
+                      className={isCurrent ? "model-row model-row--current" : "model-row"}
+                      onClick={() => onModelLeafPick(currentProviderId, model)}
+                    >
+                      <span className="model-row__name">{model}</span>
+                      {isCurrent ? (
+                        <span className="provider-row__check" aria-hidden="true">
+                          ✓
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+                {models.length === 0 ? (
+                  <div className="composer-model-tree__empty">（无模型）</div>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+          <div className="composer-effort-head">
+            <span className="composer-model-dialog__label">Effort</span>
+            <span className="composer-effort-head__value">{effortValue}</span>
+          </div>
+          <EffortSlider
+            effortValue={effortValue}
+            effortChoices={effortChoices}
+            effortIndex={effortIndex}
+            fillPercent={fillPercent}
+            disabled={disabled}
+            onEffortPick={onEffortPick}
+          />
+        </div>
+        {onManage !== undefined ? <ManageRow onManage={onManage} /> : null}
       </section>
     </div>
   );
@@ -384,7 +353,7 @@ function EffortSlider({
   );
 }
 
-/** Manage Provider 沉底行（图1 的 "Manage models" 分区）。 */
+/** Manage Provider 沉底行（打开管理页）。 */
 function ManageRow({ onManage }: { onManage: () => void }): ReactElement {
   return (
     <div className="composer-model-dialog__manage-section">

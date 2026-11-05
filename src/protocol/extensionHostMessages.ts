@@ -66,6 +66,8 @@ export type AcpUiProviderCatalogEntry = {
     name: string;
     /** Provider protocol adapter (`openai` / `anthropic`), display only. */
     type?: string;
+    /** 该 provider 当前的生效模型（一键切 provider 时与 id 配对提交）。 */
+    model?: string;
     /** Model catalog of this provider (`Models` config, falling back to `[Model]`). */
     models: string[];
 };

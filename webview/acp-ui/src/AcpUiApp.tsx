@@ -873,7 +873,13 @@ export function AcpUiApp({
                       postSetSessionModelSelection(provider, model);
                     }
               }
-              onOpenProviderConfig={postOpenProviderConfig}
+              // MANAGE Provider → 打开管理页 overlay（宿主接了 detail 上行才算
+              // 可用；config.yaml 链接在管理页头部，走 postOpenProviderConfig）。
+              onOpenProviderManager={
+                postProviderDetailRequest === undefined
+                  ? undefined
+                  : () => setProviderManagerOpen(true)
+              }
               onPickSessionConfigOption={(configId, value) => {
                 dispatch({ type: "pickSessionConfigOption", configId, value });
                 postSetSessionConfigOption(configId, value);

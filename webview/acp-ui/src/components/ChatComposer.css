@@ -162,12 +162,6 @@
     box-shadow: 0 12px 32px color-mix(in srgb, var(--gw-shadow-key) 45%, transparent);
 }
 
-/* 双栏形态（图1）：左 = Models + Effort slider；右 = Providers + 沉底 Manage。 */
-.composer-model-dialog--twopane {
-    width: min(560px, calc(100vw - 32px));
-    max-height: min(460px, calc(100vh - 48px));
-}
-
 .composer-model-dialog__header {
     display: flex;
     align-items: center;
@@ -201,32 +195,69 @@
     overflow-y: auto;
 }
 
-.composer-model-dialog__body--twopane {
+/* Provider 设置行：弹框内的固定行，hover / 点击从右侧浮出 provider 列表。 */
+.provider-head-row {
+    position: relative;
+    padding: 2px 12px 6px;
+    border-bottom: 1px solid var(--gw-border);
+}
+
+.provider-head {
     display: flex;
-    gap: 0;
-    padding: 0;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 5px 8px;
+    color: var(--gw-text);
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.provider-head:hover:not(:disabled) {
+    background: var(--gw-surface-hover);
+}
+
+.provider-head:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.provider-head__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 600;
     overflow: hidden;
-    min-height: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.composer-model-dialog__left {
-    flex: 1 1 58%;
-    min-width: 0;
-    display: grid;
-    gap: 6px;
-    align-content: start;
-    padding: 2px 14px 12px;
+.provider-head__chevron {
+    flex-shrink: 0;
+    color: var(--gw-text-faint);
+    font-size: 13px;
+}
+
+/* 浮出层：head 行右侧（可溢出弹框边界），条目点击即切 provider。 */
+.provider-flyout {
+    position: absolute;
+    left: calc(100% + 8px);
+    top: -4px;
+    z-index: 10;
+    width: 230px;
+    max-height: 260px;
     overflow-y: auto;
-}
-
-.composer-model-dialog__right {
-    flex: 1 1 42%;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    border-left: 1px solid var(--gw-border);
-    padding: 2px 0 0;
+    display: grid;
+    gap: 2px;
+    padding: 6px;
+    border: 1px solid var(--gw-border-strong);
+    border-radius: 10px;
+    background: var(--gw-surface-overlay);
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--gw-shadow-key) 45%, transparent);
 }
 
 .composer-model-dialog__label {
@@ -298,9 +329,9 @@
     cursor: pointer;
 }
 
-.composer-model-dialog__providers .provider-row {
-    margin: 0 8px;
-    width: calc(100% - 16px);
+.provider-flyout .provider-row {
+    margin: 0;
+    width: 100%;
 }
 
 .provider-row:hover:not(:disabled),
@@ -341,8 +372,13 @@
     overflow-y: auto;
 }
 
-.composer-model-dialog__left .composer-model-tree {
-    max-height: 180px;
+.composer-model-dialog__scroll {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    padding: 8px 12px 12px;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .composer-model-tree__empty {
@@ -429,16 +465,11 @@
     font-weight: 600;
 }
 
-/* Manage Provider 沉底分区（图1 "Manage models"）：右栏底部 / 单栏底部。 */
+/* Manage Provider 沉底分区：弹框底部固定（滚动主体之外）。 */
 .composer-model-dialog__manage-section {
     margin-top: auto;
-    padding: 8px 8px;
+    padding: 6px 8px 8px;
     border-top: 1px solid var(--gw-border);
-}
-
-.composer-model-dialog__body .composer-model-dialog__manage-section {
-    margin-top: 6px;
-    padding: 8px 0 0;
 }
 
 .composer-model-dialog__manage {
