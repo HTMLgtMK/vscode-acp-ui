@@ -6,7 +6,10 @@ import {
     MockAcpNdjsonDaemon,
     type MockAcpNdjsonDaemonOptions,
 } from "../testing/mockAcpNdjsonDaemon";
-import { AcpSessionBridge } from "./acpSessionBridge";
+import {
+    AcpSessionBridge,
+    type AcpSessionBridgeHooks,
+} from "./acpSessionBridge";
 
 const startedDaemons: MockAcpNdjsonDaemon[] = [];
 
@@ -38,6 +41,7 @@ function isAppendAgentText(
 function bridgeFor(
     daemon: MockAcpNdjsonDaemon,
     messages: ExtensionToWebviewMessage[],
+    hooks?: AcpSessionBridgeHooks,
 ): AcpSessionBridge {
     return new AcpSessionBridge(
         {
@@ -60,6 +64,7 @@ function bridgeFor(
                     socketPath: daemon.socketPath,
                 }),
         },
+        hooks,
     );
 }
 
@@ -149,6 +154,38 @@ describe("AcpSessionBridge over the socket transport", () => {
         }
     });
 
+    it("routes session_info_update to the host hook with transport id and no unknown trace row", async () => {
+        let hookUpdate: { title?: string } | undefined;
+        let hookTransportId: string | undefined;
+        const daemon = await startDaemon({
+            onPrompt: (mock) => {
+                mock.notifySessionUpdate("transport-1", {
+                    sessionUpdate: "session_info_update",
+                    title: "generated",
+                    updatedAt: "2026-11-06T12:00:00Z",
+                });
+                return "end_turn";
+            },
+        });
+        const messages: ExtensionToWebviewMessage[] = [];
+        const bridge = bridgeFor(daemon, messages, {
+            onSessionInfoUpdate: (update, transportSessionId) => {
+                hookUpdate = update;
+                hookTransportId = transportSessionId;
+            },
+        });
+        try {
+            await bridge.connect();
+            await bridge.prompt("first message");
+            expect(hookUpdate?.title).toBe("generated");
+            expect(hookTransportId).toBe("transport-1");
+            expect(
+                messages.filter((message) => message.type === "appendUnknownSessionUpdate"),
+            ).toHaveLength(0);
+        } finally {
+            bridge.dispose();
+        }
+    });
     it("recreates the session and retries the prompt once after being superseded", async () => {
         let created = 0;
         let prompted = 0;

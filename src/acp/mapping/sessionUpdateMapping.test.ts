@@ -21,6 +21,16 @@ describe("sessionUpdateToWebviewMessages", () => {
         expect(messages).toEqual([{ type: "appendUserText", text: "hello" }]);
     });
 
+    it("consumes session_info_update as host metadata without a transcript message", () => {
+        const messages = sessionUpdateToWebviewMessages(
+            rawUpdate({
+                sessionUpdate: "session_info_update",
+                title: "Generated title",
+                updatedAt: "2026-11-06T12:00:00Z",
+            }),
+        );
+        expect(messages).toEqual([]);
+    });
     it("derives grep match counts from Cursor-style rawOutput", () => {
         expect(
             searchStatsSubtitleFromRawOutput({

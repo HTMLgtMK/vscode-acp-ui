@@ -54,7 +54,11 @@ export type AcpSessionHostRuntime = {
 };
 
 export type AcpSessionBridgeHooks = {
-    onSessionInfoUpdate?: (update: acp.SessionInfoUpdate) => void;
+    /** Session metadata update plus ACP transport session id (for host mapping). */
+    onSessionInfoUpdate?: (
+        update: acp.SessionInfoUpdate,
+        transportSessionId: string,
+    ) => void;
     /** Called immediately before `session/load` replays agent-side history. */
     onResumeSession?: () => void | Promise<void>;
     /** Called when `session/load` fails and the client falls back to `session/new`. */
@@ -852,7 +856,7 @@ export class AcpSessionBridge {
 
     private handleSessionUpdate(params: acp.SessionNotification): void {
         if (params.update.sessionUpdate === "session_info_update") {
-            this.hooks?.onSessionInfoUpdate?.(params.update);
+            this.hooks?.onSessionInfoUpdate?.(params.update, params.sessionId);
         }
         if (params.update.sessionUpdate === "config_option_update") {
             this.syncConfigOptionsFromAgent(params.update.configOptions);

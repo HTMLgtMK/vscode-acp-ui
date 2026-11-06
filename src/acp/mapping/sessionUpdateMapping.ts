@@ -963,6 +963,10 @@ export function sessionUpdateToWebviewMessages(
                     })),
                 },
             ];
+        case "session_info_update":
+            // Session metadata (title/updatedAt) is consumed by the host/sidebar hook;
+            // it must never become a transcript row or an "unknown update" block.
+            return [];
         case "config_option_update": {
             const normalized = sessionConfigOptionsFromAgent(
                 update.configOptions,
